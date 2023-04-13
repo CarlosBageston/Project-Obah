@@ -1,0 +1,54 @@
+import { useRef, useState, useEffect } from 'react';
+import { Box, StyledIcon, Title } from './style'
+
+interface Props {
+    tooltipRef: React.RefObject<HTMLDivElement>;
+}
+
+export default function ToolTip({ tooltipRef }: Props) {
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+        const options = {
+            rootMargin: "40% 0px",
+            threshold: 0,
+        };
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    setIsVisible(true);
+                } else {
+                    setIsVisible(false);
+                }
+            });
+        }, options);
+
+        if (tooltipRef.current) {
+            observer.observe(tooltipRef.current);
+        }
+
+        return () => {
+            if (tooltipRef.current) {
+                observer.unobserve(tooltipRef.current);
+            }
+        };
+    }, []);
+
+    return (
+        <>
+            {isVisible &&
+                <Box
+                    to='menu'
+                    spy={true}
+                    smooth={true}
+                    offset={-70}
+                    duration={500}
+                    activeClass="active"
+                >
+                    <Title>Voltar ao Topo</Title>
+                    <StyledIcon />
+                </Box>
+            }
+        </>
+    )
+}

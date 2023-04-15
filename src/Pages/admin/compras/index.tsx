@@ -4,8 +4,8 @@ import { db } from "../../../firebase";
 import Input from "../../../Components/input";
 import ComprasModel from "./model/compras";
 import Button from "../../../Components/button";
-import { Alert, AlertTitle, Autocomplete, AutocompleteCloseReason, TextField } from "@mui/material";
-import { get, orderBy } from "lodash";
+import { Alert, AlertTitle, Autocomplete, AutocompleteCloseReason, FormControl, InputLabel, MenuItem, Select, TextField } from "@mui/material";
+import _ from 'lodash';
 import * as Yup from 'yup';
 import { useFormik } from 'formik';
 
@@ -21,6 +21,7 @@ import formatDate from "../../../Components/masks/formatDate";
 import FiltroGeneric from "../../../Components/filtro";
 import GenericTable from "../../../Components/table";
 import GetData from "../../../firebase/getData";
+import SituacaoProduto from "./enumeration/situacaoProduto";
 
 
 const objClean: ComprasModel = {
@@ -29,7 +30,10 @@ const objClean: ComprasModel = {
     vlUnitario: '',
     dtCompra: '',
     quantidade: null,
-    totalPago: null
+    totalPago: null,
+    tpProduto: null,
+    cxProduto: null,
+    kgProduto: null,
 }
 
 export default function NovasCompras() {
@@ -39,6 +43,7 @@ export default function NovasCompras() {
     const [initialValues, setInitialValues] = useState<ComprasModel>({ ...objClean });
     const [recarregue, setRecarregue] = useState<boolean>(true);
     const [select, setSelect] = useState<boolean>(false);
+    const [valorQuantidade, setValorQuantidade] = useState<number>()
 
     //Realizando busca no banco de dados
     const { dataTable, loading, setDataTable } = GetData('Compras', recarregue);
@@ -52,6 +57,8 @@ export default function NovasCompras() {
             cdProduto: Yup.string().required('Campo obrigatório'),
             vlUnitario: Yup.string().required('Campo obrigatório'),
             dtCompra: Yup.string().required('Campo obrigatório'),
+            cxProduto: Yup.number().optional().nullable(),
+            tpProduto: Yup.number().transform((value) => (isNaN(value) ? undefined : value)).required('Campo obrigatório'),
             quantidade: Yup.number().transform((value) => (isNaN(value) ? undefined : value)).required('Campo obrigatório'),
         }),
         onSubmit: hundleSubmitForm,
@@ -65,7 +72,10 @@ export default function NovasCompras() {
             vlUnitario: '',
             dtCompra: '',
             quantidade: null,
-            totalPago: null
+            totalPago: null,
+            tpProduto: null,
+            cxProduto: null,
+            kgProduto: null,
         })
         setKey(Math.random());
     }
@@ -74,7 +84,9 @@ export default function NovasCompras() {
     async function hundleSubmitForm() {
 
         await addDoc(collection(db, "Compras"), {
-            ...values
+            ...values,
+            cxProduto: values.cxProduto ? valorQuantidade : null,
+            kgProduto: values.kgProduto ? valorQuantidade : null
         })
             .then(() => {
                 setSuccess(true);
@@ -91,17 +103,29 @@ export default function NovasCompras() {
         setSelect(false);
     }
     //Formata valor do input
-    function formatarValor(valor: string) {
-        const inputText = valor.replace(/\D/g, "");
-        let formattedText = "";
-        if (inputText.length <= 2) {
-            formattedText = inputText;
-        } else {
-            const regex = /^(\d*)(\d{2})$/;
-            formattedText = inputText.replace(regex, '$1,$2');
+    useEffect(() => {
+        function formatarValor(valor: string) {
+            const inputText = valor.replace(/\D/g, "");
+            let formattedText = "";
+            if (inputText.length <= 2) {
+                formattedText = inputText
+            } else if (inputText.length === 3) {
+                formattedText = inputText.substring(0, 1) + "," + inputText.substring(1);
+            } else if (inputText.length === 4) {
+                formattedText = inputText.substring(0, 2) + "," + inputText.substring(2);
+            } else if (inputText.length === 5) {
+                if (inputText[0] === '0') {
+                    formattedText = "0," + inputText.substring(1, 6);
+                } else {
+                    formattedText = inputText.substring(0, 3) + "," + inputText.substring(3);
+                }
+            }
+            return formattedText ? "R$ " + formattedText : "";
         }
-        return inputText ? "R$ " + formattedText : "";
-    }
+        const formattedValue = formatarValor(values.vlUnitario);
+        setFieldValue('vlUnitario', formattedValue);
+
+    }, [values.vlUnitario]);
 
     useEffect(() => {
         const mult = () => {
@@ -115,7 +139,7 @@ export default function NovasCompras() {
             }
         }
         mult()
-    }, [values.quantidade])
+    }, [values.quantidade, values.vlUnitario])
 
     useEffect(() => {
         const getProduct = () => {
@@ -136,14 +160,59 @@ export default function NovasCompras() {
             setFieldValue('vlUnitario', lastProduct.vlUnitario);
         }
     }, [values.nmProduto, dataTable]);
+    //tornando valores unicos no array/não repete
     const uniqueNames = Array.from(new Set(dataTable.map(nome => nome.nmProduto)));
 
+    useEffect(() => {
+        const valorCaixa = values.cxProduto;
+        const quantidade = values.quantidade;
+        const valorKg = values.kgProduto;
+        if (valorCaixa) {
+            const result = quantidade! * valorCaixa!;
+            setValorQuantidade(result);
+        } else {
+            const result = quantidade! * valorKg!;
+            setValorQuantidade(result);
+        }
+    }, [values.cxProduto, values.kgProduto, values.quantidade]);
 
     return (
         <Box>
-            <Title>Novas Compras</Title>
+            <Title>Novas Produtos</Title>
             <ContainerInputs>
                 <DivInput>
+                    <FormControl
+                        variant="standard"
+                        sx={{ mb: 2, minWidth: 120 }}
+                        style={{ width: '13rem' }}
+                    >
+                        <InputLabel style={{ color: '#4d68af', fontWeight: 'bold', paddingLeft: 4 }} id="standard-label">Situação do produto</InputLabel>
+                        <Select
+                            key={`tpProduto-${key}`}
+                            name='tpProduto'
+                            id="standard"
+                            onBlur={handleBlur}
+                            label="Selecione..."
+                            labelId="standard-label"
+                            onChange={e => setFieldValue(e.target.name, e.target.value)}
+                            value={values.tpProduto}
+                            style={{ borderBottom: '1px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
+                        >
+                            <MenuItem
+                                value={SituacaoProduto.FABRICADO}
+                            >
+                                Fabricado
+                            </MenuItem>
+                            <MenuItem
+                                value={SituacaoProduto.COMPRADO}
+                            >
+                                Comprado
+                            </MenuItem>
+                        </Select>
+                        {touched.tpProduto && errors.tpProduto && (
+                            <div style={{ color: 'red' }}>{errors.tpProduto}</div>
+                        )}
+                    </FormControl>
                     <Autocomplete
                         value={values.nmProduto}
                         options={uniqueNames}
@@ -191,11 +260,12 @@ export default function NovasCompras() {
                         error={touched.cdProduto && errors.cdProduto ? errors.cdProduto : ''}
                         raisedLabel={select}
                     />
+
                 </DivInput>
                 <DivInput>
                     <Input
                         key={`dtCompra-${key}`}
-                        label="Data Da Compra"
+                        label="Data"
                         onBlur={handleBlur}
                         name="dtCompra"
                         value={values.dtCompra!}
@@ -210,12 +280,37 @@ export default function NovasCompras() {
                         name="vlUnitario"
                         value={values.vlUnitario}
                         maxLength={9}
-                        onChange={e => setFieldValue(e.target.name, formatarValor(e.target.value))}
+                        onChange={e => setFieldValue(e.target.name, e.target.value)}
                         error={touched.vlUnitario && errors.vlUnitario ? errors.vlUnitario : ''}
                         raisedLabel={select}
                     />
                 </DivInput>
                 <DivInput>
+                    <div style={{ display: 'flex' }}>
+                        <Input
+                            key={`cxProduto-${key}`}
+                            name="cxProduto"
+                            onBlur={handleBlur}
+                            label="Quantidade na Caixa ?"
+                            value={values.cxProduto ? values.cxProduto! : ''}
+                            onChange={e => setFieldValue(e.target.name, e.target.value)}
+                            error={touched.cxProduto && errors.cxProduto ? errors.cxProduto : ''}
+                            style={{ paddingBottom: 0 }}
+                            styleDiv={{ paddingRight: 8 }}
+                            styleLabel={{ fontSize: '0.8rem' }}
+                        />
+                        <Input
+                            key={`kgProduto-${key}`}
+                            name="kgProduto"
+                            onBlur={handleBlur}
+                            label="Quantidade KG ?"
+                            value={values.kgProduto ? values.kgProduto! : ''}
+                            onChange={e => setFieldValue(e.target.name, e.target.value)}
+                            error={touched.kgProduto && errors.kgProduto ? errors.kgProduto : ''}
+                            style={{ paddingBottom: 0 }}
+                            styleLabel={{ fontSize: '0.8rem' }}
+                        />
+                    </div>
                     <Input
                         key={`Quantidade-${key}`}
                         label="Quantidade"
@@ -223,7 +318,7 @@ export default function NovasCompras() {
                         name="quantidade"
                         value={values.quantidade!}
                         maxLength={10}
-                        onChange={e => setFieldValue(e.target.name, formatDate(e.target.value))}
+                        onChange={e => setFieldValue(e.target.name, e.target.value)}
                         error={touched.quantidade && errors.quantidade ? errors.quantidade : ''}
                     />
                     <Input
@@ -285,6 +380,8 @@ export default function NovasCompras() {
                     { label: 'Data', name: 'dtCompra' },
                     { label: 'Valor', name: 'vlUnitario' },
                     { label: 'Quantidade', name: 'quantidade' },
+                    { label: 'Quantidade na Caixa', name: 'cxProduto' },
+                    { label: 'Quantidade KG', name: 'kgProduto' },
                     { label: 'Valor Total', name: 'totalPago' }
                 ]}
                 data={dataTable}

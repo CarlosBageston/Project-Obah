@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import {
     Box,
     Title,
+    ContainerTables
 } from './style'
 import FiltroGeneric from "../../../Components/filtro";
 import GenericTable from "../../../Components/table";
@@ -10,13 +11,15 @@ import GetData from "../../../firebase/getData";
 import ComprasModel from "../compras/model/compras";
 import ProdutoModel from "../vendas/model/vendas";
 import EstoqueModel from "./model/estoque";
+import SituacaoProduto from "../compras/enumeration/situacaoProduto";
 
 
 
 
 export default function Estoque() {
     const [recarregue, setRecarregue] = useState<boolean>(true);
-    const [dataTableEstoque, setDataTableEstoque] = useState<EstoqueModel[]>([])
+    const [dataTableFabricado, setDataTableFabricado] = useState<EstoqueModel[]>([])
+    const [dataTableComprado, setDataTableComprado] = useState<EstoqueModel[]>([])
 
     const {
         dataTable,
@@ -51,9 +54,9 @@ export default function Estoque() {
 
         if (dataTable.length !== 0) {
             dataTable.forEach(venda => {
-                const { cdProduto, nmProduto, quantidade } = venda;
+                const { cdProduto, nmProduto, quantidade, tpProduto } = venda;
                 if (!quantidadeCompras[nmProduto]) {
-                    quantidadeCompras[nmProduto] = { cdProduto, nmProduto, quantidadeTotal: 0 };
+                    quantidadeCompras[nmProduto] = { cdProduto, tpProduto, nmProduto, quantidadeTotal: 0 };
                 }
                 quantidadeCompras[nmProduto].quantidadeTotal += Number(quantidade);
             });
@@ -67,26 +70,65 @@ export default function Estoque() {
             }
             return acc;
         }, []);
-        setDataTableEstoque(resultado)
+        const tipoFabricado = resultado.filter(tipo => tipo.tpProduto === SituacaoProduto.FABRICADO)
+        const tipoComprado = resultado.filter(tipo => tipo.tpProduto === SituacaoProduto.COMPRADO)
+        setDataTableFabricado(tipoFabricado)
+        setDataTableComprado(tipoComprado)
 
     }, [vendasDataTable, dataTable]);
+
     return (
         <Box>
             <Title>Estoque</Title>
-            {/*Tabala */}
-            <div style={{ margin: '-3.5rem 0px -12px 3rem' }}>
-                <FiltroGeneric data={dataTableEstoque} setFilteredData={setDataTableEstoque} carregarDados={setRecarregue} type="produto" />
-            </div>
-            <GenericTable
-                columns={[
-                    { label: 'Código', name: 'cdProduto' },
-                    { label: 'Nome', name: 'nmProduto' },
-                    { label: 'Quantidade', name: 'quantidadeTotal' },
-                    { label: 'Status', name: 'stEstoque' },
-                ]}
-                data={dataTableEstoque}
-                isLoading={loading}
-            />
+            <ContainerTables>
+                {/*Tabala Fabricado*/}
+                <div>
+
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <div style={{ margin: '0rem 0px -12px -1rem' }}>
+                            <FiltroGeneric data={dataTableFabricado} setFilteredData={setDataTableFabricado} carregarDados={setRecarregue} type="produto" />
+                        </div>
+                        <div>
+                            <p>Tabela Fabricado</p>
+                        </div>
+
+                    </div>
+                    <GenericTable
+                        columns={[
+                            { label: 'Código', name: 'cdProduto' },
+                            { label: 'Nome', name: 'nmProduto' },
+                            { label: 'Quantidade', name: 'quantidadeTotal' },
+                            { label: 'Status', name: 'stEstoque' },
+                        ]}
+                        data={dataTableFabricado}
+                        isLoading={loading}
+                        styleDiv={{ margin: '0px 1rem 0px 0px', width: '43.8rem' }}
+                    />
+                </div>
+                {/*Tabala Comprado*/}
+                <div>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <div style={{ margin: '0rem 0px -12px -1rem' }}>
+                            <FiltroGeneric data={dataTableComprado} setFilteredData={setDataTableComprado} carregarDados={setRecarregue} type="produto" />
+                        </div>
+                        <div>
+                            <p>Tabela Compra</p>
+                        </div>
+
+                    </div>
+                    <GenericTable
+                        columns={[
+                            { label: 'Código', name: 'cdProduto' },
+                            { label: 'Nome', name: 'nmProduto' },
+                            { label: 'Quantidade', name: 'quantidadeTotal' },
+                            { label: 'Status', name: 'stEstoque' },
+                        ]}
+                        data={dataTableComprado}
+                        isLoading={loading}
+                        styleDiv={{ margin: '0px 0rem 0px 0px', width: '43.8rem' }}
+                    />
+                </div>
+            </ContainerTables>
         </Box>
     );
 }

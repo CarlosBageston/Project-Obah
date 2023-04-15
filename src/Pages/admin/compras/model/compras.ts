@@ -4,6 +4,8 @@
 * @author Carlos Bageston
 */
 
+import SituacaoProduto from "../enumeration/situacaoProduto"
+
 
 interface ComprasModel {
     id?: string,
@@ -12,6 +14,10 @@ interface ComprasModel {
     cdProduto: string,
     vlUnitario: string,
     quantidade: number | null,
-    totalPago: number | null
+    totalPago: number | null,
+    tpProduto: SituacaoProduto | null,
+    cxProduto: number | null,
+    kgProduto: number | null,
+
 }
 export default ComprasModel

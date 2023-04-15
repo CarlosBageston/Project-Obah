@@ -4,6 +4,7 @@ import {
     StyledTableCell,
     StyledTableRow,
 } from './style'
+import { CSSProperties } from 'react';
 
 
 type TableColumn = {
@@ -16,22 +17,23 @@ type TableProps = {
     data: any[];
     isLoading: boolean;
     error?: string;
+    styleDiv?: CSSProperties | undefined
 };
 
-const GenericTable = ({ columns, data, isLoading, error }: TableProps) => {
+const GenericTable = ({ columns, data, isLoading, error, styleDiv }: TableProps) => {
 
     if (error) {
         return <p>{error}</p>;
     }
 
     return (
-        <ContainerTable>
+        <ContainerTable style={styleDiv}>
             <TableContainer component={Paper}>
                 <Table sx={{ minWidth: 700 }} aria-label="customized table">
                     <TableHead>
                         <TableRow>
                             {columns.map((column) => (
-                                <StyledTableCell key={column.name}>{column.label}</StyledTableCell>
+                                <StyledTableCell key={column.name} >{column.label}</StyledTableCell>
                             ))}
                         </TableRow>
                     </TableHead>
@@ -40,7 +42,7 @@ const GenericTable = ({ columns, data, isLoading, error }: TableProps) => {
                             return isLoading ? (
                                 <></>
                             ) : (
-                                <StyledTableRow key={row.id}>
+                                <StyledTableRow key={row.id} >
                                     {columns.map((column) => (
                                         <StyledTableCell key={column.name}>
                                             {column.name.split('.').reduce((obj, key) => obj?.[key], row)}

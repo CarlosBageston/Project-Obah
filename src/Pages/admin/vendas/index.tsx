@@ -36,6 +36,7 @@ import * as Yup from 'yup';
 import { useFormik } from 'formik';
 import ProdutosModel from "../cadastroProdutos/model/produtos";
 import { format } from "date-fns";
+import SituacaoProduto from "../compras/enumeration/situacaoProduto";
 
 
 const objClean: VendaModel = {
@@ -160,6 +161,7 @@ export default function Vendas() {
             setFieldValue('vlRecebido', ''),
             setFieldValue('vlTroco', null),
             setFieldValue('produtoEscaniado', []),
+            setFieldValue('tpProduto', SituacaoProduto.FABRICADO),
             setIsValid(false),
             setKey(Math.random()),
             setIsValidQntBolas(false)

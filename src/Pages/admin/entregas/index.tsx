@@ -31,11 +31,11 @@ const objClean: EntregaModel = {
     vlEntrega: '',
     dtEntrega: '',
     quantidades: {
-        moreninha: null,
-        loirinha: null,
-        pote1L: null,
-        pote2L: null,
-        sundae: null,
+        Moreninha: null,
+        Loirinha: null,
+        Pote1L: null,
+        Pote2L: null,
+        Sundae: null,
         Creme: null,
         Fruta: null,
         Itu: null,
@@ -128,11 +128,11 @@ export default function Entregas() {
             vlEntrega: '',
             dtEntrega: '',
             quantidades: {
-                moreninha: 0,
-                loirinha: 0,
-                pote1L: 0,
-                pote2L: 0,
-                sundae: 0,
+                Moreninha: 0,
+                Loirinha: 0,
+                Pote1L: 0,
+                Pote2L: 0,
+                Sundae: 0,
                 Creme: 0,
                 Fruta: 0,
                 Itu: 0,
@@ -151,7 +151,10 @@ export default function Entregas() {
     //enviando formulario
     async function hundleSubmitForm() {
         await addDoc(collection(db, "Entregas"), {
-            ...values
+            ...values,
+            cliente: {
+                nmCliente: values.cliente.nmCliente
+            }
         })
             .then(() => {
                 setSuccess(true);
@@ -197,11 +200,11 @@ export default function Entregas() {
             const produtoS = Number(sundae?.match(/\d+/g)?.join("."));
             const produtoPt = Number(plPaleta?.match(/\d+/g)?.join("."));
             const multiplyValues = [
-                produtoM * values.quantidades.moreninha!,
-                produtoL * values.quantidades.loirinha!,
-                produtoP1 * values.quantidades.pote1L!,
-                produtoP2 * values.quantidades.pote2L!,
-                produtoS * values.quantidades.sundae!,
+                produtoM * values.quantidades.Moreninha!,
+                produtoL * values.quantidades.Loirinha!,
+                produtoP1 * values.quantidades.Pote1L!,
+                produtoP2 * values.quantidades.Pote2L!,
+                produtoS * values.quantidades.Sundae!,
                 produtoI * values.quantidades.Itu!,
                 produtoF * values.quantidades.Fruta!,
                 produtoC * values.quantidades.Creme!,
@@ -381,55 +384,55 @@ export default function Entregas() {
                                         styleDiv={{ marginTop: 4 }}
                                         key={`qtMoreninha-${key}`}
                                         label="Quantidade"
-                                        name="quantidades.moreninha"
+                                        name="quantidades.Moreninha"
                                         onBlur={handleBlur}
-                                        value={values.quantidades.moreninha!}
+                                        value={values.quantidades.Moreninha!}
                                         onChange={e => setFieldValue(e.target.name, e.target.value)}
-                                        error={touched.quantidades?.moreninha && errors.quantidades?.moreninha ? errors.quantidades.moreninha : ''}
+                                        error={touched.quantidades?.Moreninha && errors.quantidades?.Moreninha ? errors.quantidades.Moreninha : ''}
                                     />
                                     <Input
                                         disabled={!info.preco.loirinha}
                                         styleDiv={{ marginTop: 4 }}
                                         key={`qtLoirinha-${key}`}
                                         label="Quantidade"
-                                        name="quantidades.loirinha"
+                                        name="quantidades.Loirinha"
                                         onBlur={handleBlur}
-                                        value={values.quantidades.loirinha!}
+                                        value={values.quantidades.Loirinha!}
                                         onChange={e => setFieldValue(e.target.name, e.target.value)}
-                                        error={touched.quantidades?.loirinha && errors.quantidades?.loirinha ? errors.quantidades?.loirinha : ''}
+                                        error={touched.quantidades?.Loirinha && errors.quantidades?.Loirinha ? errors.quantidades?.Loirinha : ''}
                                     />
                                     <Input
                                         disabled={!info.preco.pote1L}
                                         styleDiv={{ marginTop: 4 }}
                                         key={`qtPote1L-${key}`}
                                         label="Quantidade"
-                                        name="quantidades.pote1L"
+                                        name="quantidades.Pote1L"
                                         onBlur={handleBlur}
-                                        value={values.quantidades.pote1L!}
+                                        value={values.quantidades.Pote1L!}
                                         onChange={e => setFieldValue(e.target.name, e.target.value)}
-                                        error={touched.quantidades?.pote1L && errors.quantidades?.pote1L ? errors.quantidades?.pote1L : ''}
+                                        error={touched.quantidades?.Pote1L && errors.quantidades?.Pote1L ? errors.quantidades?.Pote1L : ''}
                                     />
                                     <Input
                                         disabled={!info.preco.pote2L}
                                         styleDiv={{ marginTop: 4 }}
                                         key={`qtPote2L-${key}`}
                                         label="Quantidade"
-                                        name="quantidades.pote2L"
+                                        name="quantidades.Pote2L"
                                         onBlur={handleBlur}
-                                        value={values.quantidades.pote2L!}
+                                        value={values.quantidades.Pote2L!}
                                         onChange={e => setFieldValue(e.target.name, e.target.value)}
-                                        error={touched.quantidades?.pote2L && errors.quantidades?.pote2L ? errors.quantidades?.pote2L : ''}
+                                        error={touched.quantidades?.Pote2L && errors.quantidades?.Pote2L ? errors.quantidades?.Pote2L : ''}
                                     />
                                     <Input
                                         disabled={!info.preco.sundae}
                                         styleDiv={{ marginTop: 4 }}
                                         key={`qtSundae-${key}`}
                                         label="Quantidade"
-                                        name="quantidades.sundae"
+                                        name="quantidades.Sundae"
                                         onBlur={handleBlur}
-                                        value={values.quantidades.sundae!}
+                                        value={values.quantidades.Sundae!}
                                         onChange={e => setFieldValue(e.target.name, e.target.value)}
-                                        error={touched.quantidades?.sundae && errors.quantidades?.sundae ? errors.quantidades?.sundae : ''}
+                                        error={touched.quantidades?.Sundae && errors.quantidades?.Sundae ? errors.quantidades?.Sundae : ''}
                                     />
                                     <Input
                                         disabled={!info.preco.plItu}

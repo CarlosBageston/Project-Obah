@@ -121,9 +121,25 @@ export default function MenuLateral() {
                 <Link to="/dashboard" style={{ textDecoration: 'none', color: 'white' }}>
                     <StyledListItemButton>
                         <ListItemIcon>
-                            <Image src={dashboard} alt="cadastro cliente" width={32} />
+                            <Image src={dashboard} alt="Dashboard" width={32} />
                         </ListItemIcon>
                         <StyledListItemText primary="Dashboard" />
+                    </StyledListItemButton>
+                </Link>
+                <Link to="/compras" style={{ textDecoration: 'none', color: 'white' }}>
+                    <StyledListItemButton>
+                        <ListItemIcon>
+                            <Image src={compra} alt="Novas Compras" width={32} />
+                        </ListItemIcon>
+                        <StyledListItemText primary="Novas Compras" />
+                    </StyledListItemButton>
+                </Link>
+                <Link to="/cadastro-produto" style={{ textDecoration: 'none', color: 'white' }}>
+                    <StyledListItemButton>
+                        <ListItemIcon>
+                            <Image src={produto} alt="Cadastro Produto" width={32} />
+                        </ListItemIcon>
+                        <StyledListItemText primary="Cadastro Produto" />
                     </StyledListItemButton>
                 </Link>
                 <Link to="/cadastro-cliente" style={{ textDecoration: 'none', color: 'white' }}>
@@ -134,18 +150,10 @@ export default function MenuLateral() {
                         <StyledListItemText primary="Cadastro Cliente" />
                     </StyledListItemButton>
                 </Link>
-                <Link to="/cadastro-produto" style={{ textDecoration: 'none', color: 'white' }}>
-                    <StyledListItemButton>
-                        <ListItemIcon>
-                            <Image src={produto} alt="cadastro cliente" width={32} />
-                        </ListItemIcon>
-                        <StyledListItemText primary="Cadastro Produto" />
-                    </StyledListItemButton>
-                </Link>
                 <Link to="/vendas" style={{ textDecoration: 'none', color: 'white' }}>
                     <StyledListItemButton>
                         <ListItemIcon>
-                            <Image src={vendas} alt="cadastro cliente" width={32} />
+                            <Image src={vendas} alt="Painel de venda" width={32} />
                         </ListItemIcon>
                         <StyledListItemText primary="Painel de venda" />
                     </StyledListItemButton>
@@ -153,17 +161,9 @@ export default function MenuLateral() {
                 <Link to="/entregas" style={{ textDecoration: 'none', color: 'white' }}>
                     <StyledListItemButton>
                         <ListItemIcon>
-                            <Image src={entrega} alt="cadastro cliente" width={32} />
+                            <Image src={entrega} alt="Entregas" width={32} />
                         </ListItemIcon>
                         <StyledListItemText primary="Entregas" />
-                    </StyledListItemButton>
-                </Link>
-                <Link to="/compras" style={{ textDecoration: 'none', color: 'white' }}>
-                    <StyledListItemButton>
-                        <ListItemIcon>
-                            <Image src={compra} alt="cadastro cliente" width={32} />
-                        </ListItemIcon>
-                        <StyledListItemText primary="Novas Compras" />
                     </StyledListItemButton>
                 </Link>
                 <Link to="/estoque" style={{ textDecoration: 'none', color: 'white' }}>

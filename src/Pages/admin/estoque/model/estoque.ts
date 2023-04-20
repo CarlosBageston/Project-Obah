@@ -1,5 +1,6 @@
 import ProdutosModel from "../../cadastroProdutos/model/produtos"
 import SituacaoProduto from "../../compras/enumeration/situacaoProduto"
+import ComprasModel from "../../compras/model/compras"
 
 
 /**
@@ -14,7 +15,10 @@ interface EstoqueModel {
     nmProduto: string,
     cdProduto: string,
     quantidadeTotal: number,
-    tpProduto?: SituacaoProduto | null
+    cxProduto?: number | null,
+    kgProduto?: number | null,
+    tpProduto?: SituacaoProduto | null,
+    mpFabricado?: ComprasModel[]
 
 }
 export default EstoqueModel

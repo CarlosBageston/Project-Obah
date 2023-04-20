@@ -13,7 +13,7 @@ interface ComprasModel {
     nmProduto: string,
     cdProduto: string,
     vlUnitario: string,
-    quantidade: number | null,
+    quantidade: string,
     totalPago: number | null,
     tpProduto: SituacaoProduto | null,
     cxProduto: number | null,

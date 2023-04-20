@@ -1,4 +1,7 @@
 
+import SituacaoProduto from "../../compras/enumeration/situacaoProduto"
+import ComprasModel from "../../compras/model/compras"
+
 /**
  * Modelo de Entrega
 *
@@ -11,6 +14,8 @@ interface ProdutosModel {
     nmProduto: string,
     cdProduto: string,
     vlPagoProduto: string,
-    vlVendaProduto: string
+    vlVendaProduto: string,
+    tpProduto: SituacaoProduto | null
+    mpFabricado: ComprasModel[]
 }
 export default ProdutosModel

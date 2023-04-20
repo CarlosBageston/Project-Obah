@@ -29,7 +29,7 @@ const objClean: ComprasModel = {
     nmProduto: '',
     vlUnitario: '',
     dtCompra: '',
-    quantidade: null,
+    quantidade: '',
     totalPago: null,
     tpProduto: null,
     cxProduto: null,
@@ -43,7 +43,6 @@ export default function NovasCompras() {
     const [initialValues, setInitialValues] = useState<ComprasModel>({ ...objClean });
     const [recarregue, setRecarregue] = useState<boolean>(true);
     const [select, setSelect] = useState<boolean>(false);
-    const [valorQuantidade, setValorQuantidade] = useState<number>()
 
     //Realizando busca no banco de dados
     const { dataTable, loading, setDataTable } = GetData('Compras', recarregue);
@@ -71,7 +70,7 @@ export default function NovasCompras() {
             nmProduto: '',
             vlUnitario: '',
             dtCompra: '',
-            quantidade: null,
+            quantidade: '',
             totalPago: null,
             tpProduto: null,
             cxProduto: null,
@@ -84,9 +83,7 @@ export default function NovasCompras() {
     async function hundleSubmitForm() {
 
         await addDoc(collection(db, "Compras"), {
-            ...values,
-            cxProduto: values.cxProduto ? valorQuantidade : null,
-            kgProduto: values.kgProduto ? valorQuantidade : null
+            ...values
         })
             .then(() => {
                 setSuccess(true);
@@ -127,10 +124,11 @@ export default function NovasCompras() {
 
     }, [values.vlUnitario]);
 
+    //multiplicando
     useEffect(() => {
         const mult = () => {
             const valueFormat = values.vlUnitario?.match(/\d+/g)?.join('.')
-            const multiplication = values.quantidade! * Number(valueFormat)
+            const multiplication = Number(values.quantidade) * Number(valueFormat)
             if (!isNaN(multiplication)) {
                 const resultFormat = multiplication.toLocaleString('pt-BR', { minimumFractionDigits: 2 })
                 setFieldValue('totalPago', `R$ ${resultFormat}`)
@@ -141,6 +139,7 @@ export default function NovasCompras() {
         mult()
     }, [values.quantidade, values.vlUnitario])
 
+    //fazendo autocomplete dos inputs
     useEffect(() => {
         const getProduct = () => {
             const dataTableWithDate = dataTable.map(produto => ({
@@ -160,25 +159,15 @@ export default function NovasCompras() {
             setFieldValue('vlUnitario', lastProduct.vlUnitario);
         }
     }, [values.nmProduto, dataTable]);
+
+
     //tornando valores unicos no array/não repete
     const uniqueNames = Array.from(new Set(dataTable.map(nome => nome.nmProduto)));
 
-    useEffect(() => {
-        const valorCaixa = values.cxProduto;
-        const quantidade = values.quantidade;
-        const valorKg = values.kgProduto;
-        if (valorCaixa) {
-            const result = quantidade! * valorCaixa!;
-            setValorQuantidade(result);
-        } else {
-            const result = quantidade! * valorKg!;
-            setValorQuantidade(result);
-        }
-    }, [values.cxProduto, values.kgProduto, values.quantidade]);
 
     return (
         <Box>
-            <Title>Novas Produtos</Title>
+            <Title>Atualização de estoque</Title>
             <ContainerInputs>
                 <DivInput>
                     <FormControl

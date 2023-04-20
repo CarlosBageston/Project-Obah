@@ -12,11 +12,11 @@ export interface EntregaModel {
     cliente: ClienteModel,
     dtEntrega: string;
     quantidades: {
-        moreninha: number | null;
-        loirinha: number | null;
-        pote1L: number | null;
-        pote2L: number | null;
-        sundae: number | null;
+        Moreninha: number | null;
+        Loirinha: number | null;
+        Pote1L: number | null;
+        Pote2L: number | null;
+        Sundae: number | null;
         Creme: number | null;
         Fruta: number | null;
         Itu: number | null;

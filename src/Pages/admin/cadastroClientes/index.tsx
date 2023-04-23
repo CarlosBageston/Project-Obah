@@ -1,70 +1,63 @@
 import * as Yup from 'yup';
 import { useFormik } from 'formik';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Input from '../../../Components/input';
 import Button from '../../../Components/button';
-import ClienteModel, { ValorProdutoModel } from './model/cliente';
+import ClienteModel from './model/cliente';
 import formatPhone from '../../../Components/masks/maskTelefone';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import { orderBy } from 'lodash';
 
 
+import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { db } from '../../../firebase';
+import { Alert, AlertTitle, Autocomplete, Stack, TextField } from '@mui/material';
+import FiltroGeneric from '../../../Components/filtro';
+import GenericTable from '../../../Components/table';
+import GetData from '../../../firebase/getData';
+import { ContainerFlutuante, Paragrafo, ContianerMP, DivLineMP, DivLineMPEdit } from '../cadastroProdutos/style';
+import SituacaoProduto from '../compras/enumeration/situacaoProduto';
+import ProdutosModel from '../cadastroProdutos/model/produtos';
 //import do styled components
 import {
     Box,
     ContainerInfoCliente,
     DivCliente,
-    DivPreco,
-    TextDivisao,
+    ButtonStyled,
     ContainerButton,
     TitleDefault,
-    ContainerAlert
+    ContainerAlert,
+    DivTwoInput
 } from './style';
-import { addDoc, collection, CollectionReference, getDocs } from 'firebase/firestore';
-import { db } from '../../../firebase';
-import { Alert, AlertTitle, Paper } from '@mui/material';
-import FiltroGeneric from '../../../Components/filtro';
-import GenericTable from '../../../Components/table';
-import GetData from '../../../firebase/getData';
 
-const objClean = {
+const objClean: ClienteModel = {
     nmCliente: '',
-    tfCleinte: '',
+    tfCliente: '',
     ruaCliente: '',
     nrCasaCliente: '',
     bairroCliente: '',
     cidadeCliente: '',
-    preco: {
-        moreninha: null,
-        loirinha: null,
-        plCreme: null,
-        plFruta: null,
-        plItu: null,
-        pote1L: null,
-        pote2L: null,
-        sundae: null,
-        plPacote: null,
-        Balde10L: null,
-        plSkimo: null,
-        plPaleta: null
-    } as unknown as ValorProdutoModel,
+    produtos: []
 }
 
 export default function CadastroCliente() {
     const [key, setKey] = useState<number>(0);
     const [fail, setFail] = useState<boolean>(false);
     const [success, setSuccess] = useState<boolean>(false);
-    const [recarregue, setRecarregue] = useState<boolean>(true)
+    const [recarregue, setRecarregue] = useState<boolean>(true);
+    const [isVisibleTpProuto, setIsVisibleTpProduto] = useState<boolean>(false)
+    const [isEdit, setIsEdit] = useState<boolean>(false);
+    const [selected, setSelected] = useState<ClienteModel>();
 
     const [initialValues, setInitialValues] = useState<ClienteModel>({ ...objClean });
 
     //realizando busca no banco de dados
-    const { dataTable, loading, setDataTable } = GetData('Clientes', recarregue);
+    const {
+        dataTable,
+        loading,
+        setDataTable
+    } = GetData('Clientes', recarregue) as { dataTable: ClienteModel[], loading: boolean, setDataTable: (data: ClienteModel[]) => void };
+    const {
+        dataTable: produtosDataTable,
+    } = GetData('Produtos', recarregue) as { dataTable: ProdutosModel[] };
 
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<ClienteModel>({
         validateOnBlur: true,
@@ -72,51 +65,65 @@ export default function CadastroCliente() {
         initialValues,
         validationSchema: Yup.object().shape({
             nmCliente: Yup.string().required('Campo obrigatório'),
-            tfCleinte: Yup.string().required('Campo obrigatório'),
+            tfCliente: Yup.string().required('Campo obrigatório'),
             ruaCliente: Yup.string().required('Campo obrigatório'),
             nrCasaCliente: Yup.string().required('Campo obrigatório'),
             bairroCliente: Yup.string().required('Campo obrigatório'),
             cidadeCliente: Yup.string().required('Campo obrigatório'),
-            preco: Yup.object().shape({
-                moreninha: Yup.string().notRequired(),
-                loirinha: Yup.string().notRequired(),
-                pote1L: Yup.string().notRequired(),
-                pote2L: Yup.string().notRequired(),
-                sundae: Yup.string().notRequired(),
-                plItu: Yup.string().notRequired(),
-                plFruta: Yup.string().notRequired(),
-                plCreme: Yup.string().notRequired(),
-                plPacote: Yup.string().notRequired(),
-                Balde10L: Yup.string().notRequired(),
-                plSkimo: Yup.string().notRequired(),
-                plPaleta: Yup.string().notRequired(),
-            }).notRequired()
+            produtos: Yup.array().test("array vazio", 'Obrigatório pelo menos 1 produto', function (value) {
+                if ((!value || value.length === 0)) {
+                    return false;
+                } else {
+                    return true;
+                }
+            }).nullable()
         }),
         onSubmit: hundleSubmitForm,
     });
 
-    function cleanState() {
-        setFieldValue("preco.moreninha", '');
-        setFieldValue("preco.loirinha", '');
-        setFieldValue("preco.plCreme", '');
-        setFieldValue("preco.plFruta", '');
-        setFieldValue("preco.plItu", '');
-        setFieldValue("preco.pote1L", '');
-        setFieldValue("preco.pote2L", '');
-        setFieldValue("preco.sundae", '');
-        setFieldValue("preco.plPacote", '');
-        setFieldValue("preco.Balde10L", '');
-        setFieldValue("preco.plSkimo", '');
-        setFieldValue("preco.plPaleta", '');
+    //editar uma linha da tabela e do banco de dados
+    async function handleEditRow() {
+        if (selected) {
+            const refID: string = selected.id ?? '';
+            const refTable = doc(db, "Clientes", refID);
 
+            if (JSON.stringify(selected) !== JSON.stringify(initialValues)) {
+                await updateDoc(refTable, { ...selected })
+                    .then(() => {
+                        const index = dataTable.findIndex((item) => item.id === selected.id);
+                        const updatedDataTable = [
+                            ...dataTable.slice(0, index),
+                            selected,
+                            ...dataTable.slice(index + 1)
+                        ];
+                        setDataTable(updatedDataTable);
+                    });
+            }
+        }
+        setIsEdit(false)
+        setSelected(undefined)
+    }
+
+    //deleta uma linha da tabela e do banco de dados
+    async function handleDeleteRow() {
+        if (selected) {
+            const refID: string = selected.id ?? '';
+            await deleteDoc(doc(db, "Clientes", refID)).then(() => {
+                const newDataTable = dataTable.filter(row => row.id !== selected.id);
+                setDataTable(newDataTable);
+            });
+        }
+        setSelected(undefined)
+    }
+    function cleanState() {
         setInitialValues({
             nmCliente: '',
-            tfCleinte: '',
+            tfCliente: '',
             ruaCliente: '',
             nrCasaCliente: '',
             bairroCliente: '',
             cidadeCliente: '',
-            preco: {} as unknown as ValorProdutoModel,
+            produtos: []
         })
         setKey(Math.random());
     }
@@ -136,7 +143,6 @@ export default function CadastroCliente() {
 
     //envia informações para o banco
     async function hundleSubmitForm() {
-
         setDataTable([...dataTable, values]);
 
         await addDoc(collection(db, "Clientes"), {
@@ -151,6 +157,7 @@ export default function CadastroCliente() {
         resetForm()
         cleanState()
     }
+    const filterTpProduto = produtosDataTable.filter(item => item.tpProduto === SituacaoProduto.FABRICADO)
 
     return (
         <>
@@ -171,14 +178,14 @@ export default function CadastroCliente() {
                                 style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                             />
                             <Input
-                                key={`tfCleinte-${key}`}
+                                key={`tfCliente-${key}`}
                                 maxLength={12}
                                 label='Telefone'
-                                name='tfCleinte'
+                                name='tfCliente'
                                 onBlur={handleBlur}
-                                value={formatPhone(values.tfCleinte)}
+                                value={formatPhone(values.tfCliente)}
                                 onChange={e => setFieldValue(e.target.name, e.target.value)}
-                                error={touched.tfCleinte && errors.tfCleinte ? errors.tfCleinte : ''}
+                                error={touched.tfCliente && errors.tfCliente ? errors.tfCliente : ''}
                                 styleDiv={{ marginTop: 4 }}
                                 style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                             />
@@ -229,8 +236,15 @@ export default function CadastroCliente() {
                                 style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                             />
                         </DivCliente>
+                        <div>
+                            {touched.produtos && errors.produtos && (
+                                //@ts-ignore
+                                <div style={{ color: 'red' }}>{errors.produtos}</div>
+                            )}
+                            <ButtonStyled onClick={() => setIsVisibleTpProduto(true)}> Adicionar Produtos</ButtonStyled>
+                        </div>
                     </ContainerInfoCliente>
-                    <TextDivisao>Preço dos Produtos</TextDivisao>
+
                     {success &&
                         <ContainerAlert>
                             <Alert severity="success" style={{
@@ -255,151 +269,75 @@ export default function CadastroCliente() {
                             </Alert>
                         </ContainerAlert>
                     }
-                    <DivPreco>
-                        <div>
-                            <Input
-                                key={`moreninha-${key}`}
-                                maxLength={8}
-                                label='Moreninha'
-                                name='preco.moreninha'
-                                onBlur={handleBlur}
-                                styleDiv={{ marginTop: 4 }}
-                                value={values.preco.moreninha}
-                                onChange={e => setFieldValue(e.target.name, formatarValor(e.target.value))}
-                                error={touched.preco?.moreninha && errors.preco?.moreninha ? errors.preco.moreninha : ''}
-                            />
-                            <Input
-                                key={`loirinha-${key}`}
-                                maxLength={8}
-                                label='Loirinha'
-                                name='preco.loirinha'
-                                onBlur={handleBlur}
-                                value={values.preco.loirinha}
-                                onChange={e => setFieldValue(e.target.name, formatarValor(e.target.value))}
-                                error={touched.preco?.loirinha && errors.preco?.loirinha ? errors.preco?.loirinha : ''}
-                                styleDiv={{ marginTop: 4 }}
-                            />
-                            <Input
-                                key={`plPaleta-${key}`}
-                                maxLength={8}
-                                label='Paleta de Picolé'
-                                name='preco.loirinha'
-                                onBlur={handleBlur}
-                                value={values.preco.plPaleta}
-                                onChange={e => setFieldValue(e.target.name, formatarValor(e.target.value))}
-                                error={touched.preco?.plPaleta && errors.preco?.plPaleta ? errors.preco?.plPaleta : ''}
-                                styleDiv={{ marginTop: 4 }}
-                            />
-
-                        </div>
-                        <div>
-                            <Input
-                                key={`pote1L-${key}`}
-                                maxLength={8}
-                                label='Pote 1 Litro'
-                                name='preco.pote1L'
-                                onBlur={handleBlur}
-                                value={values.preco.pote1L}
-                                onChange={e => setFieldValue(e.target.name, formatarValor(e.target.value))}
-                                error={touched.preco?.pote1L && errors.preco?.pote1L ? errors.preco?.pote1L : ''}
-                                styleDiv={{ marginTop: 4 }}
-                            />
-                            <Input
-                                key={`pote2L-${key}`}
-                                maxLength={8}
-                                label='Pote 2 Litros'
-                                name='preco.pote2L'
-                                onBlur={handleBlur}
-                                value={values.preco.pote2L}
-                                onChange={e => setFieldValue(e.target.name, formatarValor(e.target.value))}
-                                error={touched.preco?.pote2L && errors.preco?.pote2L ? errors.preco?.pote2L : ''}
-                                styleDiv={{ marginTop: 4 }}
-                            />
-                            <Input
-                                key={`Balde10L-${key}`}
-                                maxLength={8}
-                                label='Balde de 10 Litros'
-                                onBlur={handleBlur}
-                                name='preco.Balde10L'
-                                styleDiv={{ marginTop: 4 }}
-                                value={values.preco.Balde10L}
-                                onChange={e => setFieldValue(e.target.name, formatarValor(e.target.value))}
-                                error={touched.preco?.Balde10L && errors.preco?.Balde10L ? errors.preco?.Balde10L : ''}
-                            />
-                        </div>
-                        <div>
-                            <Input
-                                key={`sundae-${key}`}
-                                maxLength={8}
-                                label='Sundae'
-                                name='preco.sundae'
-                                onBlur={handleBlur}
-                                value={values.preco.sundae}
-                                onChange={e => setFieldValue(e.target.name, formatarValor(e.target.value))}
-                                error={touched.preco?.sundae && errors.preco?.sundae ? errors.preco?.sundae : ''}
-                                styleDiv={{ marginTop: 4 }}
-                            />
-                            <Input
-                                key={`plItu-${key}`}
-                                maxLength={8}
-                                label='Picolé Itu'
-                                name='preco.plItu'
-                                onBlur={handleBlur}
-                                value={values.preco.plItu}
-                                onChange={e => setFieldValue(e.target.name, formatarValor(e.target.value))}
-                                error={touched.preco?.plItu && errors.preco?.plItu ? errors.preco?.plItu : ''}
-                                styleDiv={{ marginTop: 4 }}
-                            />
-                            <Input
-                                key={`plPacote-${key}`}
-                                maxLength={8}
-                                label='Pacote Picolé'
-                                onBlur={handleBlur}
-                                name='preco.plPacote'
-                                styleDiv={{ marginTop: 4 }}
-                                value={values.preco.plPacote}
-                                onChange={e => setFieldValue(e.target.name, formatarValor(e.target.value))}
-                                error={touched.preco?.plPacote && errors.preco?.plPacote ? errors.preco?.plPacote : ''}
-                            />
-                        </div>
-                        <div>
-                            <Input
-                                key={`plCreme-${key}`}
-                                maxLength={8}
-                                label='Picolé De Leite'
-                                name='preco.plCreme'
-                                onBlur={handleBlur}
-                                value={values.preco.plCreme}
-                                onChange={e => setFieldValue(e.target.name, formatarValor(e.target.value))}
-                                error={touched.preco?.plCreme && errors.preco?.plCreme ? errors.preco?.plCreme : ''}
-                                styleDiv={{ marginTop: 4 }}
-                            />
-                            <Input
-                                key={`plFruta-${key}`}
-                                maxLength={8}
-                                label='Picolé de Fruta'
-                                onBlur={handleBlur}
-                                name='preco.plFruta'
-                                styleDiv={{ marginTop: 4 }}
-                                value={values.preco.plFruta}
-                                onChange={e => setFieldValue(e.target.name, formatarValor(e.target.value))}
-                                error={touched.preco?.plFruta && errors.preco?.plFruta ? errors.preco?.plFruta : ''}
-                            />
-                            <Input
-                                key={`plSkimo-${key}`}
-                                maxLength={8}
-                                label='Picolé Skimo'
-                                onBlur={handleBlur}
-                                name='preco.plSkimo'
-                                styleDiv={{ marginTop: 4 }}
-                                value={values.preco.plSkimo}
-                                onChange={e => setFieldValue(e.target.name, formatarValor(e.target.value))}
-                                error={touched.preco?.plSkimo && errors.preco?.plSkimo ? errors.preco?.plSkimo : ''}
-                            />
-
-                        </div>
-                    </DivPreco>
                 </div>
+                {/*Adicionar Produtos */}
+                {isVisibleTpProuto &&
+                    <ContainerFlutuante >
+                        <div>
+                            <TitleDefault style={{ margin: '0 0 8px 0' }}>Produtos</TitleDefault>
+                            <Paragrafo>Informe os Produtos e os valores de venda dos produtos a serem cadastrados</Paragrafo>
+                        </div>
+                        <div>
+                            <Stack spacing={3} sx={{ width: 500 }}>
+                                <Autocomplete
+                                    multiple
+                                    id="tags-standard"
+                                    options={filterTpProduto}
+                                    getOptionLabel={(item) => item.nmProduto}
+                                    onChange={(e, value) => {
+                                        setFieldValue('produtos', value);
+                                    }}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            variant="standard"
+                                            label="Selecione MP necessaria para fabricar"
+                                            placeholder="matéria-prima"
+                                        />
+                                    )}
+                                />
+                            </Stack>
+                        </div>
+                        <ContianerMP>
+                            {values.produtos &&
+                                values.produtos.map(produto => (
+                                    <>
+                                        <ul>
+                                            <DivLineMP>
+                                                <div style={{ width: '18rem' }}>
+                                                    <li>{produto.nmProduto}</li>
+                                                </div>
+                                                <div>
+                                                    <Input
+                                                        error=""
+                                                        label="Valor do produto"
+                                                        name={produto.nmProduto}
+                                                        onChange={(e) => {
+                                                            const newMpFabricado = [...values.produtos];
+                                                            const index = newMpFabricado.findIndex((item) => item.nmProduto === produto.nmProduto);
+                                                            newMpFabricado[index].vlVendaProduto = e.target.value;
+                                                            setFieldValue("produtos", newMpFabricado);
+                                                        }}
+                                                        value={produto.vlVendaProduto}
+                                                        raisedLabel
+                                                        style={{ fontSize: '1rem' }}
+                                                        styleLabel={{ marginTop: '-20px' }}
+                                                        styleDiv={{ margin: '0', padding: 0 }}
+                                                    />
+                                                </div>
+                                            </DivLineMP>
+                                        </ul>
+                                    </>
+                                ))}
+                        </ContianerMP>
+                        <div>
+                            <ButtonStyled
+                                onClick={() => setIsVisibleTpProduto(false)}>
+                                Concluído
+                            </ButtonStyled>
+                        </div>
+                    </ContainerFlutuante>
+                }
                 <ContainerButton>
                     <Button
                         fontSize={18}
@@ -407,12 +345,215 @@ export default function CadastroCliente() {
                         type={'button'}
                         children={'Cadastrar'}
                         onClick={handleSubmit}
-                        style={{ margin: '1rem 4rem 1rem 100%', height: '4rem' }}
+                        style={{ margin: '1rem 4rem 3rem 100%', height: '4rem' }}
                     />
                 </ContainerButton>
 
+                {/* Editar o cliente */}
+
+                {isEdit &&
+                    <ContainerFlutuante >
+                        <div>
+                            <TitleDefault style={{ margin: '0 0 8px 0' }}>Editar Cliente</TitleDefault>
+                            <Paragrafo>Alterar dados do cliente e produtos vendidos</Paragrafo>
+                        </div>
+                        <div>
+                            <>
+                                <ul>
+                                    <DivTwoInput style={{ display: 'flex' }}>
+                                        <DivLineMPEdit>
+                                            <div>
+                                                <Input
+                                                    error=""
+                                                    label="Nome"
+                                                    name={'nmCliente'}
+                                                    onChange={(e) => {
+                                                        setSelected((prevSelected) => {
+                                                            return {
+                                                                ...prevSelected,
+                                                                nmCliente: e.target.value || ''
+                                                            } as ClienteModel | undefined;
+                                                        });
+                                                    }}
+                                                    value={selected?.nmCliente}
+                                                    raisedLabel
+                                                    style={{ fontSize: '16px' }}
+                                                    styleLabel={{ marginTop: '0', fontSize: 12 }}
+                                                    styleDiv={{ margin: '0', padding: 0 }}
+                                                />
+                                            </div>
+                                        </DivLineMPEdit>
+                                        <DivLineMPEdit>
+                                            <div>
+                                                <Input
+                                                    error=""
+                                                    label="Bairro"
+                                                    name={'bairroCliente'}
+                                                    onChange={(e) => {
+                                                        setSelected((prevSelected) => {
+                                                            return {
+                                                                ...prevSelected,
+                                                                bairroCliente: e.target.value || ''
+                                                            } as ClienteModel | undefined;
+                                                        });
+                                                    }}
+                                                    value={selected?.bairroCliente}
+                                                    raisedLabel
+                                                    style={{ fontSize: '16px' }}
+                                                    styleLabel={{ marginTop: '0', fontSize: 12 }}
+                                                    styleDiv={{ margin: '0', padding: 0 }}
+                                                />
+                                            </div>
+                                        </DivLineMPEdit>
+                                    </DivTwoInput>
+                                    <DivTwoInput>
+                                        <DivLineMPEdit>
+                                            <div>
+                                                <Input
+                                                    error=""
+                                                    label="Telefone"
+                                                    name={'tfCliente'}
+                                                    onChange={(e) => {
+                                                        setSelected((prevSelected) => {
+                                                            return {
+                                                                ...prevSelected,
+                                                                tfCliente: e.target.value || ''
+                                                            } as ClienteModel | undefined;
+                                                        });
+                                                    }}
+                                                    value={selected?.tfCliente}
+                                                    raisedLabel
+                                                    style={{ fontSize: '16px' }}
+                                                    styleLabel={{ marginTop: '0', fontSize: 12 }}
+                                                    styleDiv={{ margin: '0', padding: 0 }}
+                                                />
+                                            </div>
+
+                                        </DivLineMPEdit>
+                                        <DivLineMPEdit>
+
+                                            <div>
+                                                <Input
+                                                    error=""
+                                                    label="Rua"
+                                                    name={'ruaCliente'}
+                                                    onChange={(e) => {
+                                                        setSelected((prevSelected) => {
+                                                            return {
+                                                                ...prevSelected,
+                                                                ruaCliente: e.target.value || ''
+                                                            } as ClienteModel | undefined;
+                                                        });
+                                                    }}
+                                                    value={selected?.ruaCliente}
+                                                    raisedLabel
+                                                    style={{ fontSize: '16px' }}
+                                                    styleLabel={{ marginTop: '0', fontSize: 12 }}
+                                                    styleDiv={{ margin: '0', padding: 0 }}
+                                                />
+                                            </div>
+                                        </DivLineMPEdit>
+                                    </DivTwoInput>
+                                    <DivTwoInput>
+                                        <DivLineMPEdit>
+                                            <div>
+                                                <Input
+                                                    error=""
+                                                    label="Cidade"
+                                                    name={'cidadeCliente'}
+                                                    onChange={(e) => {
+                                                        setSelected((prevSelected) => {
+                                                            return {
+                                                                ...prevSelected,
+                                                                cidadeCliente: e.target.value || ''
+                                                            } as ClienteModel | undefined;
+                                                        });
+                                                    }}
+                                                    value={selected?.cidadeCliente}
+                                                    raisedLabel
+                                                    style={{ fontSize: '16px' }}
+                                                    styleLabel={{ marginTop: '0', fontSize: 12 }}
+                                                    styleDiv={{ margin: '0', padding: 0 }}
+                                                />
+                                            </div>
+                                        </DivLineMPEdit>
+                                        <DivLineMPEdit>
+                                            <div>
+                                                <Input
+                                                    error=""
+                                                    label="Número"
+                                                    name={'nrCasaCliente'}
+                                                    onChange={(e) => {
+                                                        setSelected((prevSelected) => {
+                                                            return {
+                                                                ...prevSelected,
+                                                                nrCasaCliente: e.target.value || ''
+                                                            } as ClienteModel | undefined;
+                                                        });
+                                                    }}
+                                                    value={selected?.nrCasaCliente}
+                                                    raisedLabel
+                                                    style={{ fontSize: '16px' }}
+                                                    styleLabel={{ marginTop: '0', fontSize: 12 }}
+                                                    styleDiv={{ margin: '0', padding: 0 }}
+                                                />
+                                            </div>
+                                        </DivLineMPEdit>
+                                    </DivTwoInput>
+                                </ul>
+                            </>
+                        </div>
+                        <ContianerMP>
+                            {selected?.produtos.map((produto, index) => (
+                                <>
+                                    <ul>
+                                        <DivLineMP>
+                                            <div style={{ width: '18rem' }}>
+                                                <li>{produto.nmProduto}</li>
+                                            </div>
+                                            <div>
+                                                <Input
+                                                    error=""
+                                                    label="Valor do produto"
+                                                    name={produto.nmProduto}
+                                                    onChange={(e) => {
+                                                        const valorFormatado = formatarValor(e.target.value);
+                                                        const updatedProdutos = selected?.produtos.map((produto, i) => {
+                                                            if (i === index) {
+                                                                return {
+                                                                    ...produto,
+                                                                    vlVendaProduto: valorFormatado,
+                                                                };
+                                                            }
+                                                            return produto;
+                                                        });
+                                                        setSelected((prevSelected) => ({
+                                                            ...prevSelected,
+                                                            produtos: updatedProdutos || [],
+                                                        } as ClienteModel | undefined));
+                                                    }}
+                                                    value={produto.vlVendaProduto}
+                                                    raisedLabel
+                                                    style={{ fontSize: '1rem' }}
+                                                    styleLabel={{ marginTop: '-20px' }}
+                                                    styleDiv={{ margin: '0', padding: 0 }}
+                                                />
+                                            </div>
+                                        </DivLineMP>
+                                    </ul>
+                                </>
+                            ))}
+                        </ContianerMP>
+                        <div>
+                            <ButtonStyled
+                                onClick={handleEditRow}>
+                                Concluído
+                            </ButtonStyled>
+                        </div>
+                    </ContainerFlutuante>
+                }
                 {/*Tabela */}
-                <div style={{ margin: '-3.5rem 0px -12px 3rem' }}>
+                <div style={{ margin: '-3.5rem 0px -35px 3rem' }}>
                     <FiltroGeneric
                         data={dataTable}
                         carregarDados={setRecarregue}
@@ -423,19 +564,25 @@ export default function CadastroCliente() {
                 <GenericTable
                     columns={[
                         { label: 'Nome', name: 'nmCliente' },
-                        { label: 'Telefone', name: 'tfCleinte' },
-                        { label: 'Moreninha', name: 'preco.moreninha' },
-                        { label: 'Loirinha', name: 'preco.loirinha' },
-                        { label: 'Pote 1 Litro', name: 'preco.pote1L' },
-                        { label: 'Pote 2 Litros', name: 'preco.pote2L' },
-                        { label: 'Sundae', name: 'preco.sundae' },
-                        { label: 'Picolé Itú', name: 'preco.plItu' },
-                        { label: 'Picolé De Leite', name: 'preco.plCreme' },
-                        { label: 'Picolé De Fruta', name: 'preco.plFruta' },
+                        { label: 'Telefone', name: 'tfCliente' },
+                        { label: 'Cidade', name: 'cidadeCliente' },
+                        { label: 'Bairro', name: 'bairroCliente' },
+                        { label: 'Rua', name: 'ruaCliente' },
+                        { label: 'Numero Casa', name: 'nrCasaCliente' },
                     ]}
                     data={dataTable}
                     isLoading={loading}
-
+                    onSelectedRow={setSelected}
+                    onEdit={() => {
+                        if (selected) {
+                            setIsEdit(true)
+                            setInitialValues(selected)
+                        } else {
+                            return
+                        }
+                    }}
+                    onDelete={handleDeleteRow}
+                    isDisabled={selected ? false : true}
                 />
             </Box>
         </>

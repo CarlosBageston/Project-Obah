@@ -10,17 +10,31 @@ height: 100%;
 
 export const Title = styled(TitleDefault)``;
 
-export const TextTable = styled.p<{ isDisabled?: boolean }>`
+export const TextTable = styled.p`
 font-size: 20px;
 font-weight: bold;
-text-align: center;
 padding: 24px 8px 8px 8px;
-opacity: ${({ isDisabled }) => isDisabled ? 0.5 : 1};
-pointer-events: ${({ isDisabled }) => isDisabled ? 'none' : 'auto'};
 `
 
-export const DivPreco = styled.div`
-width: 8rem;
+export const DivProduto = styled.div`
+display: flex;
+align-items: center;
+`;
+export const NameProduto = styled.div`
+width: 15rem;
+padding: 0 8px;
+`;
+export const ValueProduto = styled.div`
+width: 10rem;
+padding: 0 8px;
+`;
+export const QntProduto = styled.div`
+width: 10rem;
+padding: 0 8px;
+`;
+export const ResultProduto = styled.div`
+width: 10rem;
+padding: 0 8px;
 `;
 
 export const ContainerTableCliente = styled.div<{isVisible?: boolean}>`
@@ -28,11 +42,12 @@ overflow: auto;
 height: 19rem;
 display: flex;
 width: 42rem;
-justify-content: space-evenly;
+justify-content: flex-start;
 opacity: ${({ isVisible }) => isVisible ? 0 : 1};
 border: 2px solid #0000008c;
 border-radius: 8px;
 box-shadow: 4px 4px 13px 0px rgba(0,0,0,0.45);
+flex-direction: column;
 
 ::-webkit-scrollbar {
     width: 8px;
@@ -112,4 +127,5 @@ export const DivInputs = styled.div`
 display: flex;
 width: 45rem;
 justify-content: flex-start;
+padding-left: 4rem;
 `;

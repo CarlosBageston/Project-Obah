@@ -111,6 +111,7 @@ margin-top: 1rem;
 height: 45px;
 `;
 
+
 export const ButtonStyled = styled.button`
   display: flex;
   align-items: center;
@@ -181,3 +182,8 @@ export const ButtonStyled = styled.button`
     z-index: 2;
   }
 `;
+
+export const DivLineMPEdit = styled(DivLineMP)`
+width: auto;
+`;
+

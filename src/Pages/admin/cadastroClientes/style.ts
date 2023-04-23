@@ -2,6 +2,7 @@ import styled from "styled-components";
 import TableCell, { tableCellClasses } from '@mui/material/TableCell';
 import { styled as styleMui } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
+import { DivLineMP } from "../cadastroProdutos/style";
 
 export const Box = styled.div`
 height: 100%;
@@ -17,6 +18,7 @@ display: flex;
 width: 100%;
 padding: 0 4rem 0 4rem;
 justify-content: space-between;
+align-items: flex-end;
 `;
 
 export const DivCliente = styled.div`
@@ -81,4 +83,67 @@ export const StyledTableRow = styleMui(TableRow)(({ theme }) => ({
 
 export const ContainerButton = styled.div`
 margin: 0px 12rem;
+`;
+
+export const ButtonStyled = styled.button`
+  --color: #7371f2;
+  padding: 0.8em 1.7em;
+  background-color: transparent;
+  border-radius: .3em;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: .5s;
+  font-weight: bold;
+  font-size: 17px;
+  border: 1px solid;
+  font-family: inherit;
+  text-transform: uppercase;
+  color: var(--color);
+  z-index: 1;
+
+  &::before,
+  &::after {
+    content: '';
+    display: block;
+    width: 50px;
+    height: 50px;
+    transform: translate(-50%, -50%);
+    position: absolute;
+    border-radius: 50%;
+    z-index: -1;
+    background-color: var(--color);
+    transition: 1s ease;
+  }
+
+  &::before {
+    top: -1em;
+    left: -1em;
+  }
+
+  &::after {
+    left: calc(100% + 1em);
+    top: calc(100% + 1em);
+  }
+
+  &:hover::before,
+  &:hover::after {
+    height: 410px;
+    width: 410px;
+  }
+
+  &:hover {
+    color: white;
+  }
+
+  &:active {
+    filter: brightness(.8);
+  }
+`;
+
+
+export const DivTwoInput = styled.div`
+display: flex;
+width: 600px;
+justify-content: space-around;
 `;

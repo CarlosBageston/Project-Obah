@@ -23,7 +23,7 @@ export default function Estoque() {
     const [dataTableComprado, setDataTableComprado] = useState<EstoqueModel[]>([])
 
     const {
-        dataTable,
+        dataTable: comprasDataTable,
         loading,
     } = GetData('Compras', recarregue) as { dataTable: ComprasModel[], loading: boolean, setDataTable: (data: ComprasModel[]) => void }
     const {
@@ -52,8 +52,8 @@ export default function Estoque() {
             });
         }
 
-        if (dataTable.length !== 0) {
-            dataTable.forEach(venda => {
+        if (comprasDataTable.length !== 0) {
+            comprasDataTable.forEach(venda => {
                 const { cdProduto, nmProduto, quantidade, tpProduto, cxProduto, kgProduto } = venda;
                 if (!quantidadeCompras[nmProduto]) {
                     quantidadeCompras[nmProduto] = { cdProduto, tpProduto, nmProduto, quantidadeTotal: 0, cxProduto, kgProduto };
@@ -111,7 +111,7 @@ export default function Estoque() {
         setDataTableFabricado(tipoFabricado)
         setDataTableComprado(tipoComprado)
 
-    }, [vendasDataTable, dataTable, entregasDataTable]);
+    }, [vendasDataTable, comprasDataTable, entregasDataTable]);
 
     return (
         <Box>
@@ -138,6 +138,8 @@ export default function Estoque() {
                         ]}
                         data={dataTableFabricado}
                         isLoading={loading}
+                        isVisibleEdit
+                        isVisibledDelete
                     />
                 </div>
                 {/*Tabala Comprado*/}
@@ -162,6 +164,9 @@ export default function Estoque() {
                         ]}
                         data={dataTableComprado}
                         isLoading={loading}
+                        isVisibleEdit
+                        isVisibledDelete
+
                     />
                 </div>
             </div>

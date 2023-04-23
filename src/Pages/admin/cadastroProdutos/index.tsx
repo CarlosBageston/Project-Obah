@@ -1,11 +1,10 @@
-import { addDoc, collection, CollectionReference, getDocs } from "firebase/firestore";
+import { addDoc, collection, CollectionReference, deleteDoc, doc, getDocs, updateDoc } from "firebase/firestore";
 import React, { useState, useEffect } from "react";
 import { db } from "../../../firebase";
 import Input from "../../../Components/input";
 import ProdutoModel from "./model/produtos";
 import Button from "../../../Components/button";
 import { Alert, AlertTitle, Autocomplete, FormControl, InputLabel, MenuItem, Select, Stack, TextField } from "@mui/material";
-import { orderBy } from "lodash";
 import * as Yup from 'yup';
 import { useFormik } from 'formik';
 
@@ -19,9 +18,10 @@ import {
     DivLineMP,
     ContianerMP,
     Paragrafo,
-    ButtonStyled
+    ButtonStyled,
+    DivLineMPEdit
 } from './style'
-import { ContainerAlert } from "../cadastroClientes/style";
+import { ContainerAlert, DivTwoInput } from "../cadastroClientes/style";
 import GenericTable from "../../../Components/table";
 import FiltroGeneric from "../../../Components/filtro";
 import GetData from "../../../firebase/getData";
@@ -41,10 +41,11 @@ const objClean: ProdutoModel = {
 export default function CadastroProduto() {
     const [key, setKey] = useState<number>(0);
     const [fail, setFail] = useState<boolean>(false);
+    const [isEdit, setIsEdit] = useState<boolean>(false);
     const [success, setSuccess] = useState<boolean>(false);
     const [recarregue, setRecarregue] = useState<boolean>(true);
-    const [quantidadesMP, setQuantidadesMP] = useState<{ [key: string]: number | null }>({});
-    const [isVisibleTpProuto, setIsVisibleTpProduto] = useState<boolean>(false)
+    const [selected, setSelected] = useState<ProdutoModel | undefined>();
+    const [isVisibleTpProuto, setIsVisibleTpProduto] = useState<boolean>(false);
 
 
     const [initialValues, setInitialValues] = useState<ProdutoModel>({ ...objClean });
@@ -104,15 +105,6 @@ export default function CadastroProduto() {
         setKey(Math.random());
     }
 
-    //manupulando evento onChange do AutoComplete
-    function handleOnChangeAutoComplete(e: React.SyntheticEvent<Element, Event>, value: ComprasModel[]) {
-        setFieldValue('mpFabricado',
-            value.map((mp) => ({
-                nmProduto: mp.nmProduto,
-                quantidade: quantidadesMP[mp.nmProduto]
-            }))
-        );
-    }
 
     //enviando formulario
     async function handleSubmitForm() {
@@ -136,38 +128,106 @@ export default function CadastroProduto() {
         cleanState()
     }
 
-    useEffect(() => {
-        let soma = 0;
-        for (const mp of values.mpFabricado) {
-            const produtoEncontrado = comprasDataTable.find(produto => produto.nmProduto === mp.nmProduto);
+    //deleta uma linha da tabela e do banco de dados
+    async function handleDeleteRow() {
+        if (selected) {
+            const refID: string = selected.id ?? '';
+            await deleteDoc(doc(db, "Produtos", refID)).then(() => {
+                const newDataTable = dataTable.filter(row => row.id !== selected.id);
+                setDataTable(newDataTable);
+            });
+        }
+        setSelected(undefined)
+    }
 
-            if (produtoEncontrado) {
-                const valorPago = produtoEncontrado.vlUnitario;
-                const valueFormat = valorPago.match(/\d+/g)?.join('.');
-                let result = 0;
+    //editar uma linha da tabela e do banco de dados
+    async function handleEditRow() {
+        if (selected) {
+            const refID: string = selected.id ?? '';
+            const refTable = doc(db, "Produtos", refID);
 
-                if (produtoEncontrado.cxProduto) {
-                    const caixa = produtoEncontrado.cxProduto;
-                    const quantidadeUsada = mp.quantidade;
-                    console.log(values.mpFabricado)
-                    result = Number(valueFormat) / Number(caixa) * Number(quantidadeUsada);
-
-                } else if (produtoEncontrado.kgProduto) {
-                    const kg = produtoEncontrado.kgProduto;
-                    const quantidadeUsada = mp.quantidade;
-                    console.log(quantidadeUsada)
-                    result = Number(valueFormat) / Number(kg) * Number(quantidadeUsada);
-                } else {
-                    const quantidadetotal = produtoEncontrado.quantidade;
-                    const quantidadeUsada = mp.quantidade;
-                    result = Number(valueFormat) / Number(quantidadetotal) * Number(quantidadeUsada);
-                }
-                soma += result;
+            if (JSON.stringify(selected) !== JSON.stringify(initialValues)) {
+                await updateDoc(refTable, { ...selected })
+                    .then(() => {
+                        const index = dataTable.findIndex((item) => item.id === selected.id);
+                        const updatedDataTable = [
+                            ...dataTable.slice(0, index),
+                            selected,
+                            ...dataTable.slice(index + 1)
+                        ];
+                        setDataTable(updatedDataTable);
+                    });
             }
         }
-        const somaFormat = soma.toFixed(2)
-        setFieldValue('vlPagoProduto', `R$ ${somaFormat}`);
-    }, [comprasDataTable, values.mpFabricado, isVisibleTpProuto]);
+        setIsEdit(false)
+        setSelected(undefined)
+    }
+
+    useEffect(() => {
+        let soma = 0;
+        if (isEdit && selected) {
+            for (const mp of selected.mpFabricado) {
+                const produtoEncontrado = comprasDataTable.find(produto => produto.nmProduto === mp.nmProduto);
+
+                if (produtoEncontrado) {
+                    const valorPago = produtoEncontrado.vlUnitario;
+                    const valueFormat = valorPago.match(/\d+/g)?.join('.');
+                    let result = 0;
+
+                    if (produtoEncontrado.cxProduto) {
+                        const caixa = produtoEncontrado.cxProduto;
+                        const quantidadeUsada = mp.quantidade;
+                        console.log(values.mpFabricado)
+                        result = Number(valueFormat) / Number(caixa) * Number(quantidadeUsada);
+
+                    } else if (produtoEncontrado.kgProduto) {
+                        const kg = produtoEncontrado.kgProduto;
+                        const quantidadeUsada = mp.quantidade;
+                        result = Number(valueFormat) / Number(kg) * Number(quantidadeUsada);
+                    } else {
+                        const quantidadetotal = produtoEncontrado.quantidade;
+                        const quantidadeUsada = mp.quantidade;
+                        result = Number(valueFormat) / Number(quantidadetotal) * Number(quantidadeUsada);
+                    }
+                    soma += result;
+                }
+            }
+            const somaFormat = soma.toFixed(2)
+            setSelected((prevSelected) => ({
+                ...prevSelected,
+                vlPagoProduto: `R$ ${somaFormat}` || '',
+            } as ProdutoModel | undefined));
+        } else {
+            for (const mp of values.mpFabricado) {
+                const produtoEncontrado = comprasDataTable.find(produto => produto.nmProduto === mp.nmProduto);
+
+                if (produtoEncontrado) {
+                    const valorPago = produtoEncontrado.vlUnitario;
+                    const valueFormat = valorPago.match(/\d+/g)?.join('.');
+                    let result = 0;
+
+                    if (produtoEncontrado.cxProduto) {
+                        const caixa = produtoEncontrado.cxProduto;
+                        const quantidadeUsada = mp.quantidade;
+                        console.log(values.mpFabricado)
+                        result = Number(valueFormat) / Number(caixa) * Number(quantidadeUsada);
+
+                    } else if (produtoEncontrado.kgProduto) {
+                        const kg = produtoEncontrado.kgProduto;
+                        const quantidadeUsada = mp.quantidade;
+                        result = Number(valueFormat) / Number(kg) * Number(quantidadeUsada);
+                    } else {
+                        const quantidadetotal = produtoEncontrado.quantidade;
+                        const quantidadeUsada = mp.quantidade;
+                        result = Number(valueFormat) / Number(quantidadetotal) * Number(quantidadeUsada);
+                    }
+                    soma += result;
+                }
+            }
+            const somaFormat = soma.toFixed(2)
+            setFieldValue('vlPagoProduto', `R$ ${somaFormat}`);
+        }
+    }, [comprasDataTable, values.mpFabricado, isVisibleTpProuto, selected?.mpFabricado]);
 
 
     useEffect(() => {
@@ -343,13 +403,168 @@ export default function CadastroProduto() {
                     </div>
                 </ContainerFlutuante>
             }
+            {/* Editar o cliente */}
+
+            {isEdit &&
+                <ContainerFlutuante >
+                    <div>
+                        <Title style={{ margin: '0 0 8px 0' }}>Editar Produto</Title>
+                        <Paragrafo>Alterar dados do Produto e da matéria prima utilizado</Paragrafo>
+                    </div>
+                    <div>
+                        <>
+                            <ul>
+                                <DivTwoInput style={{ display: 'flex' }}>
+                                    <DivLineMPEdit>
+                                        <div>
+                                            <Input
+                                                error=""
+                                                label="Nome"
+                                                name={'nmProduto'}
+                                                onChange={(e) => {
+                                                    setSelected((prevSelected) => {
+                                                        return {
+                                                            ...prevSelected,
+                                                            nmProduto: e.target.value || ''
+                                                        } as ProdutoModel | undefined;
+                                                    });
+                                                }}
+                                                value={selected?.nmProduto}
+                                                raisedLabel
+                                                style={{ fontSize: '16px' }}
+                                                styleLabel={{ marginTop: '0', fontSize: 12 }}
+                                                styleDiv={{ margin: '0', padding: 0 }}
+                                            />
+                                        </div>
+                                    </DivLineMPEdit>
+                                    <DivLineMPEdit>
+                                        <div>
+                                            <Input
+                                                error=""
+                                                label="Código do Produto"
+                                                name={'cdProduto'}
+                                                onChange={(e) => {
+                                                    setSelected((prevSelected) => {
+                                                        return {
+                                                            ...prevSelected,
+                                                            cdProduto: e.target.value || ''
+                                                        } as ProdutoModel | undefined;
+                                                    });
+                                                }}
+                                                value={selected?.cdProduto}
+                                                raisedLabel
+                                                style={{ fontSize: '16px' }}
+                                                styleLabel={{ marginTop: '0', fontSize: 12 }}
+                                                styleDiv={{ margin: '0', padding: 0 }}
+                                            />
+                                        </div>
+                                    </DivLineMPEdit>
+                                </DivTwoInput>
+                                <DivTwoInput>
+                                    <DivLineMPEdit>
+                                        <div>
+                                            <Input
+                                                error=""
+                                                label="Valor de Venda"
+                                                name={'vlVendaProduto'}
+                                                onChange={(e) => {
+                                                    setSelected((prevSelected) => {
+                                                        return {
+                                                            ...prevSelected,
+                                                            vlVendaProduto: e.target.value || ''
+                                                        } as ProdutoModel | undefined;
+                                                    });
+                                                }}
+                                                value={selected?.vlVendaProduto}
+                                                raisedLabel
+                                                style={{ fontSize: '16px' }}
+                                                styleLabel={{ marginTop: '0', fontSize: 12 }}
+                                                styleDiv={{ margin: '0', padding: 0 }}
+                                            />
+                                        </div>
+                                    </DivLineMPEdit>
+                                    <DivLineMPEdit>
+                                        <div>
+                                            <Input
+                                                error=""
+                                                label="Valor Pago"
+                                                name={'vlPagoProduto'}
+                                                onChange={(e) => {
+                                                    setSelected((prevSelected) => {
+                                                        return {
+                                                            ...prevSelected,
+                                                            vlPagoProduto: e.target.value || ''
+                                                        } as ProdutoModel | undefined;
+                                                    });
+                                                }}
+                                                value={selected?.vlPagoProduto}
+                                                raisedLabel
+                                                style={{ fontSize: '16px' }}
+                                                styleLabel={{ marginTop: '0', fontSize: 12 }}
+                                                styleDiv={{ margin: '0', padding: 0 }}
+                                            />
+                                        </div>
+                                    </DivLineMPEdit>
+                                </DivTwoInput>
+                            </ul>
+                        </>
+                    </div>
+                    <ContianerMP>
+                        {selected?.mpFabricado.map((mp, index) => (
+                            <>
+                                <ul>
+                                    <DivLineMP>
+                                        <div style={{ width: '18rem' }}>
+                                            <li>{mp.nmProduto}</li>
+                                        </div>
+                                        <div>
+                                            <Input
+                                                error=""
+                                                label="Quantidade"
+                                                name={mp.nmProduto}
+                                                onChange={(e) => {
+                                                    const newMps = [...selected.mpFabricado];
+                                                    newMps[index].quantidade = e.target.value;
+                                                    setSelected((prevSelected) => ({
+                                                        ...prevSelected,
+                                                        mpFabricado: newMps,
+                                                    } as ProdutoModel | undefined));
+                                                }}
+                                                value={mp.quantidade}
+                                                raisedLabel
+                                                style={{ fontSize: '1rem' }}
+                                                styleLabel={{ marginTop: '-20px' }}
+                                                styleDiv={{ margin: '0', padding: 0 }}
+                                            />
+                                        </div>
+                                    </DivLineMP>
+                                </ul>
+                            </>
+                        ))}
+                    </ContianerMP>
+                    <div>
+                        <div style={{ height: '60px' }}>
+                            <ButtonStyled
+                                onClick={handleEditRow}>
+                                <span className="text">Concluído</span>
+                                <span className="icon">
+                                    <svg aria-hidden="true" width="20px" data-icon="paper-plane" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                                        <path fill="currentColor" d="M476 3.2L12.5 270.6c-18.1 10.4-15.8 35.6 2.2 43.2L121 358.4l287.3-253.2c5.5-4.9 13.3 2.6 8.6 8.3L176 407v80.5c0 23.6 28.5 32.9 42.5 15.8L282 426l124.6 52.2c14.2 6 30.4-2.9 33-18.2l72-432C515 7.8 493.3-6.8 476 3.2z">
+                                        </path>
+                                    </svg>
+                                </span>
+                            </ButtonStyled>
+                        </div>
+                    </div>
+                </ContainerFlutuante>
+            }
             <ContainerButton>
                 <Button
                     children='Cadastrar Produto'
                     type="button"
                     onClick={handleSubmit}
                     fontSize={20}
-                    style={{ margin: '1rem 4rem 1rem 95%', height: '4rem', width: '12rem' }}
+                    style={{ margin: '1rem 4rem 2rem 95%', height: '4rem', width: '12rem' }}
                 />
                 {success &&
                     <ContainerAlert>
@@ -377,7 +592,7 @@ export default function CadastroProduto() {
                 }
             </ContainerButton>
             {/*Tabala */}
-            <div style={{ margin: '-3.5rem 0px -12px 3rem' }}>
+            <div style={{ margin: '-3.5rem 0px -40px 3rem' }}>
                 <FiltroGeneric
                     data={dataTable}
                     setFilteredData={setDataTable}
@@ -390,10 +605,21 @@ export default function CadastroProduto() {
                     { label: 'Código', name: 'cdProduto' },
                     { label: 'Nome', name: 'nmProduto' },
                     { label: 'Valor Venda', name: 'vlVendaProduto' },
-                    { label: 'Valor fabricar', name: 'vlPagoProduto' },
+                    { label: 'Valor Pago', name: 'vlPagoProduto' },
                 ]}
                 data={dataTable}
                 isLoading={loading}
+                isDisabled={selected ? false : true}
+                onSelectedRow={setSelected}
+                onEdit={() => {
+                    if (selected) {
+                        setIsEdit(true)
+                        setInitialValues(selected)
+                    } else {
+                        return
+                    }
+                }}
+                onDelete={handleDeleteRow}
             />
         </Box>
     );

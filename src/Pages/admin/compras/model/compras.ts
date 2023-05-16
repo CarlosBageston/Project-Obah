@@ -18,6 +18,7 @@ interface ComprasModel {
     tpProduto: SituacaoProduto | null,
     cxProduto: number | null,
     kgProduto: number | null,
+    qntMinima: number | null
 
 }
 export default ComprasModel

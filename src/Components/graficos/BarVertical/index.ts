@@ -4,20 +4,27 @@ import { useState, useEffect } from "react";
 import ProdutoModel from "../../../Pages/admin/vendas/model/vendas";
 import { db } from "../../../firebase";
 import 'chart.js/auto'
+import GetData from "../../../firebase/getData";
 
 
 export default function ChartBarVertical() {
-    const [vendas, setVendas] = useState<ProdutoModel[]>([])
-    const _collectionVendas = collection(db, 'Vendas') as CollectionReference<ProdutoModel>;
+    const [recarregue, setRecarregue] = useState<boolean>(true);
+    // const [vendas, setVendas] = useState<ProdutoModel[]>([])
+    // const _collectionVendas = collection(db, 'Vendas') as CollectionReference<ProdutoModel>;
 
-    //buscar dados no banco 
-    useEffect(() => {
-        const getVendas = async () => {
-            const data = await getDocs<ProdutoModel>(_collectionVendas);
-            setVendas(data.docs.map(doc => ({ ...doc.data(), id: doc.id })));
-        };
-        getVendas();
-    }, []);
+    // //buscar dados no banco 
+    // useEffect(() => {
+    //     const getVendas = async () => {
+    //         const data = await getDocs<ProdutoModel>(_collectionVendas);
+    //         setVendas(data.docs.map(doc => ({ ...doc.data(), id: doc.id })));
+    //     };
+    //     getVendas();
+    // }, []);
+
+    //realizando busca no banco de dados
+    const {
+        dataTable: dataTableVendas,
+    } = GetData('Vendas', recarregue) as { dataTable: ProdutoModel[] };
 
     //filtrando dados por data
     const mesesDesejados = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
@@ -30,13 +37,15 @@ export default function ChartBarVertical() {
         });
         const quantidade = dadosFiltrado.length
         const valorTotal = dadosFiltrado.reduce((total, item) => total + item.vlTotal!, 0)
+        const valorLucro = dadosFiltrado.reduce((total, item) => total + Number(item.vlLucroTotal), 0)
         return {
             mes,
             quantidade,
-            valorTotal
+            valorTotal,
+            valorLucro
         }
     };
-    const dadosPorMesVertical = mesesDesejados.map(mes => filtrarDadosPorMes(vendas, mes));
+    const dadosPorMesVertical = mesesDesejados.map(mes => filtrarDadosPorMes(dataTableVendas, mes));
 
     const optionsVertical = {
         responsive: true,

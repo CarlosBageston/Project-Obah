@@ -36,6 +36,7 @@ const objClean: ComprasModel = {
     tpProduto: null,
     cxProduto: null,
     kgProduto: null,
+    qntMinima: null
 }
 
 export default function NovasCompras() {
@@ -63,6 +64,7 @@ export default function NovasCompras() {
             cxProduto: Yup.number().optional().nullable(),
             tpProduto: Yup.number().transform((value) => (isNaN(value) ? undefined : value)).required('Campo obrigatório'),
             quantidade: Yup.number().transform((value) => (isNaN(value) ? undefined : value)).required('Campo obrigatório'),
+            qntMinima: Yup.number().transform((value) => (isNaN(value) ? undefined : value)).required('Campo obrigatório')
         }),
         onSubmit: hundleSubmitForm,
     });
@@ -79,6 +81,7 @@ export default function NovasCompras() {
             tpProduto: null,
             cxProduto: null,
             kgProduto: null,
+            qntMinima: null
         })
         setKey(Math.random());
     }
@@ -204,6 +207,7 @@ export default function NovasCompras() {
             setSelectAutoComplete(true)
             setFieldValue('cdProduto', lastProduct.cdProduto);
             setFieldValue('vlUnitario', lastProduct.vlUnitario);
+            setFieldValue('qntMinima', lastProduct.qntMinima);
         }
     }, [values.nmProduto, dataTable]);
 
@@ -292,7 +296,7 @@ export default function NovasCompras() {
                         onBlur={handleBlur}
                         label="Código do Produto"
                         value={values.cdProduto}
-                        onChange={e => setFieldValue(e.target.name, e.target.value)}
+                        onChange={e => setFieldValue(e.target.name, e.target.value.replace(/[^\d]/g, ''))}
                         error={touched.cdProduto && errors.cdProduto ? errors.cdProduto : ''}
                         raisedLabel={selectAutoComplete}
                     />
@@ -371,6 +375,20 @@ export default function NovasCompras() {
                     />
                 </DivInput>
             </ContainerInputs>
+            <div style={{ width: 200, marginLeft: '4rem' }}>
+                <Input
+                    key={`qntMinima-${key}`}
+                    label="Quant. mínima em estoque"
+                    onBlur={handleBlur}
+                    name="qntMinima"
+                    value={values.qntMinima || ''}
+                    onChange={e => setFieldValue(e.target.name, e.target.value.toString().replace(/[^\d]/g, ''))}
+                    maxLength={4}
+                    error={touched.qntMinima && errors.qntMinima ? errors.qntMinima : ''}
+                    style={{ paddingBottom: 0 }}
+                    styleLabel={{ fontSize: '0.8rem' }}
+                />
+            </div>
             {isEdit &&
                 <ContainerFlutuante >
                     <div>

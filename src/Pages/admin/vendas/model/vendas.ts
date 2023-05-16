@@ -1,3 +1,5 @@
+import SituacaoProduto from "../../compras/enumeration/situacaoProduto"
+import ComprasModel from "../../compras/model/compras"
 
 
 /**
@@ -6,18 +8,20 @@
 * @author Carlos Bageston
 */
 
-import SituacaoProduto from "../../compras/enumeration/situacaoProduto"
-
 interface ProdutoEscaniado{
             nmProduto: string,
             cdProduto: string,
             vlVendaProduto: string,
             quantidadeVenda: number,
-            tpProduto: SituacaoProduto | null
+            tpProduto: SituacaoProduto | null,
+            mpFabricado: ComprasModel[],
+            vlLucro?: string,
+            vlTotalMult?: string
         }
 
 interface VendaModel {
-    dtProduto: string | null
+    dtProduto: string | null,
+    vlLucroTotal?: number,
     vlTotal: number | null,
     vlRecebido: string,
     vlTroco: number | null,

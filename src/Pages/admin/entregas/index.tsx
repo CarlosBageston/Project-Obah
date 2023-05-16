@@ -12,9 +12,6 @@ import { ContainerAlert } from "../cadastroClientes/style";
 import ClienteModel from "../cadastroClientes/model/cliente";
 import {
     Box,
-    ContainerTable,
-    StyledTableCell,
-    StyledTableRow,
     Title,
     ContainerTableCliente,
     TextTable,
@@ -125,10 +122,11 @@ export default function Entregas() {
         setClienteCurrent(clienteCerto)
         setFieldValue('cliente.nmCliente', clienteSelecionado)
     }
-
     //fazendo a soma dos lucros e do valor total
     useEffect(() => {
+        //inicializando array para guardar o calculo antes da soma total
         const temp: number[] = [];
+        //calculando o Total da entrega
         const result = clienteCurrent.flatMap((cliente) =>
             cliente.produtos.map((produto) => {
                 const quantidade = quantidades[produto.nmProduto] ?? 0;
@@ -138,12 +136,33 @@ export default function Entregas() {
                 return total;
             })
         );
+        //calculando o lucro
+        const resultLucro = clienteCurrent.flatMap((cliente) =>
+            cliente.produtos.map((produto) => {
+                const quantidade = quantidades[produto.nmProduto] ?? 0;
+                const valorPago = Number(produto.vlPagoProduto.match(/\d+/g)?.join('.'));
+                const valorVenda = Number(produto.vlVendaProduto.match(/\d+/g)?.join('.'));;
+                const totalLucro = valorVenda - valorPago;
+                const total = totalLucro * quantidade
+                return total;
+            })
+        );
         setResultCalculo(temp);
+
+        //somando todos os valores de total da entrega
         const sum = result.reduce((total, number) => total + number, 0);
 
-        if (sum === 0) return
+        //somando todos os valores de lucro
+        const sumLucro = resultLucro.reduce((total, number) => total + number, 0);
+
+        // Formatar total da entrega
+        if (sum === 0 && sumLucro === 0) return
         const formattedSum = sum.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
         setFieldValue('vlEntrega', formattedSum);
+
+        // Formatar lucro
+        const formattedSumLucro = sumLucro.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+        setFieldValue('vlLucro', formattedSumLucro);
     }, [quantidades]);
     return (
         <Box>
@@ -228,7 +247,7 @@ export default function Entregas() {
                             value={values.vlEntrega && `R$ ${values.vlEntrega}`}
                             onChange={e => setFieldValue(e.target.name, e.target.value)}
                             error={touched.vlEntrega && errors.vlEntrega ? errors.vlEntrega : ''}
-                            style={{ color: 'black', opacity: 1, borderBottom: '2px solid #c7c6f3', backgroundColor: '#e0e0e04f' }}
+                            style={{ color: '#333333d3', opacity: 1, borderBottom: '2px solid #c7c6f3', backgroundColor: '#e0e0e04f' }}
                             styleDiv={{ marginTop: 0 }}
                             disabled
                             raisedLabel={values.vlEntrega ? true : false}
@@ -239,10 +258,12 @@ export default function Entregas() {
                             label="Lucro"
                             name="vlLucro"
                             onBlur={handleBlur}
-                            value={values.vlLucro}
+                            value={values.vlLucro && `R$ ${values.vlLucro}`}
+                            raisedLabel={values.vlLucro ? true : false}
                             onChange={e => setFieldValue(e.target.name, e.target.value)}
                             error={touched.vlLucro && errors.vlLucro ? errors.vlLucro : ''}
                             styleDiv={{ marginTop: 8 }}
+                            style={{ color: '#333333d3', opacity: 1, borderBottom: '2px solid #c7c6f3', backgroundColor: '#e0e0e04f' }}
                         />
                     </div>
                 </DivInputs>

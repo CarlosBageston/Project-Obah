@@ -33,10 +33,16 @@ export default function ChartLine() {
             const valorEntrega = item.vlEntrega ? Number(item.vlEntrega.match(/\d+/g)?.join('.')) : 0;
             return total + valorEntrega;
         }, 0);
+        
+        const valorLucro = dadosFiltrado.reduce((total, item) => {
+            const valueLucro = item.vlLucro ? Number(item.vlLucro.match(/\d+/g)?.join('.')) : 0;
+            return total + valueLucro;
+        }, 0)
         return {
             mes,
             quantidade,
-            valorTotal
+            valorTotal,
+            valorLucro
         }
     };
     const dadosPorMes = mesesDoAno.map(mes => filtrarDados(entregas, mes));

@@ -3,15 +3,14 @@ import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 
-
 const firebaseConfig = {
-    apiKey: 'AIzaSyCDq2yqovW4bzuZgjqH7ClcjzzYiXVapH0',
-    authDomain:'sorveteriaobah.firebaseapp.com',
-    projectId:'sorveteriaobah',
-    storageBucket:'sorveteriaobah.appspot.com',
-    messagingSenderId: '728690954233',
-    appId:'1:728690954233:web:f3762510b8634e7ee8f728',
-    measurementId: 'G-18K1TNXG21'
+    apiKey: import.meta.env.VITE_KEY,
+    authDomain:import.meta.env.VITE_AUTHDOMAIN,
+    projectId:import.meta.env.VITE_ID,
+    storageBucket:import.meta.env.VITE_STORAGE,
+    messagingSenderId:import.meta.env.VITE_MESSAGING,
+    appId:import.meta.env.VITE_APPID,
+    measurementId: import.meta.env.VITE_MEASUREMENTID
 };
 
 const app = initializeApp(firebaseConfig);

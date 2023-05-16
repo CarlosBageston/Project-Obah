@@ -129,9 +129,9 @@ export default function MenuLateral() {
                 <Link to="/compras" style={{ textDecoration: 'none', color: 'white' }}>
                     <StyledListItemButton>
                         <ListItemIcon>
-                            <Image src={compra} alt="Novas Compras" width={32} />
+                            <Image src={compra} alt="Atualizar Estoque" width={32} />
                         </ListItemIcon>
-                        <StyledListItemText primary="Novas Compras" />
+                        <StyledListItemText primary="Atualizar Estoque" />
                     </StyledListItemButton>
                 </Link>
                 <Link to="/cadastro-produto" style={{ textDecoration: 'none', color: 'white' }}>

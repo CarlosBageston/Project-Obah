@@ -18,7 +18,9 @@ interface EstoqueModel {
     cxProduto?: number | null,
     kgProduto?: number | null,
     tpProduto?: SituacaoProduto | null,
-    mpFabricado?: ComprasModel[]
+    mpFabricado?: ComprasModel[],
+    qntMinima?: number | null,
+    stEstoque?: string,
 
 }
 export default EstoqueModel

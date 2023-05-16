@@ -23,6 +23,7 @@ align-items: flex-end;
 
 export const DivCliente = styled.div`
 width: 40%;
+padding-left: 8px;
 `;
 export const DivPreco = styled.div`
 padding: 0px 4rem;

@@ -25,13 +25,27 @@ export default function Dashboard() {
     const { dataHorizontal, optionsHotizontal } = ChartBarHorizontal()
 
 
-    //soma de todas as entregas do ano
+    //soma do valor total de todas as entregas do ano
     const totalEntregas = dadosPorMes.map(entregas => entregas.valorTotal)
     const somaTotalEntregas = totalEntregas.reduce((total, item) => total + item)
 
-    //soma de todas as vendas do ano
+    //soma do valor total de todas as vendas do ano
     const totalVendas = dadosPorMesVertical.map(vendas => vendas.valorTotal)
     const somaTotalVendas = totalVendas.reduce((total, item) => total + item)
+    console.log(totalVendas)
+    console.log(totalEntregas)
+    //soma do valor Lucro de todas as entregas do ano
+    const lucroEntregas = dadosPorMes.map(entregas => entregas.valorLucro)
+    const somaLucroEntregas = lucroEntregas.reduce((lucro, item) => lucro + item)
+
+    //soma do valor Lucro de todas as vendas do ano
+    const lucroVendas = dadosPorMesVertical.map(vendas => vendas.valorLucro)
+    console.log(lucroVendas)
+    console.log(lucroEntregas)
+    const somaLucroVendas = lucroVendas.reduce((lucro, item) => lucro + item)
+
+    //somando todas as vendas e entregas do ano
+    const somaLucroAnual = somaLucroVendas + somaLucroEntregas
 
     //somando todas as vendas e entregas do ano
     const somaAnual = somaTotalVendas + somaTotalEntregas
@@ -60,7 +74,7 @@ export default function Dashboard() {
                     </DivResult>
                     <DivResult>
                         <TextResult>Lucro anual</TextResult>
-                        <SumResult>R$ {somaAnual}</SumResult>
+                        <SumResult>R$ {somaLucroAnual}</SumResult>
                         <Paragraph>Soma de todas as vendas no decorrer do ano</Paragraph>
                     </DivResult>
                 </ContainerResult>

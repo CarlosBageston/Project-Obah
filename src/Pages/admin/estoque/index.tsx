@@ -3,13 +3,12 @@ import React, { useState, useEffect } from "react";
 import {
     Box,
     Title,
-    ContainerTables
 } from './style'
 import FiltroGeneric from "../../../Components/filtro";
 import GenericTable from "../../../Components/table";
 import GetData from "../../../firebase/getData";
 import ComprasModel from "../compras/model/compras";
-import ProdutoModel from "../vendas/model/vendas";
+import VendasModel from "../vendas/model/vendas";
 import EstoqueModel from "./model/estoque";
 import SituacaoProduto from "../compras/enumeration/situacaoProduto";
 import { EntregaModel } from "../entregas/model/entrega";
@@ -22,16 +21,18 @@ export default function Estoque() {
     const [dataTableFabricado, setDataTableFabricado] = useState<EstoqueModel[]>([])
     const [dataTableComprado, setDataTableComprado] = useState<EstoqueModel[]>([])
 
+    //realizando busca no banco de dados
     const {
         dataTable: comprasDataTable,
-        loading,
-    } = GetData('Compras', recarregue) as { dataTable: ComprasModel[], loading: boolean, setDataTable: (data: ComprasModel[]) => void }
+    } = GetData('Compras', recarregue) as { dataTable: ComprasModel[] }
     const {
         dataTable: vendasDataTable,
-    } = GetData('Vendas', recarregue) as { dataTable: ProdutoModel[], loading: boolean, setDataTable: (data: ProdutoModel[]) => void }
+    } = GetData('Vendas', recarregue) as { dataTable: VendasModel[] }
     const {
         dataTable: entregasDataTable,
+        loading,
     } = GetData('Entregas', recarregue) as { dataTable: EntregaModel[], loading: boolean, setDataTable: (data: EntregaModel[]) => void }
+
 
     useEffect(() => {
         let quantidadeVendas: { [key: string]: EstoqueModel } = {};
@@ -42,21 +43,40 @@ export default function Estoque() {
                 if (venda.produtoEscaniado !== undefined) {
                     const produtosEscaniados = venda.produtoEscaniado;
                     produtosEscaniados.forEach(produto => {
-                        const { cdProduto, nmProduto, quantidadeVenda, tpProduto } = produto;
+                        const { cdProduto, nmProduto, quantidadeVenda, tpProduto, mpFabricado } = produto;
                         if (!quantidadeVendas[nmProduto]) {
-                            quantidadeVendas[nmProduto] = { cdProduto, nmProduto, quantidadeTotal: 0, tpProduto };
+                            quantidadeVendas[nmProduto] = { cdProduto, nmProduto, quantidadeTotal: 0, tpProduto, mpFabricado };
                         }
                         quantidadeVendas[nmProduto].quantidadeTotal += quantidadeVenda;
                     });
                 }
+
             });
         }
-
+        if (entregasDataTable.length !== 0) {
+            entregasDataTable.forEach(entrega => {
+                const { quantidades } = entrega;
+                Object.entries(quantidades).forEach(([produto, quantidade]) => {
+                    if (!quantidadeVendas[produto]) {
+                        quantidadeVendas[produto] = { cdProduto: '', tpProduto: null, nmProduto: produto, quantidadeTotal: 0 };
+                    }
+                    if (quantidade !== 0) {
+                        quantidadeVendas[produto].quantidadeTotal += Number(quantidade);
+                    }
+                });
+            });
+            quantidadeVendas = Object.entries(quantidadeVendas)
+                .filter(([produto, info]) => info.quantidadeTotal !== 0)
+                .reduce((acc, [produto, info]) => {
+                    acc[produto] = info;
+                    return acc;
+                }, {} as { [produto: string]: typeof quantidadeVendas[keyof typeof quantidadeVendas] });
+        }
         if (comprasDataTable.length !== 0) {
             comprasDataTable.forEach(venda => {
-                const { cdProduto, nmProduto, quantidade, tpProduto, cxProduto, kgProduto } = venda;
+                const { cdProduto, nmProduto, quantidade, tpProduto, cxProduto, kgProduto, qntMinima } = venda;
                 if (!quantidadeCompras[nmProduto]) {
-                    quantidadeCompras[nmProduto] = { cdProduto, tpProduto, nmProduto, quantidadeTotal: 0, cxProduto, kgProduto };
+                    quantidadeCompras[nmProduto] = { cdProduto, tpProduto, nmProduto, quantidadeTotal: 0, cxProduto, kgProduto, qntMinima };
                 }
                 if (cxProduto) {
                     const qntCaixa = cxProduto * Number(quantidade)
@@ -69,45 +89,48 @@ export default function Estoque() {
                 }
             });
         }
-        if (entregasDataTable.length !== 0) {
-            entregasDataTable.forEach(entrega => {
-                const { quantidades } = entrega;
-                Object.entries(quantidades).forEach(([produto, quantidade]) => {
-                    if (!quantidadeVendas[produto]) {
-                        quantidadeVendas[produto] = { cdProduto: '', tpProduto: null, nmProduto: produto, quantidadeTotal: 0 };
-                    }
-                    if (quantidade !== 0) {
-                        quantidadeVendas[produto].quantidadeTotal += Number(quantidade) || 0;
-                    }
-                });
-            });
-            quantidadeVendas = Object.entries(quantidadeVendas)
-                .filter(([produto, info]) => info.quantidadeTotal !== 0)
-                .reduce((acc, [produto, info]) => {
-                    acc[produto] = info;
-                    return acc;
-                }, {} as { [produto: string]: typeof quantidadeVendas[keyof typeof quantidadeVendas] });
-        }
+        const resultado = [...Object.values(quantidadeCompras), ...Object.values(quantidadeVendas)].reduce((estoque: EstoqueModel[], vendido) => {
+            const existingItemIndex = estoque.findIndex((item) => item.nmProduto === vendido.nmProduto);
 
-        const resultado = [...Object.values(quantidadeCompras), ...Object.values(quantidadeVendas)].reduce((acc: EstoqueModel[], curr) => {
-            const existingItemIndex = acc.findIndex((item) => item.nmProduto === curr.nmProduto);
             if (existingItemIndex > -1) {
-                if (curr.quantidadeTotal < 0 && Math.abs(curr.quantidadeTotal) > acc[existingItemIndex].quantidadeTotal) {
-                    acc[existingItemIndex].quantidadeTotal = acc[existingItemIndex].quantidadeTotal - (-1 * curr.quantidadeTotal);
+                if (vendido.quantidadeTotal < 0 && Math.abs(vendido.quantidadeTotal) > estoque[existingItemIndex].quantidadeTotal) {
+                    estoque[existingItemIndex].quantidadeTotal = estoque[existingItemIndex].quantidadeTotal - (-1 * vendido.quantidadeTotal);
                 } else {
-                    acc[existingItemIndex].quantidadeTotal -= curr.quantidadeTotal;
+                    estoque[existingItemIndex].quantidadeTotal -= vendido.quantidadeTotal;
+                }
+                if (vendido.mpFabricado && vendido.mpFabricado.length > 0) {
+
+                    vendido.mpFabricado.forEach((mp) => {
+                        const existingMpIndex = estoque.findIndex((item) => item.nmProduto === mp.nmProduto);
+
+                        if (existingMpIndex > -1) {
+                            const total = Number(mp.quantidade) * vendido.quantidadeTotal
+                            estoque[existingMpIndex].quantidadeTotal -= total;
+                        }
+                    });
                 }
             } else {
-                if (curr.quantidadeTotal < 0) {
-                    curr.quantidadeTotal = -1 * curr.quantidadeTotal;
+                if (vendido.quantidadeTotal < 0) {
+                    vendido.quantidadeTotal = -1 * vendido.quantidadeTotal;
                 }
-                acc.push(curr);
+                estoque.push(vendido);
             }
-            return acc;
+            return estoque;
         }, []);
-
         const tipoFabricado = resultado.filter(tipo => tipo.tpProduto === SituacaoProduto.FABRICADO)
         const tipoComprado = resultado.filter(tipo => tipo.tpProduto === SituacaoProduto.COMPRADO)
+        tipoFabricado.map(item => {
+            if (item.qntMinima) {
+                if (item.qntMinima > item.quantidadeTotal) return item.stEstoque = 'Fabricar'
+                return item.stEstoque = 'Ok'
+            }
+        })
+        tipoComprado.map(item => {
+            if (item.qntMinima) {
+                if (item.qntMinima > item.quantidadeTotal) return item.stEstoque = 'Comprar'
+                return item.stEstoque = 'Ok'
+            }
+        })
         setDataTableFabricado(tipoFabricado)
         setDataTableComprado(tipoComprado)
 
@@ -158,15 +181,12 @@ export default function Estoque() {
                             { label: 'Código', name: 'cdProduto' },
                             { label: 'Nome', name: 'nmProduto' },
                             { label: 'Quantidade', name: 'quantidadeTotal' },
-                            { label: 'Quantidade na Caixa', name: 'cxProduto' },
-                            { label: 'Quantidade KG', name: 'kgProduto' },
                             { label: 'Status', name: 'stEstoque' },
                         ]}
                         data={dataTableComprado}
                         isLoading={loading}
                         isVisibleEdit
                         isVisibledDelete
-
                     />
                 </div>
             </div>

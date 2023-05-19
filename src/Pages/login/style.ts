@@ -89,7 +89,7 @@ border-radius: 24px;
 background: #ffffff6b;
 height: 44px;
 width: 100%;
-margin-top: 40px;
+margin-top: 24px;
 padding: 16px;
 outline: none;
 @media screen and (max-width: 1024px) {
@@ -117,7 +117,7 @@ export const Button = styled.button`
   padding: 1em 1.8em;
   background: var(--primary-color);
   display: flex;
-  transition: 0.2s background;
+  transition: 0.2s ;
   align-items: center;
   gap: 0.6em;
   font-weight: bold;

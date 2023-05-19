@@ -1,8 +1,7 @@
 
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import Menu from '../Components/Menu/Menu'
-import { AuthProvider, useAuth } from '../hooks/auth';
-import PrivateRoute from '../hooks/auth/private';
+import PrivateRoute from '../store/reducer/private';
 import CadastroCliente from '../Pages/admin/cadastroClientes';
 import CadastroProduto from '../Pages/admin/cadastroProdutos';
 import Dashboard from '../Pages/admin/dashboard';
@@ -22,37 +21,35 @@ export default function Router() {
 
     return (
         <BrowserRouter>
-            <AuthProvider>
-                <Routes>
-                    <Route path='/' element={
-                        <>
-                            <Carousel />
-                            <MaisVendidos />
-                            <SobreNos />
-                        </>
-                    }
-                    />
-                    <Route path='/contato' element={
-                        <Contato />
-                    }
-                    />
-                    <Route path='/login' element={
-                        <Login />
-                    }
-                    />
+            <Routes>
+                <Route path='/' element={
+                    <>
+                        <Carousel />
+                        <MaisVendidos />
+                        <SobreNos />
+                    </>
+                }
+                />
+                <Route path='/contato' element={
+                    <Contato />
+                }
+                />
+                <Route path='/login' element={
+                    <Login />
+                }
+                />
 
-                    <Route element={<PrivateRoute />}>
-                        <Route path='dashboard' element={<Dashboard />} />
-                        <Route path='/vendas' element={<Vendas />} />
-                        <Route path='/cadastro-cliente' element={<CadastroCliente />} />
-                        <Route path='/cadastro-produto' element={<CadastroProduto />} />
-                        <Route path='/entregas' element={<Entregas />} />
-                        <Route path='/compras' element={<NovasCompras />} />
-                        <Route path='/estoque' element={<Estoque />} />
-                    </Route>
-                </Routes>
-                <Footer />
-            </AuthProvider>
+                <Route element={<PrivateRoute />}>
+                    <Route path='dashboard' element={<Dashboard />} />
+                    <Route path='/vendas' element={<Vendas />} />
+                    <Route path='/cadastro-cliente' element={<CadastroCliente />} />
+                    <Route path='/cadastro-produto' element={<CadastroProduto />} />
+                    <Route path='/entregas' element={<Entregas />} />
+                    <Route path='/compras' element={<NovasCompras />} />
+                    <Route path='/estoque' element={<Estoque />} />
+                </Route>
+            </Routes>
+            <Footer />
         </BrowserRouter>
     )
 }

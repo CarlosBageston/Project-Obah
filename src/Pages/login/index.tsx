@@ -1,16 +1,40 @@
 import { Box, Container, DivInput, Image, Title, Input, Button, Error } from './style';
-import { useAuth } from '../../hooks/auth';
-import { KeyboardEvent } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { State, setEmail, setPassword, setError, setUser, setuserLogado } from '../../store/reducer/reducer';
+import { AuthError, signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../../firebase';
+import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+
 
 
 export default function Login() {
-    const { login, setEmail, setPassword, email, password, error } = useAuth();
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const { email, password, error } = useSelector((state: State) => state.user);
 
-    const eventKey = (e: KeyboardEvent<HTMLButtonElement>) => {
-        if (e.code === 'Enter') {
-            login();
+    const authenticateUser = () => {
+        signInWithEmailAndPassword(auth, email, password)
+            .then((userCredential) => {
+                const user = userCredential.user
+                dispatch(setUser(user))
+                dispatch(setError(''));
+                dispatch(setuserLogado(true))
+                setPassword('');
+                setEmail('');
+                navigate('/dashboard');
+            })
+            .catch((error: AuthError) => {
+                console.log(error.message)
+                dispatch(setError('e-mail ou senha incorretos'));
+            });
+    };
+    const onKeyPressAuthenticate = (e: React.KeyboardEvent<HTMLInputElement> | React.KeyboardEvent<HTMLButtonElement>) => {
+        if (e.key === 'Enter') {
+            authenticateUser();
         }
-    }
+    };
+
     return (
         <>
             <Box>
@@ -23,7 +47,7 @@ export default function Login() {
                             name="email"
                             value={email}
                             placeholder='E-mail'
-                            onChange={(e) => setEmail(e.target.value)}
+                            onChange={e => dispatch(setEmail(e.target.value))}
                         />
 
                         <Input
@@ -32,24 +56,23 @@ export default function Login() {
                             name="password"
                             placeholder='Senha'
                             value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            onChange={e => dispatch(setPassword(e.target.value))}
+                            onKeyDown={e => onKeyPressAuthenticate(e)}
                         />
                         <Error>{error}</Error>
                         <Button
-                            onKeyPress={(e: KeyboardEvent<HTMLButtonElement>) => eventKey(e)}
-                            onClick={() => login()}
+                            onKeyDown={e => onKeyPressAuthenticate(e)}
+                            onClick={authenticateUser}
                         >
                             Login
                             <div className="arrow-wrapper">
                                 <div className="arrow"></div>
-
                             </div>
                         </Button>
                     </DivInput>
 
                 </Container>
             </Box>
-
         </>
     )
 }

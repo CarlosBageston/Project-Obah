@@ -17,7 +17,6 @@ import {
     Button
 } from './style';
 
-import { RiMenuUnfoldFill } from 'react-icons/ri'
 import logo from '../../assets/Image/logo.png';
 
 //import de icon para menu

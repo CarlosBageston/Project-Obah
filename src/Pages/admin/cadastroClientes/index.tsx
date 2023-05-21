@@ -9,7 +9,7 @@ import formatPhone from '../../../Components/masks/maskTelefone';
 
 import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../../firebase';
-import { Alert, AlertTitle, Autocomplete, Stack, TextField } from '@mui/material';
+import { Autocomplete, Stack, TextField } from '@mui/material';
 import FiltroGeneric from '../../../Components/filtro';
 import GenericTable from '../../../Components/table';
 import GetData from '../../../firebase/getData';
@@ -24,9 +24,9 @@ import {
     ButtonStyled,
     ContainerButton,
     TitleDefault,
-    ContainerAlert,
     DivTwoInput
 } from './style';
+import FormAlert from '../../../Components/FormAlert/formAlert';
 
 const objClean: ClienteModel = {
     nmCliente: '',
@@ -40,8 +40,7 @@ const objClean: ClienteModel = {
 
 export default function CadastroCliente() {
     const [key, setKey] = useState<number>(0);
-    const [fail, setFail] = useState<boolean>(false);
-    const [success, setSuccess] = useState<boolean>(false);
+    const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
     const [recarregue, setRecarregue] = useState<boolean>(true);
     const [isVisibleTpProuto, setIsVisibleTpProduto] = useState<boolean>(false)
     const [isEdit, setIsEdit] = useState<boolean>(false);
@@ -143,16 +142,16 @@ export default function CadastroCliente() {
 
     //envia informações para o banco
     async function hundleSubmitForm() {
-        setDataTable([...dataTable, values]);
 
         await addDoc(collection(db, "Clientes"), {
             ...values
         }).then(() => {
-            setSuccess(true);
-            setTimeout(() => { setSuccess(false) }, 2000)
+            setSubmitForm(true);
+            setDataTable([...dataTable, values]);
+            setTimeout(() => { setSubmitForm(undefined) }, 3000)
         }).catch(() => {
-            setFail(true)
-            setTimeout(() => { setFail(false) }, 3000)
+            setSubmitForm(false);
+            setTimeout(() => { setSubmitForm(undefined) }, 3000)
         });
         resetForm()
         cleanState()
@@ -245,30 +244,8 @@ export default function CadastroCliente() {
                         </div>
                     </ContainerInfoCliente>
 
-                    {success &&
-                        <ContainerAlert>
-                            <Alert severity="success" style={{
-                                position: 'absolute',
-                                marginTop: '-20px',
-                                width: '25rem'
-                            }}>
-                                <AlertTitle><strong>Sucesso</strong></AlertTitle>
-                                Cliente Cadastrado com <strong>Sucesso!</strong>
-                            </Alert>
-                        </ContainerAlert>
-                    }
-                    {fail &&
-                        <ContainerAlert>
-                            <Alert severity="error" style={{
-                                position: 'absolute',
-                                marginTop: '-20px',
-                                width: '25rem'
-                            }}>
-                                <AlertTitle><strong>Erro</strong></AlertTitle>
-                                Erro ao Cadastrar novo Cliente.<strong>Tente novamente</strong>
-                            </Alert>
-                        </ContainerAlert>
-                    }
+
+                    <FormAlert submitForm={submitForm} name={'Cliente'} />
                 </div>
                 {/*Adicionar Produtos */}
                 {isVisibleTpProuto &&
@@ -343,7 +320,7 @@ export default function CadastroCliente() {
                         fontSize={18}
                         primary={false}
                         type={'button'}
-                        children={'Cadastrar'}
+                        children={'Cadastrar Cliente'}
                         onClick={handleSubmit}
                         style={{ margin: '1rem 4rem 3rem 100%', height: '4rem' }}
                     />

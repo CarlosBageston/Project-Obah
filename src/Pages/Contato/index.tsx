@@ -1,6 +1,6 @@
 import * as Yup from 'yup';
 import { useFormik } from 'formik';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import Input from '../../Components/input';
 import Button from '../../Components/button';
 import ContatoModel from './model/contato';
@@ -25,19 +25,13 @@ import {
     TitleBox,
     ContainerIcons,
     Ancora,
-    Container,
-    EnterButton,
-    InputStyle,
-    InputBox,
-    Label,
-    SignupLink,
-    Card
 } from './style';
-import Menu from '../../Components/Menu/Menu';
+import ToolTip from '../../Components/ToolTip';
 
 
 
 export default function Contato() {
+    const targetRef = useRef<HTMLDivElement>(null);
 
     const [initialValues, setInitialValues] = useState<ContatoModel>({
         msgContato: '',
@@ -63,37 +57,41 @@ export default function Contato() {
 
     return (
         <>
-            <Menu />
             <Box>
-                <Imagem />
+                {/*toolTip */}
+
+                <ToolTip tooltipRef={targetRef} />
+                <Imagem id='contato' />
                 <ContainerAll>
 
-                    <ContainerTitle>
+                    <ContainerTitle >
                         <img src={detalhe} alt="Sorvete" width={250} />
                         <Title>Fale Conosco</Title>
                     </ContainerTitle>
                     <ContainerContato>
-                        <ContainerBox>
+                        <ContainerBox ref={targetRef}>
                             <TitleBox>Nos acompanhe</TitleBox>
                             <SubTitleBox>nas redes sociais</SubTitleBox>
                             <ContainerIcons>
                                 <div>
                                     <Ancora
-                                        href="https://www.instagram.com/marbellasorvetes/">
+                                        target='_blank'
+                                        href="https://www.instagram.com/marbellasorvetes/"> {/* colocar o link correto*/}
                                         <img src={iconinstagram} alt="instagram" width={50} />
                                         @sorveteObah!
                                     </Ancora>
                                 </div>
                                 <div>
-
                                     <Ancora
-                                        href="https://www.facebook.com/marbella.sorvetes">
+                                        target='_blank'
+                                        href="https://www.facebook.com/marbella.sorvetes"> {/* colocar o link correto*/}
                                         <img src={iconFacebook} alt="facebook" width={50} />
                                         SorveteriaObah!
                                     </Ancora>
                                 </div>
                                 <div>
                                     <Ancora
+                                        target='_blank'
                                         href="https://api.whatsapp.com/send?phone=5546999358718&text=Oi,%20tenho%20interesse%20em%20adquirir%20seus%20produtos%20:)">
                                         <img src={iconwhatsapp} alt="facebook" width={50} />
                                         SorveteriaObah!
@@ -151,36 +149,6 @@ export default function Contato() {
                                 style={{ margin: '15px 0px' }}
                             />
                         </ContainerBox>
-                        <Container>
-                            <Card>
-                                <SignupLink>Entre em contato</SignupLink>
-                                <SignupLink>faça seu pedido ou deixe seu feedback</SignupLink>
-                                <InputBox>
-                                    <InputStyle type="text" required />
-                                    <Label>Email</Label>
-                                </InputBox>
-
-                                <InputBox>
-                                    <InputStyle type="text" required />
-                                    <Label>Username</Label>
-                                </InputBox>
-
-                                {/* <InputBox>
-                                    <Input
-                                        label=''
-                                        name='msgContato'
-                                        onBlur={handleBlur}
-                                        value={values.msgContato}
-                                        onChange={e => setFieldValue(e.target.name, e.target.value)}
-                                        error={touched.msgContato && errors.msgContato ? errors.msgContato : ''}
-                                        styleLabel={{ color: '#FFFFFF' }}
-                                    />
-                                    <Label>Mensagem</Label>
-                                </InputBox> */}
-
-                                <EnterButton>Enter</EnterButton>
-                            </Card>
-                        </Container>
                     </ContainerContato>
                 </ContainerAll>
             </Box>

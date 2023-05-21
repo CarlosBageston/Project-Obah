@@ -14,14 +14,14 @@ export default function Menu() {
                     <ContainerList >
                         <li>
                             <NavLinkScroll
-                                to={'slide'}
+                                to={'maisVendidos'}
                                 spy={true}
                                 smooth={true}
                                 offset={-70}
                                 duration={500}
                                 activeClass="active"
                             >
-                                Sorvetes
+                                Queridinhos
                             </NavLinkScroll>
                         </li>
                         <li>
@@ -37,9 +37,16 @@ export default function Menu() {
                             </NavLinkScroll>
                         </li>
                         <li>
-                            <NavLinkRouterDom to={'/contato'} target={'_blank'}>
-                                <p>Contato</p>
-                            </NavLinkRouterDom> {/*colocar icone que indica outra tela*/}
+                            <NavLinkScroll
+                                to={'contato'}
+                                spy={true}
+                                smooth={true}
+                                offset={-70}
+                                duration={600}
+                                activeClass="active"
+                            >
+                                Contato
+                            </NavLinkScroll>
                         </li>
                         <Admin>
                             <NavLinkRouterDom to={'/login'}>

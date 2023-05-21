@@ -16,30 +16,33 @@ import image8 from '../../assets/imageteste/image8.png'
 export default function MaisVendidos() {
     return (
         <>
-            <Box id='contato'>
+            <Box id='maisVendidos'>
+                <div>
+                    <h1>Mais vendidos</h1>
+                </div>
                 <ContainerAllImage>
                     <ContainerImgName>
                         <RotatingImage src={image3} alt="logo" width={150} src2={image7} />
                         <div>
-                            <h1>Nome</h1>
+                            <h1>Moreninha</h1>
                         </div>
                     </ContainerImgName>
                     <ContainerImgName>
                         <RotatingImage src={image1} alt="logo" width={150} src2={image4} />
                         <div>
-                            <h1>Nome</h1>
+                            <h1>Loirinha</h1>
                         </div>
                     </ContainerImgName>
                     <ContainerImgName>
                         <RotatingImage src={image5} alt="logo" width={150} src2={image6} />
                         <div>
-                            <h1>Nome</h1>
+                            <h1>Taça Sundae</h1>
                         </div>
                     </ContainerImgName>
                     <ContainerImgName>
                         <RotatingImage src={image2} alt="logo" width={150} src2={image8} />
                         <div>
-                            <h1>Nome</h1>
+                            <h1>Potes de Sorvete</h1>
                         </div>
                     </ContainerImgName>
                 </ContainerAllImage>

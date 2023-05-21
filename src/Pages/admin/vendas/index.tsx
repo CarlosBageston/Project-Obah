@@ -29,7 +29,6 @@ import {
 } from './style'
 import Button from "../../../Components/button";
 import { Alert, AlertTitle } from "@mui/material";
-import { ContainerAlert } from "../cadastroClientes/style";
 import iceCreamSad from '../../../assets/Image/drawingSadIceCream.png'
 import { CgAddR } from 'react-icons/cg'
 import * as Yup from 'yup';
@@ -38,6 +37,7 @@ import ProdutosModel from "../cadastroProdutos/model/produtos";
 import { format } from "date-fns";
 import SituacaoProduto from "../compras/enumeration/situacaoProduto";
 import GetData from "../../../firebase/getData";
+import FormAlert from "../../../Components/FormAlert/formAlert";
 
 
 const objClean: VendaModel = {
@@ -56,8 +56,7 @@ export default function Vendas() {
     const [recarregue, setRecarregue] = useState<boolean>(true);
 
 
-    const [fail, setFail] = useState<boolean>(false);
-    const [success, setSuccess] = useState<boolean>(false);
+    const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
 
     const [isValid, setIsValid] = useState<boolean>(false);
     const [isValidQntBolas, setIsValidQntBolas] = useState<boolean>(false);
@@ -222,15 +221,15 @@ export default function Vendas() {
             await addDoc(collection(db, "Vendas"), {
                 ...values
             }).then(() => {
-                setSuccess(true);
-                setTimeout(() => { setSuccess(false) }, 2000)
+                setSubmitForm(true);
+                setTimeout(() => { setSubmitForm(undefined) }, 3000)
             }).catch(() => {
-                setFail(true)
-                setTimeout(() => { setFail(false) }, 3000)
+                setSubmitForm(false);
+                setTimeout(() => { setSubmitForm(undefined) }, 3000)
             });
-            clearState()
+            clearState();
         } else {
-            setIsValid(true)
+            setIsValid(true);
         }
     }
 
@@ -412,30 +411,7 @@ export default function Vendas() {
                         </ContainerNota>
                     </ContainerProdutos>
                 </BoxProduto>
-                {success &&
-                    <ContainerAlert>
-                        <Alert severity="success" style={{
-                            position: 'absolute',
-                            marginTop: '-20px',
-                            width: '25rem'
-                        }}>
-                            <AlertTitle><strong>Sucesso</strong></AlertTitle>
-                            Venda Cadastrada com <strong>Sucesso!</strong>
-                        </Alert>
-                    </ContainerAlert>
-                }
-                {fail &&
-                    <ContainerAlert>
-                        <Alert severity="error" style={{
-                            position: 'absolute',
-                            marginTop: '-20px',
-                            width: '25rem'
-                        }}>
-                            <AlertTitle><strong>Erro</strong></AlertTitle>
-                            Erro ao Cadastrar Venda.<strong>Tente novamente</strong>
-                        </Alert>
-                    </ContainerAlert>
-                }
+                <FormAlert submitForm={submitForm} name={'Venda'} />
             </ContainerAll>
         </Box>
     );

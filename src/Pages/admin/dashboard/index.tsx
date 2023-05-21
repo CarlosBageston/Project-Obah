@@ -32,16 +32,12 @@ export default function Dashboard() {
     //soma do valor total de todas as vendas do ano
     const totalVendas = dadosPorMesVertical.map(vendas => vendas.valorTotal)
     const somaTotalVendas = totalVendas.reduce((total, item) => total + item)
-    console.log(totalVendas)
-    console.log(totalEntregas)
     //soma do valor Lucro de todas as entregas do ano
     const lucroEntregas = dadosPorMes.map(entregas => entregas.valorLucro)
     const somaLucroEntregas = lucroEntregas.reduce((lucro, item) => lucro + item)
 
     //soma do valor Lucro de todas as vendas do ano
     const lucroVendas = dadosPorMesVertical.map(vendas => vendas.valorLucro)
-    console.log(lucroVendas)
-    console.log(lucroEntregas)
     const somaLucroVendas = lucroVendas.reduce((lucro, item) => lucro + item)
 
     //somando todas as vendas e entregas do ano
@@ -69,12 +65,12 @@ export default function Dashboard() {
                 <ContainerResult>
                     <DivResult>
                         <TextResult>Ganho anual</TextResult>
-                        <SumResult>R$ {somaAnual}</SumResult>
+                        <SumResult>R$ {somaAnual.toFixed(2)}</SumResult>
                         <Paragraph>Soma de todas as vendas no decorrer do ano</Paragraph>
                     </DivResult>
                     <DivResult>
                         <TextResult>Lucro anual</TextResult>
-                        <SumResult>R$ {somaLucroAnual}</SumResult>
+                        <SumResult>R$ {somaLucroAnual.toFixed(2)}</SumResult>
                         <Paragraph>Soma de todas as vendas no decorrer do ano</Paragraph>
                     </DivResult>
                 </ContainerResult>

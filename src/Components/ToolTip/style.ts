@@ -14,6 +14,7 @@ border-radius: 2rem;
 height: 3rem;
 align-items: center;
 cursor: pointer;
+z-index: 4;
 `
 
 export const StyledIcon = styled(BsFillArrowUpCircleFill)`

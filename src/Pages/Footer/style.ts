@@ -8,6 +8,7 @@ height: 10rem;
 align-items: center;
 justify-content: space-around;
 position: relative;
+margin-top: 3rem;
 
 &::before {
     position: absolute;

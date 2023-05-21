@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 export const Box = styled.div`
-height: 110vh;
+height: 140vh;
 `
 
 export const ContainerTitle = styled.div`

@@ -27,11 +27,8 @@ export default function Router() {
                         <Carousel />
                         <MaisVendidos />
                         <SobreNos />
+                        <Contato />
                     </>
-                }
-                />
-                <Route path='/contato' element={
-                    <Contato />
                 }
                 />
                 <Route path='/login' element={

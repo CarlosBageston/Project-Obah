@@ -16,21 +16,22 @@ import {
     Title,
     ContainerButton,
 } from './style'
-import { ButtonStyled, ContainerAlert, DivTwoInput } from "../cadastroClientes/style";
+import { ButtonStyled, DivTwoInput } from "../cadastroClientes/style";
 import formatDate from "../../../Components/masks/formatDate";
 import FiltroGeneric from "../../../Components/filtro";
 import GenericTable from "../../../Components/table";
 import GetData from "../../../firebase/getData";
 import SituacaoProduto from "./enumeration/situacaoProduto";
-import { svg } from "leaflet";
 import { ContainerFlutuante, Paragrafo, DivLineMPEdit } from "../cadastroProdutos/style";
+import ProdutosModel from "../cadastroProdutos/model/produtos";
+import FormAlert from "../../../Components/FormAlert/formAlert";
 
 
 const objClean: ComprasModel = {
     cdProduto: '',
     nmProduto: '',
     vlUnitario: '',
-    dtCompra: '',
+    dtCompra: null,
     quantidade: '',
     totalPago: null,
     tpProduto: null,
@@ -41,16 +42,29 @@ const objClean: ComprasModel = {
 
 export default function NovasCompras() {
     const [key, setKey] = useState<number>(0);
-    const [fail, setFail] = useState<boolean>(false);
-    const [success, setSuccess] = useState<boolean>(false);
+    const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
     const [initialValues, setInitialValues] = useState<ComprasModel>({ ...objClean });
     const [recarregue, setRecarregue] = useState<boolean>(true);
     const [selectAutoComplete, setSelectAutoComplete] = useState<boolean>(false);
     const [selected, setSelected] = useState<ComprasModel | undefined>();
     const [isEdit, setIsEdit] = useState<boolean>(false);
+    const [uniqueNames, setUniqueNames] = useState<any[]>([])
 
     //Realizando busca no banco de dados
-    const { dataTable, loading, setDataTable } = GetData('Compras', recarregue);
+    const {
+        dataTable,
+        loading,
+        setDataTable
+    } = GetData('Compras', recarregue) as {
+        dataTable: ComprasModel[],
+        loading: boolean,
+        setDataTable: (data: ComprasModel[]) => void
+    };
+    const {
+        dataTable: produtoDataTable,
+    } = GetData('Produtos', recarregue) as {
+        dataTable: ProdutosModel[],
+    };
 
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<ComprasModel>({
         validateOnBlur: true,
@@ -75,7 +89,7 @@ export default function NovasCompras() {
             cdProduto: '',
             nmProduto: '',
             vlUnitario: '',
-            dtCompra: '',
+            dtCompra: null,
             quantidade: '',
             totalPago: null,
             tpProduto: null,
@@ -105,15 +119,15 @@ export default function NovasCompras() {
             ...values
         })
             .then(() => {
-                setSuccess(true);
-                setTimeout(() => { setSuccess(false) }, 2000)
+                setSubmitForm(true)
+                setTimeout(() => { setSubmitForm(undefined) }, 3000)
+                setDataTable([...dataTable, values])
             })
-            .then(() =>
-                setDataTable([...dataTable, values]))
             .catch(() => {
-                setFail(true)
-                setTimeout(() => { setFail(false) }, 3000)
+                setSubmitForm(false)
+                setTimeout(() => { setSubmitForm(undefined) }, 3000)
             });
+        setUniqueNames([])
         resetForm()
         cleanState()
         setSelectAutoComplete(false);
@@ -192,29 +206,57 @@ export default function NovasCompras() {
     //fazendo autocomplete dos inputs
     useEffect(() => {
         const getProduct = () => {
-            const dataTableWithDate = dataTable.map(produto => ({
-                ...produto,
-                dtcompra: new Date(produto.dtcompra)
-            }));
-            const filteredProducts = dataTableWithDate.filter(produto => produto.nmProduto === values.nmProduto);
-            const sortedProducts = filteredProducts.sort((a, b) => b.dtcompra - a.dtcompra);
+            const filteredProducts = dataTable.filter(
+                (produto) => produto.nmProduto === values.nmProduto
+            );
+            const sortedProducts = filteredProducts.sort(
+                (a, b) =>
+                    (b.dtCompra instanceof Date ? b.dtCompra.getTime() : 0) -
+                    (a.dtCompra instanceof Date ? a.dtCompra.getTime() : 0)
+            );
             const lastProduct = sortedProducts[0];
             return lastProduct;
         };
 
         const lastProduct = getProduct();
-        if (lastProduct) {
-            setSelectAutoComplete(true)
-            setFieldValue('cdProduto', lastProduct.cdProduto);
-            setFieldValue('vlUnitario', lastProduct.vlUnitario);
-            setFieldValue('qntMinima', lastProduct.qntMinima);
+        if (values.tpProduto === SituacaoProduto.COMPRADO) {
+            if (lastProduct) {
+                setSelectAutoComplete(true);
+                setFieldValue('cdProduto', lastProduct.cdProduto);
+                setFieldValue('vlUnitario', lastProduct.vlUnitario);
+                setFieldValue('qntMinima', lastProduct.qntMinima);
+            }
+        } else {
+            const fabricadoAutoComplete = produtoDataTable.find(
+                (produto) =>
+                    produto.tpProduto === SituacaoProduto.FABRICADO &&
+                    produto.nmProduto === values.nmProduto
+            );
+            if (lastProduct) {
+                setSelectAutoComplete(true);
+                setFieldValue('cdProduto', lastProduct.cdProduto);
+                setFieldValue('vlUnitario', fabricadoAutoComplete?.vlPagoProduto);
+                setFieldValue('qntMinima', lastProduct.qntMinima);
+            } else if (fabricadoAutoComplete) {
+                setFieldValue('vlUnitario', fabricadoAutoComplete.vlPagoProduto);
+            }
         }
-    }, [values.nmProduto, dataTable]);
+    }, [values.nmProduto, dataTable, values.tpProduto]);
 
 
     //tornando valores unicos no array/não repete
-    const uniqueNames = Array.from(new Set(dataTable.map(nome => nome.nmProduto)));
+    useEffect(() => {
 
+        if (values.tpProduto === SituacaoProduto.COMPRADO) {
+            const filterUniqueNames = dataTable.filter(produtos => produtos.tpProduto === SituacaoProduto.COMPRADO)
+            const uniqueNames = Array.from(new Set(filterUniqueNames.map(nome => nome.nmProduto)));
+            setUniqueNames(uniqueNames)
+        } else {
+            const filterUniqueNames = produtoDataTable.filter(produtos => produtos.tpProduto === SituacaoProduto.FABRICADO)
+            const uniqueNames = Array.from(new Set(filterUniqueNames.map(nome => nome.nmProduto)));
+            setUniqueNames(uniqueNames)
+        }
+    }, [values.tpProduto])
 
     return (
         <Box>
@@ -262,6 +304,7 @@ export default function NovasCompras() {
                                 setSelectAutoComplete(false);
                                 setFieldValue('cdProduto', '');
                                 setFieldValue('vlUnitario', '');
+                                setFieldValue('qntMinima', '');
                             }
                         }}
                         freeSolo
@@ -319,10 +362,11 @@ export default function NovasCompras() {
                         onBlur={handleBlur}
                         name="vlUnitario"
                         value={values.vlUnitario}
+                        disabled={values.tpProduto === SituacaoProduto.FABRICADO}
                         maxLength={9}
                         onChange={e => setFieldValue(e.target.name, e.target.value)}
                         error={touched.vlUnitario && errors.vlUnitario ? errors.vlUnitario : ''}
-                        raisedLabel={selectAutoComplete}
+                        raisedLabel={selectAutoComplete || values.vlUnitario ? true : false}
                     />
                 </DivInput>
                 <DivInput>
@@ -387,6 +431,7 @@ export default function NovasCompras() {
                     error={touched.qntMinima && errors.qntMinima ? errors.qntMinima : ''}
                     style={{ paddingBottom: 0 }}
                     styleLabel={{ fontSize: '0.8rem' }}
+                    raisedLabel={values.qntMinima ? true : false}
                 />
             </div>
             {isEdit &&
@@ -455,11 +500,11 @@ export default function NovasCompras() {
                                                     setSelected((prevSelected) => {
                                                         return {
                                                             ...prevSelected,
-                                                            dtCompra: e.target.value || ''
+                                                            dtCompra: e.target.value || null
                                                         } as ComprasModel | undefined;
                                                     });
                                                 }}
-                                                value={selected?.dtCompra}
+                                                value={selected?.dtCompra ? selected?.dtCompra : ''}
                                                 raisedLabel
                                                 style={{ fontSize: '16px' }}
                                                 styleLabel={{ marginTop: '0', fontSize: 12 }}
@@ -604,36 +649,13 @@ export default function NovasCompras() {
             }
             <ContainerButton>
                 <Button
-                    children='Cadastrar Produto'
+                    children='Cadastrar Estoque'
                     type="button"
                     onClick={handleSubmit}
                     fontSize={20}
                     style={{ margin: '1rem 4rem 2rem 95%', height: '4rem', width: '12rem' }}
                 />
-                {success &&
-                    <ContainerAlert>
-                        <Alert severity="success" style={{
-                            position: 'absolute',
-                            marginTop: '-20px',
-                            width: '25rem'
-                        }}>
-                            <AlertTitle><strong>Sucesso</strong></AlertTitle>
-                            Cliente Cadastrado com <strong>Sucesso!</strong>
-                        </Alert>
-                    </ContainerAlert>
-                }
-                {fail &&
-                    <ContainerAlert>
-                        <Alert severity="error" style={{
-                            position: 'absolute',
-                            marginTop: '-20px',
-                            width: '25rem'
-                        }}>
-                            <AlertTitle><strong>Erro</strong></AlertTitle>
-                            Erro ao Cadastrar novo Cliente.<strong>Tente novamente</strong>
-                        </Alert>
-                    </ContainerAlert>
-                }
+                <FormAlert submitForm={submitForm} name={'Estoque'} />
             </ContainerButton>
 
             {/*Tabala */}

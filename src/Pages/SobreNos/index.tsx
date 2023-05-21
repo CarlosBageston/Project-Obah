@@ -113,7 +113,7 @@ export default function SobreNos() {
                     <MapContainer
                         center={center}
                         zoom={zoom}
-                        style={{ height: "20rem", width: "35rem", boxShadow: "5px 5px 11px -1px rgb(0 0 0 / 45%)" }}
+                        style={{ height: "20rem", width: "35rem", boxShadow: "5px 5px 11px -1px rgb(0 0 0 / 45%)", marginRight: '4rem' }}
                     >
                         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                         <Marker position={center} >

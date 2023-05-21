@@ -8,7 +8,6 @@ import { orderBy } from "lodash";
 import * as Yup from 'yup';
 import { useFormik } from 'formik';
 import { EntregaModel } from "./model/entrega";
-import { ContainerAlert } from "../cadastroClientes/style";
 import ClienteModel from "../cadastroClientes/model/cliente";
 import {
     Box,
@@ -28,6 +27,7 @@ import formatDate from "../../../Components/masks/formatDate";
 import GenericTable from "../../../Components/table";
 import GetData from "../../../firebase/getData";
 import FiltroGeneric from "../../../Components/filtro";
+import FormAlert from "../../../Components/FormAlert/formAlert";
 
 
 const objClean: EntregaModel = {
@@ -39,8 +39,7 @@ const objClean: EntregaModel = {
 
 export default function Entregas() {
     const [key, setKey] = useState<number>(0);
-    const [fail, setFail] = useState<boolean>(false);
-    const [success, setSuccess] = useState<boolean>(false);
+    const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
     const [selected, setSelected] = useState<EntregaModel>();
     const [recarregue, setRecarregue] = useState<boolean>(true);
     const [resultCalculo, setResultCalculo] = useState<number[]>([]);
@@ -102,14 +101,13 @@ export default function Entregas() {
             quantidades: quantidades
         })
             .then(() => {
-                setSuccess(true);
-                setTimeout(() => { setSuccess(false) }, 2000)
+                setSubmitForm(true)
+                setDataTableEntregas([...dataTableEntregas, values])
+                setTimeout(() => { setSubmitForm(undefined) }, 3000)
             })
-            .then(() =>
-                setDataTableEntregas([...dataTableEntregas, values]))
             .catch(() => {
-                setFail(true)
-                setTimeout(() => { setFail(false) }, 3000)
+                setSubmitForm(false)
+                setTimeout(() => { setSubmitForm(undefined) }, 3000)
             });
         resetForm()
         cleanState()
@@ -167,28 +165,8 @@ export default function Entregas() {
     return (
         <Box>
             <Title>Cadastro de Novas Entregas</Title>
-            {success &&
-                <ContainerAlert>
-                    <Alert severity="success" style={{
-                        position: 'absolute',
-                        marginTop: '25rem'
-                    }}>
-                        <AlertTitle><strong>Sucesso</strong></AlertTitle>
-                        Entrega Cadastrado com <strong>Sucesso!</strong>
-                    </Alert>
-                </ContainerAlert>
-            }
-            {fail &&
-                <ContainerAlert>
-                    <Alert severity="error" style={{
-                        position: 'absolute',
-                        marginTop: '25rem'
-                    }}>
-                        <AlertTitle><strong>Erro</strong></AlertTitle>
-                        Erro ao Cadastrar novo Entrega.<strong>Tente novamente</strong>
-                    </Alert>
-                </ContainerAlert>
-            }
+
+            <FormAlert submitForm={submitForm} name={'Entregas'} />
             <ContainerAll>
                 <DivInputs>
                     <FormControl

@@ -35,12 +35,6 @@ export const TextDivisao = styled.h4`
 padding: 2rem 4rem 0 4rem;
 `;
 
-export const ContainerAlert = styled.div`
-width: 100%;
-align-items: center;
-justify-content: center;
-display: flex;
-`;
 
 export const ContainerTable = styled.div`
 margin: 0px 4rem;

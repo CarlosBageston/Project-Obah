@@ -7,6 +7,7 @@ display: flex;
 align-items: center;
 justify-content: center;
 position: relative;
+flex-direction: column;
 
 &::before {
     display: block;
@@ -28,7 +29,7 @@ position: relative;
     height: 5rem;
     background-size: 100%;
     background-repeat: no-repeat;
-    top: 456px;
+    top: 98%;
     transform: rotate(180deg);
 }
 `

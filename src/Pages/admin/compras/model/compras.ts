@@ -9,7 +9,7 @@ import SituacaoProduto from "../enumeration/situacaoProduto"
 
 interface ComprasModel {
     id?: string,
-    dtCompra: string,
+    dtCompra: Date | null,
     nmProduto: string,
     cdProduto: string,
     vlUnitario: string,

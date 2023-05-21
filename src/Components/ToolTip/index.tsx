@@ -10,7 +10,7 @@ export default function ToolTip({ tooltipRef }: Props) {
 
     useEffect(() => {
         const options = {
-            rootMargin: "40% 0px",
+            rootMargin: "50% 0px",
             threshold: 0,
         };
         const observer = new IntersectionObserver((entries) => {

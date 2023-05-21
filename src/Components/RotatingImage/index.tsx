@@ -58,6 +58,7 @@ background-color: wheat;
 border-radius: 50%;
 display: flex;
 justify-content: center;
+box-shadow: 2px 2px 2px 2px #00000024;
 `;
 
 const Image = styled.img<{ changeImage?: boolean, rotateImage?: boolean }>`

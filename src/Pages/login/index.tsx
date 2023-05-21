@@ -4,7 +4,6 @@ import { State, setEmail, setPassword, setError, setUser, setuserLogado } from '
 import { AuthError, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../firebase';
 import { useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
 
 
 
@@ -20,13 +19,12 @@ export default function Login() {
                 dispatch(setUser(user))
                 dispatch(setError(''));
                 dispatch(setuserLogado(true))
-                setPassword('');
-                setEmail('');
+                dispatch(setPassword(''));
+                dispatch(setEmail(''));
                 navigate('/dashboard');
             })
             .catch((error: AuthError) => {
-                console.log(error.message)
-                dispatch(setError('e-mail ou senha incorretos'));
+                dispatch(setError('E-mail ou senha inválidos'));
             });
     };
     const onKeyPressAuthenticate = (e: React.KeyboardEvent<HTMLInputElement> | React.KeyboardEvent<HTMLButtonElement>) => {

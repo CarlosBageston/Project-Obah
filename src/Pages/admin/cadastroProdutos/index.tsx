@@ -21,12 +21,13 @@ import {
     ButtonStyled,
     DivLineMPEdit
 } from './style'
-import { ContainerAlert, DivTwoInput } from "../cadastroClientes/style";
+import { DivTwoInput } from "../cadastroClientes/style";
 import GenericTable from "../../../Components/table";
 import FiltroGeneric from "../../../Components/filtro";
 import GetData from "../../../firebase/getData";
 import SituacaoProduto from "../compras/enumeration/situacaoProduto";
 import ComprasModel from "../compras/model/compras";
+import FormAlert from "../../../Components/FormAlert/formAlert";
 
 
 const objClean: ProdutoModel = {
@@ -40,9 +41,8 @@ const objClean: ProdutoModel = {
 
 export default function CadastroProduto() {
     const [key, setKey] = useState<number>(0);
-    const [fail, setFail] = useState<boolean>(false);
+    const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
     const [isEdit, setIsEdit] = useState<boolean>(false);
-    const [success, setSuccess] = useState<boolean>(false);
     const [recarregue, setRecarregue] = useState<boolean>(true);
     const [selected, setSelected] = useState<ProdutoModel | undefined>();
     const [isVisibleTpProuto, setIsVisibleTpProduto] = useState<boolean>(false);
@@ -114,14 +114,13 @@ export default function CadastroProduto() {
             ...values
         })
             .then(() => {
-                setSuccess(true);
-                setTimeout(() => { setSuccess(false) }, 2000)
+                setSubmitForm(true);
+                setDataTable([...dataTable, values]);
+                setTimeout(() => { setSubmitForm(undefined) }, 3000)
             })
-            .then(() =>
-                setDataTable([...dataTable, values]))
             .catch(() => {
-                setFail(true)
-                setTimeout(() => { setFail(false) }, 3000)
+                setSubmitForm(false);
+                setTimeout(() => { setSubmitForm(undefined) }, 3000)
             });
         resetForm()
         setFieldValue('tpProduto', null)
@@ -566,30 +565,8 @@ export default function CadastroProduto() {
                     fontSize={20}
                     style={{ margin: '1rem 4rem 2rem 95%', height: '4rem', width: '12rem' }}
                 />
-                {success &&
-                    <ContainerAlert>
-                        <Alert severity="success" style={{
-                            position: 'absolute',
-                            marginTop: '-20px',
-                            width: '25rem'
-                        }}>
-                            <AlertTitle><strong>Sucesso</strong></AlertTitle>
-                            Cliente Cadastrado com <strong>Sucesso!</strong>
-                        </Alert>
-                    </ContainerAlert>
-                }
-                {fail &&
-                    <ContainerAlert>
-                        <Alert severity="error" style={{
-                            position: 'absolute',
-                            marginTop: '-20px',
-                            width: '25rem'
-                        }}>
-                            <AlertTitle><strong>Erro</strong></AlertTitle>
-                            Erro ao Cadastrar novo Cliente.<strong>Tente novamente</strong>
-                        </Alert>
-                    </ContainerAlert>
-                }
+
+                <FormAlert submitForm={submitForm} name={'Produto'} />
             </ContainerButton>
             {/*Tabala */}
             <div style={{ margin: '-3.5rem 0px -40px 3rem' }}>

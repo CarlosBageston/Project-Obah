@@ -13,7 +13,6 @@ import { Autocomplete, Stack, TextField } from '@mui/material';
 import FiltroGeneric from '../../../Components/filtro';
 import GenericTable from '../../../Components/table';
 import GetData from '../../../firebase/getData';
-import { ContainerFlutuante, Paragrafo, ContianerMP, DivLineMP, DivLineMPEdit } from '../cadastroProdutos/style';
 import SituacaoProduto from '../compras/enumeration/situacaoProduto';
 import ProdutosModel from '../cadastroProdutos/model/produtos';
 //import do styled components
@@ -24,9 +23,11 @@ import {
     ButtonStyled,
     ContainerButton,
     TitleDefault,
-    DivTwoInput
 } from './style';
+
 import FormAlert from '../../../Components/FormAlert/formAlert';
+import { IsEdit } from '../../../Components/isEdit/isEdit';
+import { ContainerFlutuante, ContianerMP, DivLineMP, Paragrafo } from '../../../Components/isEdit/style';
 
 const objClean: ClienteModel = {
     nmCliente: '',
@@ -47,7 +48,14 @@ export default function CadastroCliente() {
     const [selected, setSelected] = useState<ClienteModel>();
 
     const [initialValues, setInitialValues] = useState<ClienteModel>({ ...objClean });
-
+    const inputsConfig = [
+        { label: 'Nome', propertyName: 'nmCliente' },
+        { label: 'Telefone', propertyName: 'tfCliente' },
+        { label: 'Cidade', propertyName: 'cidadeCliente' },
+        { label: 'Bairro', propertyName: 'bairroCliente' },
+        { label: 'Rua', propertyName: 'ruaCliente' },
+        { label: 'Numero', propertyName: 'nrCasaCliente' },
+    ];
     //realizando busca no banco de dados
     const {
         dataTable,
@@ -327,208 +335,16 @@ export default function CadastroCliente() {
                 </ContainerButton>
 
                 {/* Editar o cliente */}
+                <IsEdit
+                    data={selected}
+                    handleEditRow={handleEditRow}
+                    inputsConfig={inputsConfig}
+                    isCliente={true}
+                    isEdit={isEdit}
+                    products={selected ? selected.produtos : []}
+                    setSelected={setSelected}
+                />
 
-                {isEdit &&
-                    <ContainerFlutuante >
-                        <div>
-                            <TitleDefault style={{ margin: '0 0 8px 0' }}>Editar Cliente</TitleDefault>
-                            <Paragrafo>Alterar dados do cliente e produtos vendidos</Paragrafo>
-                        </div>
-                        <div>
-                            <>
-                                <ul>
-                                    <DivTwoInput style={{ display: 'flex' }}>
-                                        <DivLineMPEdit>
-                                            <div>
-                                                <Input
-                                                    error=""
-                                                    label="Nome"
-                                                    name={'nmCliente'}
-                                                    onChange={(e) => {
-                                                        setSelected((prevSelected) => {
-                                                            return {
-                                                                ...prevSelected,
-                                                                nmCliente: e.target.value || ''
-                                                            } as ClienteModel | undefined;
-                                                        });
-                                                    }}
-                                                    value={selected?.nmCliente}
-                                                    raisedLabel
-                                                    style={{ fontSize: '16px' }}
-                                                    styleLabel={{ marginTop: '0', fontSize: 12 }}
-                                                    styleDiv={{ margin: '0', padding: 0 }}
-                                                />
-                                            </div>
-                                        </DivLineMPEdit>
-                                        <DivLineMPEdit>
-                                            <div>
-                                                <Input
-                                                    error=""
-                                                    label="Bairro"
-                                                    name={'bairroCliente'}
-                                                    onChange={(e) => {
-                                                        setSelected((prevSelected) => {
-                                                            return {
-                                                                ...prevSelected,
-                                                                bairroCliente: e.target.value || ''
-                                                            } as ClienteModel | undefined;
-                                                        });
-                                                    }}
-                                                    value={selected?.bairroCliente}
-                                                    raisedLabel
-                                                    style={{ fontSize: '16px' }}
-                                                    styleLabel={{ marginTop: '0', fontSize: 12 }}
-                                                    styleDiv={{ margin: '0', padding: 0 }}
-                                                />
-                                            </div>
-                                        </DivLineMPEdit>
-                                    </DivTwoInput>
-                                    <DivTwoInput>
-                                        <DivLineMPEdit>
-                                            <div>
-                                                <Input
-                                                    error=""
-                                                    label="Telefone"
-                                                    name={'tfCliente'}
-                                                    onChange={(e) => {
-                                                        setSelected((prevSelected) => {
-                                                            return {
-                                                                ...prevSelected,
-                                                                tfCliente: e.target.value || ''
-                                                            } as ClienteModel | undefined;
-                                                        });
-                                                    }}
-                                                    value={selected?.tfCliente}
-                                                    raisedLabel
-                                                    style={{ fontSize: '16px' }}
-                                                    styleLabel={{ marginTop: '0', fontSize: 12 }}
-                                                    styleDiv={{ margin: '0', padding: 0 }}
-                                                />
-                                            </div>
-
-                                        </DivLineMPEdit>
-                                        <DivLineMPEdit>
-
-                                            <div>
-                                                <Input
-                                                    error=""
-                                                    label="Rua"
-                                                    name={'ruaCliente'}
-                                                    onChange={(e) => {
-                                                        setSelected((prevSelected) => {
-                                                            return {
-                                                                ...prevSelected,
-                                                                ruaCliente: e.target.value || ''
-                                                            } as ClienteModel | undefined;
-                                                        });
-                                                    }}
-                                                    value={selected?.ruaCliente}
-                                                    raisedLabel
-                                                    style={{ fontSize: '16px' }}
-                                                    styleLabel={{ marginTop: '0', fontSize: 12 }}
-                                                    styleDiv={{ margin: '0', padding: 0 }}
-                                                />
-                                            </div>
-                                        </DivLineMPEdit>
-                                    </DivTwoInput>
-                                    <DivTwoInput>
-                                        <DivLineMPEdit>
-                                            <div>
-                                                <Input
-                                                    error=""
-                                                    label="Cidade"
-                                                    name={'cidadeCliente'}
-                                                    onChange={(e) => {
-                                                        setSelected((prevSelected) => {
-                                                            return {
-                                                                ...prevSelected,
-                                                                cidadeCliente: e.target.value || ''
-                                                            } as ClienteModel | undefined;
-                                                        });
-                                                    }}
-                                                    value={selected?.cidadeCliente}
-                                                    raisedLabel
-                                                    style={{ fontSize: '16px' }}
-                                                    styleLabel={{ marginTop: '0', fontSize: 12 }}
-                                                    styleDiv={{ margin: '0', padding: 0 }}
-                                                />
-                                            </div>
-                                        </DivLineMPEdit>
-                                        <DivLineMPEdit>
-                                            <div>
-                                                <Input
-                                                    error=""
-                                                    label="Número"
-                                                    name={'nrCasaCliente'}
-                                                    onChange={(e) => {
-                                                        setSelected((prevSelected) => {
-                                                            return {
-                                                                ...prevSelected,
-                                                                nrCasaCliente: e.target.value || ''
-                                                            } as ClienteModel | undefined;
-                                                        });
-                                                    }}
-                                                    value={selected?.nrCasaCliente}
-                                                    raisedLabel
-                                                    style={{ fontSize: '16px' }}
-                                                    styleLabel={{ marginTop: '0', fontSize: 12 }}
-                                                    styleDiv={{ margin: '0', padding: 0 }}
-                                                />
-                                            </div>
-                                        </DivLineMPEdit>
-                                    </DivTwoInput>
-                                </ul>
-                            </>
-                        </div>
-                        <ContianerMP>
-                            {selected?.produtos.map((produto, index) => (
-                                <>
-                                    <ul>
-                                        <DivLineMP>
-                                            <div style={{ width: '18rem' }}>
-                                                <li>{produto.nmProduto}</li>
-                                            </div>
-                                            <div>
-                                                <Input
-                                                    error=""
-                                                    label="Valor do produto"
-                                                    name={produto.nmProduto}
-                                                    onChange={(e) => {
-                                                        const valorFormatado = formatarValor(e.target.value);
-                                                        const updatedProdutos = selected?.produtos.map((produto, i) => {
-                                                            if (i === index) {
-                                                                return {
-                                                                    ...produto,
-                                                                    vlVendaProduto: valorFormatado,
-                                                                };
-                                                            }
-                                                            return produto;
-                                                        });
-                                                        setSelected((prevSelected) => ({
-                                                            ...prevSelected,
-                                                            produtos: updatedProdutos || [],
-                                                        } as ClienteModel | undefined));
-                                                    }}
-                                                    value={produto.vlVendaProduto}
-                                                    raisedLabel
-                                                    style={{ fontSize: '1rem' }}
-                                                    styleLabel={{ marginTop: '-20px' }}
-                                                    styleDiv={{ margin: '0', padding: 0 }}
-                                                />
-                                            </div>
-                                        </DivLineMP>
-                                    </ul>
-                                </>
-                            ))}
-                        </ContianerMP>
-                        <div>
-                            <ButtonStyled
-                                onClick={handleEditRow}>
-                                Concluído
-                            </ButtonStyled>
-                        </div>
-                    </ContainerFlutuante>
-                }
                 {/*Tabela */}
                 <div style={{ margin: '-3.5rem 0px -35px 3rem' }}>
                     <FiltroGeneric

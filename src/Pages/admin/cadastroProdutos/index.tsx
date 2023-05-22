@@ -1,10 +1,10 @@
-import { addDoc, collection, CollectionReference, deleteDoc, doc, getDocs, updateDoc } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import React, { useState, useEffect } from "react";
 import { db } from "../../../firebase";
 import Input from "../../../Components/input";
 import ProdutoModel from "./model/produtos";
 import Button from "../../../Components/button";
-import { Alert, AlertTitle, Autocomplete, FormControl, InputLabel, MenuItem, Select, Stack, TextField } from "@mui/material";
+import { Autocomplete, FormControl, InputLabel, MenuItem, Select, Stack, TextField } from "@mui/material";
 import * as Yup from 'yup';
 import { useFormik } from 'formik';
 
@@ -14,20 +14,16 @@ import {
     DivInput,
     Title,
     ContainerButton,
-    ContainerFlutuante,
-    DivLineMP,
-    ContianerMP,
     Paragrafo,
-    ButtonStyled,
-    DivLineMPEdit
 } from './style'
-import { DivTwoInput } from "../cadastroClientes/style";
 import GenericTable from "../../../Components/table";
 import FiltroGeneric from "../../../Components/filtro";
 import GetData from "../../../firebase/getData";
 import SituacaoProduto from "../compras/enumeration/situacaoProduto";
 import ComprasModel from "../compras/model/compras";
 import FormAlert from "../../../Components/FormAlert/formAlert";
+import { IsEdit } from "../../../Components/isEdit/isEdit";
+import { ButtonStyled, ContainerFlutuante, ContianerMP, DivLineMP } from "../../../Components/isEdit/style";
 
 
 const objClean: ProdutoModel = {
@@ -46,8 +42,14 @@ export default function CadastroProduto() {
     const [recarregue, setRecarregue] = useState<boolean>(true);
     const [selected, setSelected] = useState<ProdutoModel | undefined>();
     const [isVisibleTpProuto, setIsVisibleTpProduto] = useState<boolean>(false);
+    const [products, setProducts] = useState<ComprasModel[]>([]);
 
-
+    const inputsConfig = [
+        { label: 'Nome', propertyName: 'nmProduto' },
+        { label: 'Código do Produto', propertyName: 'cdProduto' },
+        { label: 'Valor de Venda', propertyName: 'vlVendaProduto' },
+        { label: 'Valor Pago', propertyName: 'vlPagoProduto' },
+    ];
     const [initialValues, setInitialValues] = useState<ProdutoModel>({ ...objClean });
 
     //realizando busca no banco de dados
@@ -60,6 +62,11 @@ export default function CadastroProduto() {
         dataTable: comprasDataTable,
     } = GetData('Compras', recarregue) as { dataTable: ComprasModel[] };
 
+    useEffect(() => {
+        if (selected) {
+            setProducts(selected?.mpFabricado)
+        }
+    }, [selected])
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<ProdutoModel>({
         validateOnBlur: true,
         validateOnChange: true,
@@ -403,160 +410,15 @@ export default function CadastroProduto() {
                 </ContainerFlutuante>
             }
             {/* Editar o cliente */}
-
-            {isEdit &&
-                <ContainerFlutuante >
-                    <div>
-                        <Title style={{ margin: '0 0 8px 0' }}>Editar Produto</Title>
-                        <Paragrafo>Alterar dados do Produto e da matéria prima utilizado</Paragrafo>
-                    </div>
-                    <div>
-                        <>
-                            <ul>
-                                <DivTwoInput style={{ display: 'flex' }}>
-                                    <DivLineMPEdit>
-                                        <div>
-                                            <Input
-                                                error=""
-                                                label="Nome"
-                                                name={'nmProduto'}
-                                                onChange={(e) => {
-                                                    setSelected((prevSelected) => {
-                                                        return {
-                                                            ...prevSelected,
-                                                            nmProduto: e.target.value || ''
-                                                        } as ProdutoModel | undefined;
-                                                    });
-                                                }}
-                                                value={selected?.nmProduto}
-                                                raisedLabel
-                                                style={{ fontSize: '16px' }}
-                                                styleLabel={{ marginTop: '0', fontSize: 12 }}
-                                                styleDiv={{ margin: '0', padding: 0 }}
-                                            />
-                                        </div>
-                                    </DivLineMPEdit>
-                                    <DivLineMPEdit>
-                                        <div>
-                                            <Input
-                                                error=""
-                                                label="Código do Produto"
-                                                name={'cdProduto'}
-                                                onChange={(e) => {
-                                                    setSelected((prevSelected) => {
-                                                        return {
-                                                            ...prevSelected,
-                                                            cdProduto: e.target.value || ''
-                                                        } as ProdutoModel | undefined;
-                                                    });
-                                                }}
-                                                value={selected?.cdProduto}
-                                                raisedLabel
-                                                style={{ fontSize: '16px' }}
-                                                styleLabel={{ marginTop: '0', fontSize: 12 }}
-                                                styleDiv={{ margin: '0', padding: 0 }}
-                                            />
-                                        </div>
-                                    </DivLineMPEdit>
-                                </DivTwoInput>
-                                <DivTwoInput>
-                                    <DivLineMPEdit>
-                                        <div>
-                                            <Input
-                                                error=""
-                                                label="Valor de Venda"
-                                                name={'vlVendaProduto'}
-                                                onChange={(e) => {
-                                                    setSelected((prevSelected) => {
-                                                        return {
-                                                            ...prevSelected,
-                                                            vlVendaProduto: e.target.value || ''
-                                                        } as ProdutoModel | undefined;
-                                                    });
-                                                }}
-                                                value={selected?.vlVendaProduto}
-                                                raisedLabel
-                                                style={{ fontSize: '16px' }}
-                                                styleLabel={{ marginTop: '0', fontSize: 12 }}
-                                                styleDiv={{ margin: '0', padding: 0 }}
-                                            />
-                                        </div>
-                                    </DivLineMPEdit>
-                                    <DivLineMPEdit>
-                                        <div>
-                                            <Input
-                                                error=""
-                                                label="Valor Pago"
-                                                name={'vlPagoProduto'}
-                                                onChange={(e) => {
-                                                    setSelected((prevSelected) => {
-                                                        return {
-                                                            ...prevSelected,
-                                                            vlPagoProduto: e.target.value || ''
-                                                        } as ProdutoModel | undefined;
-                                                    });
-                                                }}
-                                                value={selected?.vlPagoProduto}
-                                                raisedLabel
-                                                style={{ fontSize: '16px' }}
-                                                styleLabel={{ marginTop: '0', fontSize: 12 }}
-                                                styleDiv={{ margin: '0', padding: 0 }}
-                                            />
-                                        </div>
-                                    </DivLineMPEdit>
-                                </DivTwoInput>
-                            </ul>
-                        </>
-                    </div>
-                    <ContianerMP>
-                        {selected?.mpFabricado.map((mp, index) => (
-                            <>
-                                <ul>
-                                    <DivLineMP>
-                                        <div style={{ width: '18rem' }}>
-                                            <li>{mp.nmProduto}</li>
-                                        </div>
-                                        <div>
-                                            <Input
-                                                error=""
-                                                label="Quantidade"
-                                                name={mp.nmProduto}
-                                                onChange={(e) => {
-                                                    const newMps = [...selected.mpFabricado];
-                                                    newMps[index].quantidade = e.target.value;
-                                                    setSelected((prevSelected) => ({
-                                                        ...prevSelected,
-                                                        mpFabricado: newMps,
-                                                    } as ProdutoModel | undefined));
-                                                }}
-                                                value={mp.quantidade}
-                                                raisedLabel
-                                                style={{ fontSize: '1rem' }}
-                                                styleLabel={{ marginTop: '-20px' }}
-                                                styleDiv={{ margin: '0', padding: 0 }}
-                                            />
-                                        </div>
-                                    </DivLineMP>
-                                </ul>
-                            </>
-                        ))}
-                    </ContianerMP>
-                    <div>
-                        <div style={{ height: '60px' }}>
-                            <ButtonStyled
-                                onClick={handleEditRow}>
-                                <span className="text">Concluído</span>
-                                <span className="icon">
-                                    <svg aria-hidden="true" width="20px" data-icon="paper-plane" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                                        <path fill="currentColor" d="M476 3.2L12.5 270.6c-18.1 10.4-15.8 35.6 2.2 43.2L121 358.4l287.3-253.2c5.5-4.9 13.3 2.6 8.6 8.3L176 407v80.5c0 23.6 28.5 32.9 42.5 15.8L282 426l124.6 52.2c14.2 6 30.4-2.9 33-18.2l72-432C515 7.8 493.3-6.8 476 3.2z">
-                                        </path>
-                                    </svg>
-                                </span>
-                            </ButtonStyled>
-                        </div>
-                    </div>
-                </ContainerFlutuante>
-            }
+            <IsEdit
+                isCliente={false}
+                setSelected={setSelected}
+                data={selected}
+                handleEditRow={handleEditRow}
+                inputsConfig={inputsConfig}
+                isEdit={isEdit}
+                products={selected ? selected.mpFabricado : []}
+            />
             <ContainerButton>
                 <Button
                     children='Cadastrar Produto'

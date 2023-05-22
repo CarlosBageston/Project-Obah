@@ -2,7 +2,6 @@ import styled from "styled-components";
 import TableCell, { tableCellClasses } from '@mui/material/TableCell';
 import { styled as styleMui } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
-import { DivLineMP } from "../cadastroProdutos/style";
 
 export const Box = styled.div`
 height: 100%;
@@ -134,11 +133,4 @@ export const ButtonStyled = styled.button`
   &:active {
     filter: brightness(.8);
   }
-`;
-
-
-export const DivTwoInput = styled.div`
-display: flex;
-width: 600px;
-justify-content: space-around;
 `;

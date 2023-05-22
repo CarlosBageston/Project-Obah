@@ -1,13 +1,20 @@
-import { addDoc, collection, CollectionReference, deleteDoc, doc, getDocs, updateDoc } from "firebase/firestore";
 import React, { useState, useEffect } from "react";
-import { db } from "../../../firebase";
-import Input from "../../../Components/input";
-import ComprasModel from "./model/compras";
-import Button from "../../../Components/button";
-import { Alert, AlertTitle, Autocomplete, AutocompleteCloseReason, FormControl, InputLabel, MenuItem, Select, TextField } from "@mui/material";
-import _ from 'lodash';
 import * as Yup from 'yup';
 import { useFormik } from 'formik';
+import { db } from "../../../firebase";
+import ComprasModel from "./model/compras";
+import Input from "../../../Components/input";
+import Button from "../../../Components/button";
+import GetData from "../../../firebase/getData";
+import GenericTable from "../../../Components/table";
+import FiltroGeneric from "../../../Components/filtro";
+import { IsEdit } from "../../../Components/isEdit/isEdit";
+import SituacaoProduto from "./enumeration/situacaoProduto";
+import formatDate from "../../../Components/masks/formatDate";
+import ProdutosModel from "../cadastroProdutos/model/produtos";
+import FormAlert from "../../../Components/FormAlert/formAlert";
+import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { Autocomplete, FormControl, InputLabel, MenuItem, Select, TextField } from "@mui/material";
 
 import {
     Box,
@@ -16,16 +23,40 @@ import {
     Title,
     ContainerButton,
 } from './style'
-import { ButtonStyled, DivTwoInput } from "../cadastroClientes/style";
-import formatDate from "../../../Components/masks/formatDate";
-import FiltroGeneric from "../../../Components/filtro";
-import GenericTable from "../../../Components/table";
-import GetData from "../../../firebase/getData";
-import SituacaoProduto from "./enumeration/situacaoProduto";
-import { ContainerFlutuante, Paragrafo, DivLineMPEdit } from "../cadastroProdutos/style";
-import ProdutosModel from "../cadastroProdutos/model/produtos";
-import FormAlert from "../../../Components/FormAlert/formAlert";
-
+/*
+* Eu parei nessa tela aqui
+* Eu parei nessa tela aqui
+* Eu parei nessa tela aqui
+* Eu parei nessa tela aqui
+* Eu parei nessa tela aqui
+* Eu parei nessa tela aqui
+* Eu parei nessa tela aqui
+* Eu parei nessa tela aqui
+* Eu parei nessa tela aqui
+* Eu parei nessa tela aqui
+* Eu parei nessa tela aqui
+* Eu parei nessa tela aqui
+* Eu parei nessa tela aqui
+* Eu parei nessa tela aqui
+* Eu parei nessa tela aqui
+* Eu parei nessa tela aqui
+* Eu parei nessa tela aqui
+* Eu parei nessa tela aqui
+* Eu parei nessa tela aqui
+* Eu parei nessa tela aqui
+* Eu parei nessa tela aqui
+* Eu parei nessa tela aqui
+* Eu parei nessa tela aqui
+* Eu parei nessa tela aqui
+* Eu parei nessa tela aqui
+* Eu parei nessa tela aqui
+* Eu parei nessa tela aqui
+* Eu parei nessa tela aqui
+* Eu parei nessa tela aqui
+* Eu parei nessa tela aqui
+*
+*
+*/
 
 const objClean: ComprasModel = {
     cdProduto: '',
@@ -49,7 +80,17 @@ export default function NovasCompras() {
     const [selected, setSelected] = useState<ComprasModel | undefined>();
     const [isEdit, setIsEdit] = useState<boolean>(false);
     const [uniqueNames, setUniqueNames] = useState<any[]>([])
-
+    const inputsConfig = [
+        { label: 'Nome Do Produto', propertyName: 'nmProduto' },
+        { label: 'Código do Produto', propertyName: 'cdProduto' },
+        { label: 'Data', propertyName: 'dtCompra' },
+        { label: 'Valor Unitário', propertyName: 'vlUnitario' },
+        { label: 'Quantidade', propertyName: 'quantidade' },
+        { label: 'Valor Total', propertyName: 'totalPago' },
+        { label: 'Quant. mínima em estoque', propertyName: 'qntMinima' },
+        { label: 'Quantidade na Caixa', propertyName: 'cxProduto' },
+        { label: 'Quantidade KG', propertyName: 'kgProduto' },
+    ];
     //Realizando busca no banco de dados
     const {
         dataTable,
@@ -434,7 +475,18 @@ export default function NovasCompras() {
                     raisedLabel={values.qntMinima ? true : false}
                 />
             </div>
-            {isEdit &&
+            {/* Editar Estoque */}
+
+            <IsEdit
+                isCliente={false}
+                setSelected={setSelected}
+                data={selected}
+                handleEditRow={handleEditRow}
+                inputsConfig={inputsConfig}
+                isEdit={isEdit}
+                products={[]}
+            />
+            {/* {isEdit &&
                 <ContainerFlutuante >
                     <div>
                         <Title style={{ margin: '0 0 8px 0' }}>Editar Produto</Title>
@@ -646,7 +698,7 @@ export default function NovasCompras() {
                         </div>
                     </div>
                 </ContainerFlutuante>
-            }
+            } */}
             <ContainerButton>
                 <Button
                     children='Cadastrar Estoque'

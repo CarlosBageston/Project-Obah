@@ -1,20 +1,20 @@
 import * as Yup from 'yup';
-import { useFormik } from 'formik';
 import { useState } from 'react';
-import Input from '../../../Components/input';
-import Button from '../../../Components/button';
-import ClienteModel from './model/cliente';
-import formatPhone from '../../../Components/masks/maskTelefone';
-
-
-import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { useFormik } from 'formik';
 import { db } from '../../../firebase';
-import { Autocomplete, Stack, TextField } from '@mui/material';
-import FiltroGeneric from '../../../Components/filtro';
-import GenericTable from '../../../Components/table';
+import ClienteModel from './model/cliente';
+import Input from '../../../Components/input';
 import GetData from '../../../firebase/getData';
-import SituacaoProduto from '../compras/enumeration/situacaoProduto';
+import Button from '../../../Components/button';
+import GenericTable from '../../../Components/table';
+import FiltroGeneric from '../../../Components/filtro';
+import { IsEdit } from '../../../Components/isEdit/isEdit';
 import ProdutosModel from '../cadastroProdutos/model/produtos';
+import FormAlert from '../../../Components/FormAlert/formAlert';
+import { IsAdding } from '../../../Components/isAdding/isAdding';
+import formatPhone from '../../../Components/masks/maskTelefone';
+import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+
 //import do styled components
 import {
     Box,
@@ -25,9 +25,6 @@ import {
     TitleDefault,
 } from './style';
 
-import FormAlert from '../../../Components/FormAlert/formAlert';
-import { IsEdit } from '../../../Components/isEdit/isEdit';
-import { ContainerFlutuante, ContianerMP, DivLineMP, Paragrafo } from '../../../Components/isEdit/style';
 
 const objClean: ClienteModel = {
     nmCliente: '',
@@ -56,6 +53,7 @@ export default function CadastroCliente() {
         { label: 'Rua', propertyName: 'ruaCliente' },
         { label: 'Numero', propertyName: 'nrCasaCliente' },
     ];
+
     //realizando busca no banco de dados
     const {
         dataTable,
@@ -122,6 +120,7 @@ export default function CadastroCliente() {
         }
         setSelected(undefined)
     }
+
     function cleanState() {
         setInitialValues({
             nmCliente: '',
@@ -135,22 +134,8 @@ export default function CadastroCliente() {
         setKey(Math.random());
     }
 
-    //Formata valor do input
-    function formatarValor(valor: string) {
-        const inputText = valor.replace(/\D/g, "");
-        let formattedText = "";
-        if (inputText.length <= 2) {
-            formattedText = inputText;
-        } else {
-            const regex = /^(\d*)(\d{2})$/;
-            formattedText = inputText.replace(regex, '$1,$2');
-        }
-        return inputText ? "R$ " + formattedText : "";
-    }
-
     //envia informações para o banco
     async function hundleSubmitForm() {
-
         await addDoc(collection(db, "Clientes"), {
             ...values
         }).then(() => {
@@ -164,7 +149,6 @@ export default function CadastroCliente() {
         resetForm()
         cleanState()
     }
-    const filterTpProduto = produtosDataTable.filter(item => item.tpProduto === SituacaoProduto.FABRICADO)
 
     return (
         <>
@@ -256,73 +240,14 @@ export default function CadastroCliente() {
                     <FormAlert submitForm={submitForm} name={'Cliente'} />
                 </div>
                 {/*Adicionar Produtos */}
-                {isVisibleTpProuto &&
-                    <ContainerFlutuante >
-                        <div>
-                            <TitleDefault style={{ margin: '0 0 8px 0' }}>Produtos</TitleDefault>
-                            <Paragrafo>Informe os Produtos e os valores de venda dos produtos a serem cadastrados</Paragrafo>
-                        </div>
-                        <div>
-                            <Stack spacing={3} sx={{ width: 500 }}>
-                                <Autocomplete
-                                    multiple
-                                    id="tags-standard"
-                                    options={filterTpProduto}
-                                    getOptionLabel={(item) => item.nmProduto}
-                                    onChange={(e, value) => {
-                                        setFieldValue('produtos', value);
-                                    }}
-                                    renderInput={(params) => (
-                                        <TextField
-                                            {...params}
-                                            variant="standard"
-                                            label="Selecione MP necessaria para fabricar"
-                                            placeholder="matéria-prima"
-                                        />
-                                    )}
-                                />
-                            </Stack>
-                        </div>
-                        <ContianerMP>
-                            {values.produtos &&
-                                values.produtos.map(produto => (
-                                    <>
-                                        <ul>
-                                            <DivLineMP>
-                                                <div style={{ width: '18rem' }}>
-                                                    <li>{produto.nmProduto}</li>
-                                                </div>
-                                                <div>
-                                                    <Input
-                                                        error=""
-                                                        label="Valor do produto"
-                                                        name={produto.nmProduto}
-                                                        onChange={(e) => {
-                                                            const newMpFabricado = [...values.produtos];
-                                                            const index = newMpFabricado.findIndex((item) => item.nmProduto === produto.nmProduto);
-                                                            newMpFabricado[index].vlVendaProduto = e.target.value;
-                                                            setFieldValue("produtos", newMpFabricado);
-                                                        }}
-                                                        value={produto.vlVendaProduto}
-                                                        raisedLabel
-                                                        style={{ fontSize: '1rem' }}
-                                                        styleLabel={{ marginTop: '-20px' }}
-                                                        styleDiv={{ margin: '0', padding: 0 }}
-                                                    />
-                                                </div>
-                                            </DivLineMP>
-                                        </ul>
-                                    </>
-                                ))}
-                        </ContianerMP>
-                        <div>
-                            <ButtonStyled
-                                onClick={() => setIsVisibleTpProduto(false)}>
-                                Concluído
-                            </ButtonStyled>
-                        </div>
-                    </ContainerFlutuante>
-                }
+                <IsAdding
+                    data={produtosDataTable}
+                    isAdding={isVisibleTpProuto}
+                    setFieldValue={setFieldValue}
+                    setIsVisibleTpProduto={setIsVisibleTpProduto}
+                    products={values.produtos}
+                    addingScreen='Cliente'
+                />
                 <ContainerButton>
                     <Button
                         fontSize={18}
@@ -336,13 +261,14 @@ export default function CadastroCliente() {
 
                 {/* Editar o cliente */}
                 <IsEdit
+                    editingScreen='Cliente'
                     data={selected}
                     handleEditRow={handleEditRow}
                     inputsConfig={inputsConfig}
-                    isCliente={true}
                     isEdit={isEdit}
                     products={selected ? selected.produtos : []}
                     setSelected={setSelected}
+                    setIsEdit={setIsEdit}
                 />
 
                 {/*Tabela */}

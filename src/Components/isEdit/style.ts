@@ -1,6 +1,7 @@
+import { AiOutlineClose } from "react-icons/ai";
 import styled from "styled-components";
 
-export const BoxUp = styled.div`
+export const BoxTop = styled.div`
 width: 80%;
 height: 15rem;
 display: flex;
@@ -135,4 +136,36 @@ export const ButtonStyled = styled.button`
     filter: brightness(.8);
   }
 `;
+export const BoxBottom = styled.div`
+width: 80%;
+height: 100%;
+display: flex;
+flex-direction: column;
+-webkit-box-pack: justify;
+justify-content: space-between;
+-webkit-box-align: stretch;
+align-items: stretch;
+overflow-x: auto;
+padding-top: 1rem;
+`;
 
+export const BoxClose = styled.div`
+position: relative;
+width: 100%;
+`
+export const DivClose = styled.div`
+position: absolute;
+right: 0;
+`;
+
+export const StyledAiOutlineClose = styled(AiOutlineClose)`
+cursor: pointer;
+width: 50px;
+height: 50px;
+padding: 10px;
+
+&:hover{
+  background-color: #00000006;
+  border-radius: 4px;
+}
+`;

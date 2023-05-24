@@ -19,6 +19,10 @@ padding: 24px 8px 8px 8px;
 export const DivProduto = styled.div`
 display: flex;
 align-items: center;
+padding-bottom: 8px;
+margin-top: 4px;
+border-bottom: 1px solid black;
+height: 3rem;
 `;
 export const NameProduto = styled.div`
 width: 15rem;
@@ -30,7 +34,7 @@ padding: 0 8px;
 `;
 export const QntProduto = styled.div`
 width: 10rem;
-padding: 0 8px;
+padding:8px;
 `;
 export const ResultProduto = styled.div`
 width: 10rem;
@@ -74,8 +78,7 @@ display: flex;
 
 export const ContainerAll = styled.div`
 display: flex;
-align-items: flex-start;
-justify-content: space-between;
+padding: 0 4rem 0 4rem;
 `;
 export const DivButtonAndTable = styled.div`
 display: flex;
@@ -85,7 +88,6 @@ align-items: flex-end;
 
 export const DivInputs = styled.div`
 display: flex;
-width: 45rem;
+width: 37rem;
 justify-content: flex-start;
-padding-left: 4rem;
 `;

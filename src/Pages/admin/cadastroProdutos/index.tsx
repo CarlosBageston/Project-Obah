@@ -24,6 +24,7 @@ import ComprasModel from "../compras/model/compras";
 import FormAlert from "../../../Components/FormAlert/formAlert";
 import { IsEdit } from "../../../Components/isEdit/isEdit";
 import { ButtonStyled, ContainerFlutuante, ContianerMP, DivLineMP } from "../../../Components/isEdit/style";
+import { IsAdding } from "../../../Components/isAdding/isAdding";
 
 
 const objClean: ProdutoModel = {
@@ -240,8 +241,6 @@ export default function CadastroProduto() {
         if (values.tpProduto === SituacaoProduto.FABRICADO) return setIsVisibleTpProduto(true)
         return setIsVisibleTpProduto(false)
     }, [values.tpProduto])
-
-    const filterTpProduto = comprasDataTable.filter(item => item.tpProduto === SituacaoProduto.COMPRADO)
     return (
         <Box>
             <Title>Cadastro de Novos Produtos</Title>
@@ -329,95 +328,28 @@ export default function CadastroProduto() {
                     />
                 </DivInput>
             </ContainerInputs>
-            {isVisibleTpProuto &&
-                <ContainerFlutuante >
-                    <div>
-                        <Title style={{ margin: '0 0 8px 0' }}>Matéria-Prima</Title>
-                        <Paragrafo>Informe a matéria-prima e a quantidade utilizada no produto a ser cadastrado</Paragrafo>
-                    </div>
-                    <div>
-                        <Stack spacing={3} sx={{ width: 500 }}>
-                            <Autocomplete
-                                multiple
-                                id="tags-standard"
-                                options={filterTpProduto}
-                                getOptionLabel={(item) => item.nmProduto}
-                                onChange={(e, value) => {
-                                    setFieldValue('mpFabricado',
-                                        value.map((mp) => ({
-                                            nmProduto: mp.nmProduto,
-                                        }))
-                                    );
-                                }}
-                                renderInput={(params) => (
-                                    <TextField
-                                        {...params}
-                                        variant="standard"
-                                        label="Selecione MP necessaria para fabricar"
-                                        placeholder="matéria-prima"
-                                    />
-                                )}
-                            />
-                        </Stack>
-                        {touched.mpFabricado && errors.mpFabricado && (
-                            //@ts-ignore
-                            <div style={{ color: 'red' }}>{errors.mpFabricado}</div>
-                        )}
-                    </div>
-                    <ContianerMP>
-                        {values.mpFabricado &&
-                            values.mpFabricado.map(mp => (
-                                <>
-                                    <ul>
-                                        <DivLineMP>
-                                            <div style={{ width: '18rem' }}>
-                                                <li>{mp.nmProduto}</li>
-                                            </div>
-                                            <div>
-                                                <Input
-                                                    error=""
-                                                    label="quantidade"
-                                                    name={mp.nmProduto}
-                                                    onChange={(e) => {
-                                                        const newMpFabricado = [...values.mpFabricado];
-                                                        const index = newMpFabricado.findIndex((item) => item.nmProduto === mp.nmProduto);
-                                                        newMpFabricado[index].quantidade = e.target.value.replace(',', '.');
-                                                        setFieldValue("mpFabricado", newMpFabricado);
-                                                    }}
-                                                    value={mp.quantidade}
-                                                    style={{ fontSize: '1rem' }}
-                                                    styleLabel={{ marginTop: '-20px' }}
-                                                    styleDiv={{ margin: '0', padding: 0 }}
-                                                />
-                                            </div>
-                                        </DivLineMP>
-                                    </ul>
-                                </>
-                            ))}
-                    </ContianerMP>
-                    <div style={{ height: '60px' }}>
-                        <ButtonStyled
-                            onClick={() => setIsVisibleTpProduto(false)}>
-                            <span className="text">Concluído</span>
-                            <span className="icon">
-                                <svg aria-hidden="true" width="20px" data-icon="paper-plane" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                                    <path fill="currentColor" d="M476 3.2L12.5 270.6c-18.1 10.4-15.8 35.6 2.2 43.2L121 358.4l287.3-253.2c5.5-4.9 13.3 2.6 8.6 8.3L176 407v80.5c0 23.6 28.5 32.9 42.5 15.8L282 426l124.6 52.2c14.2 6 30.4-2.9 33-18.2l72-432C515 7.8 493.3-6.8 476 3.2z">
-                                    </path>
-                                </svg>
-                            </span>
-                        </ButtonStyled>
-                    </div>
-                </ContainerFlutuante>
-            }
-            {/* Editar o cliente */}
+            {/*Adicionando Produto */}
+            <IsAdding
+                addingScreen="Produto"
+                data={comprasDataTable}
+                isAdding={isVisibleTpProuto}
+                products={values.mpFabricado}
+                setFieldValue={setFieldValue}
+                setIsVisibleTpProduto={setIsVisibleTpProduto}
+                // errors={errors}
+                touched={touched}
+            />
+
+            {/* Editar o Produto */}
             <IsEdit
-                isCliente={false}
+                editingScreen='Produto'
                 setSelected={setSelected}
                 data={selected}
                 handleEditRow={handleEditRow}
                 inputsConfig={inputsConfig}
                 isEdit={isEdit}
                 products={selected ? selected.mpFabricado : []}
+                setIsEdit={setIsEdit}
             />
             <ContainerButton>
                 <Button

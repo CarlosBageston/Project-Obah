@@ -172,7 +172,7 @@ export default function Entregas() {
                     <FormControl
                         variant="standard"
                         sx={{ m: 1, minWidth: 120 }}
-                        style={{ paddingRight: '3rem' }}
+                        style={{ paddingRight: '2rem' }}
                     >
                         <InputLabel style={{ color: '#4d68af', fontWeight: 'bold', paddingLeft: 4 }} id="standard-label">Nome do Cliente</InputLabel>
                         <Select
@@ -271,6 +271,9 @@ export default function Entregas() {
                                                     }));
                                                 }}
                                                 value={quantidades[produto.nmProduto] ?? ''}
+                                                style={{ paddingBottom: 0 }}
+                                                styleLabel={{ fontSize: '0.9rem' }}
+                                                styleDiv={{ paddingTop: 8 }}
                                             />
                                         </QntProduto>
                                         <ResultProduto>

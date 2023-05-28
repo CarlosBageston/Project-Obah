@@ -47,7 +47,9 @@ export default function Dashboard() {
     const somaAnual = somaTotalVendas + somaTotalEntregas
     return (
         <Box>
-            <Title>Dashboard Sorveteria Obah!</Title>
+            <div>
+                <Title>Dashboard Sorveteria Obah!</Title>
+            </div>
             <Container>
                 <ContainerGrafic>
                     <DivGraficHortizontal>

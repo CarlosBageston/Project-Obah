@@ -6,7 +6,18 @@ export const Box = styled.div`
 height: 100%;
 `;
 
-export const Title = styled(TitleDefault)``;
+export const Title = styled.p`
+padding-left: 1rem;
+font-size: 3rem;
+text-align: center;
+background-image: linear-gradient(to right bottom, rgb(46, 41, 78), rgb(46, 40, 88), rgb(47, 39, 97), rgb(47, 37, 107), rgb(47, 35, 116));
+color: #fff;
+padding: 1rem 2rem;
+border-radius: 10px;
+text-shadow: 2px 2px 4px rgb(38 19 156);
+box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+margin: 2rem 1.1rem 2rem 1.1rem;
+`;
 
 export const Container = styled.div`
 display: flex;

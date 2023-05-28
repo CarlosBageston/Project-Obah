@@ -31,8 +31,9 @@ export const StyledListItemButton = styled(ListItemButton)`
         content: "";
         position: absolute;
         background-color: 'transparent';
+        clip-path: inset(0 2% 0 0);
         top: -20px;
-        right: 18px;
+        right: 8px;
         height: 20px;
         width: 25px;
         transform: rotate(180deg);
@@ -46,8 +47,9 @@ export const StyledListItemButton = styled(ListItemButton)`
         content: "";
         position: absolute;
         background-color: 'transparent';
+        clip-path: inset(-1px -1% -6px 0px);
         bottom: -20px;
-        right: 18px;
+        right: 8px;
         height: 20px;
         width: 25px;
         transform: rotate(0deg);

@@ -1,14 +1,18 @@
-import { addDoc, collection, CollectionReference, deleteDoc, doc, getDocs } from "firebase/firestore";
-import React, { useState, useEffect } from "react";
-import { db } from "../../../firebase";
-import Input from "../../../Components/input";
-import Button from "../../../Components/button";
-import { TableContainer, Paper, Table, TableHead, TableRow, TableBody, TableCell, Alert, AlertTitle, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent } from "@mui/material";
-import { orderBy } from "lodash";
+import React, { useState, useEffect, useRef } from "react";
 import * as Yup from 'yup';
 import { useFormik } from 'formik';
+import { db } from "../../../firebase";
+import Input from "../../../Components/input";
 import { EntregaModel } from "./model/entrega";
+import GetData from "../../../firebase/getData";
+import Button from "../../../Components/button";
+import GenericTable from "../../../Components/table";
+import FiltroGeneric from "../../../Components/filtro";
 import ClienteModel from "../cadastroClientes/model/cliente";
+import formatDate from "../../../Components/masks/formatDate";
+import FormAlert from "../../../Components/FormAlert/formAlert";
+import { addDoc, collection, deleteDoc, doc } from "firebase/firestore";
+import { FormControl, InputLabel, MenuItem, Select, SelectChangeEvent } from "@mui/material";
 import {
     Box,
     Title,
@@ -21,13 +25,14 @@ import {
     NameProduto,
     QntProduto,
     ResultProduto,
-    ValueProduto
+    ValueProduto,
+    DivColumn,
+    BoxLabels,
+    LabelsHeader,
+    DivColumnPrice,
+    DivColumnQntTotal,
 } from './style'
-import formatDate from "../../../Components/masks/formatDate";
-import GenericTable from "../../../Components/table";
-import GetData from "../../../firebase/getData";
-import FiltroGeneric from "../../../Components/filtro";
-import FormAlert from "../../../Components/FormAlert/formAlert";
+import { BoxTitleDefault } from "../estoque/style";
 
 
 const objClean: EntregaModel = {
@@ -45,8 +50,10 @@ export default function Entregas() {
     const [resultCalculo, setResultCalculo] = useState<number[]>([]);
     const [clienteCurrent, setClienteCurrent] = useState<ClienteModel[]>([]);
     const [quantidades, setQuantidades] = useState<{ [key: string]: number }>({});
-
+    const [scrollActive, setScrollActive] = useState<boolean>(false)
     const [initialValues, setInitialValues] = useState<EntregaModel>({ ...objClean });
+
+    const ref = useRef<HTMLDivElement>(null);
 
     //realizando busca no banco de dados
     const {
@@ -162,6 +169,13 @@ export default function Entregas() {
         const formattedSumLucro = sumLucro.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
         setFieldValue('vlLucro', formattedSumLucro);
     }, [quantidades]);
+
+    useEffect(() => {
+        if (ref.current?.scrollHeight) {
+            const hasScrollbar = ref.current?.scrollHeight > ref.current?.clientHeight;
+            setScrollActive(hasScrollbar)
+        }
+    }, [values.cliente]);
     return (
         <Box>
             <Title>Cadastro de Novas Entregas</Title>
@@ -172,7 +186,7 @@ export default function Entregas() {
                     <FormControl
                         variant="standard"
                         sx={{ m: 1, minWidth: 120 }}
-                        style={{ paddingRight: '3rem' }}
+                        style={{ paddingRight: '2rem' }}
                     >
                         <InputLabel style={{ color: '#4d68af', fontWeight: 'bold', paddingLeft: 4 }} id="standard-label">Nome do Cliente</InputLabel>
                         <Select
@@ -246,7 +260,21 @@ export default function Entregas() {
                     </div>
                 </DivInputs>
                 <DivButtonAndTable>
-                    <ContainerTableCliente isVisible={values.cliente?.nmCliente ? false : true}>
+                    <BoxLabels isVisible={values.cliente?.nmCliente ? false : true}>
+                        <DivColumn scrollActive={scrollActive}>
+                            <LabelsHeader>Descrição</LabelsHeader>
+                        </DivColumn>
+                        <DivColumnPrice scrollActive={scrollActive}>
+                            <LabelsHeader>Preço</LabelsHeader>
+                        </DivColumnPrice>
+                        <DivColumnQntTotal scrollActive={scrollActive}>
+                            <LabelsHeader>Quantidade</LabelsHeader>
+                        </DivColumnQntTotal>
+                        <DivColumnQntTotal scrollActive={scrollActive}>
+                            <LabelsHeader>Total</LabelsHeader>
+                        </DivColumnQntTotal>
+                    </BoxLabels>
+                    <ContainerTableCliente isVisible={values.cliente?.nmCliente ? false : true} ref={ref}>
                         {clienteCurrent.map(cliente => (
                             <>
                                 {cliente.produtos.map((produto, index) => (
@@ -271,10 +299,19 @@ export default function Entregas() {
                                                     }));
                                                 }}
                                                 value={quantidades[produto.nmProduto] ?? ''}
+                                                style={{ paddingBottom: 0 }}
+                                                styleLabel={{ fontSize: '0.9rem' }}
+                                                styleDiv={{ paddingTop: 8, marginTop: '2px' }}
                                             />
                                         </QntProduto>
                                         <ResultProduto>
-                                            <TextTable>R$ {!Number.isNaN(resultCalculo[index]) ? resultCalculo[index] : '-'}</TextTable>
+                                            <TextTable>
+                                                R$ {
+                                                    !Number.isNaN(resultCalculo[index]) &&
+                                                        resultCalculo[index] !== undefined ?
+                                                        resultCalculo[index].toFixed(2) : 0
+                                                }
+                                            </TextTable>
                                         </ResultProduto>
                                     </DivProduto>
                                 ))}
@@ -287,21 +324,25 @@ export default function Entregas() {
                             children='Cadastrar Entrega'
                             type="button"
                             onClick={handleSubmit}
-                            fontSize={20}
-                            style={{ margin: '2rem 0px 2rem 0px', height: '4rem', width: '12rem' }}
+                            style={{ margin: '2rem 0px 4rem 0px', height: '4rem', width: '12rem' }}
                         />
                     </div>
                 </DivButtonAndTable>
             </ContainerAll>
             {/*Tabala */}
-            <div style={{ margin: '-3.5rem 0px -35px 3rem' }}>
+            {/* <div style={{ margin: '-3.5rem 0px -35px 3rem' }}>
                 <FiltroGeneric
                     data={dataTableEntregas}
                     carregarDados={setRecarregue}
                     setFilteredData={setDataTableEntregas}
                     type='cliente'
                 />
-            </div>
+            </div> */}
+            <BoxTitleDefault>
+                <div>
+                    <FiltroGeneric data={dataTableEntregas} setFilteredData={setDataTableEntregas} carregarDados={setRecarregue} type="cliente" />
+                </div>
+            </BoxTitleDefault>
             <GenericTable
                 columns={[
                     { label: 'Nome', name: 'cliente.nmCliente' },

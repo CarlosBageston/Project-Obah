@@ -1,13 +1,20 @@
-import { addDoc, collection, CollectionReference, deleteDoc, doc, getDocs, updateDoc } from "firebase/firestore";
 import React, { useState, useEffect } from "react";
-import { db } from "../../../firebase";
-import Input from "../../../Components/input";
-import ComprasModel from "./model/compras";
-import Button from "../../../Components/button";
-import { Alert, AlertTitle, Autocomplete, AutocompleteCloseReason, FormControl, InputLabel, MenuItem, Select, TextField } from "@mui/material";
-import _ from 'lodash';
 import * as Yup from 'yup';
 import { useFormik } from 'formik';
+import { db } from "../../../firebase";
+import ComprasModel from "./model/compras";
+import Input from "../../../Components/input";
+import Button from "../../../Components/button";
+import GetData from "../../../firebase/getData";
+import GenericTable from "../../../Components/table";
+import FiltroGeneric from "../../../Components/filtro";
+import { IsEdit } from "../../../Components/isEdit/isEdit";
+import SituacaoProduto from "./enumeration/situacaoProduto";
+import formatDate from "../../../Components/masks/formatDate";
+import ProdutosModel from "../cadastroProdutos/model/produtos";
+import FormAlert from "../../../Components/FormAlert/formAlert";
+import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { Autocomplete, FormControl, InputLabel, MenuItem, Select, TextField } from "@mui/material";
 
 import {
     Box,
@@ -16,15 +23,7 @@ import {
     Title,
     ContainerButton,
 } from './style'
-import { ButtonStyled, DivTwoInput } from "../cadastroClientes/style";
-import formatDate from "../../../Components/masks/formatDate";
-import FiltroGeneric from "../../../Components/filtro";
-import GenericTable from "../../../Components/table";
-import GetData from "../../../firebase/getData";
-import SituacaoProduto from "./enumeration/situacaoProduto";
-import { ContainerFlutuante, Paragrafo, DivLineMPEdit } from "../cadastroProdutos/style";
-import ProdutosModel from "../cadastroProdutos/model/produtos";
-import FormAlert from "../../../Components/FormAlert/formAlert";
+import { BoxTitleDefault } from "../estoque/style";
 
 
 const objClean: ComprasModel = {
@@ -40,7 +39,7 @@ const objClean: ComprasModel = {
     qntMinima: null
 }
 
-export default function NovasCompras() {
+export default function AtualizarEstoque() {
     const [key, setKey] = useState<number>(0);
     const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
     const [initialValues, setInitialValues] = useState<ComprasModel>({ ...objClean });
@@ -49,7 +48,17 @@ export default function NovasCompras() {
     const [selected, setSelected] = useState<ComprasModel | undefined>();
     const [isEdit, setIsEdit] = useState<boolean>(false);
     const [uniqueNames, setUniqueNames] = useState<any[]>([])
-
+    const inputsConfig = [
+        { label: 'Nome Do Produto', propertyName: 'nmProduto' },
+        { label: 'Código do Produto', propertyName: 'cdProduto' },
+        { label: 'Data', propertyName: 'dtCompra' },
+        { label: 'Valor Unitário', propertyName: 'vlUnitario' },
+        { label: 'Quantidade', propertyName: 'quantidade' },
+        { label: 'Valor Total', propertyName: 'totalPago' },
+        { label: 'Quant. mínima em estoque', propertyName: 'qntMinima' },
+        { label: 'Quantidade na Caixa', propertyName: 'cxProduto' },
+        { label: 'Quantidade KG', propertyName: 'kgProduto' },
+    ];
     //Realizando busca no banco de dados
     const {
         dataTable,
@@ -434,234 +443,33 @@ export default function NovasCompras() {
                     raisedLabel={values.qntMinima ? true : false}
                 />
             </div>
-            {isEdit &&
-                <ContainerFlutuante >
-                    <div>
-                        <Title style={{ margin: '0 0 8px 0' }}>Editar Produto</Title>
-                        <Paragrafo>Alterar dados do Produto</Paragrafo>
-                    </div>
-                    <div>
-                        <>
-                            <ul>
-                                <DivTwoInput style={{ display: 'flex' }}>
-                                    <DivLineMPEdit>
-                                        <div>
-                                            <Input
-                                                error=""
-                                                label="Nome"
-                                                name={'nmProduto'}
-                                                onChange={(e) => {
-                                                    setSelected((prevSelected) => {
-                                                        return {
-                                                            ...prevSelected,
-                                                            nmProduto: e.target.value || ''
-                                                        } as ComprasModel | undefined;
-                                                    });
-                                                }}
-                                                value={selected?.nmProduto}
-                                                raisedLabel
-                                                style={{ fontSize: '16px' }}
-                                                styleLabel={{ marginTop: '0', fontSize: 12 }}
-                                                styleDiv={{ margin: '0', padding: 0 }}
-                                            />
-                                        </div>
-                                    </DivLineMPEdit>
-                                    <DivLineMPEdit>
-                                        <div>
-                                            <Input
-                                                error=""
-                                                label="Código do Produto"
-                                                name={'cdProduto'}
-                                                onChange={(e) => {
-                                                    setSelected((prevSelected) => {
-                                                        return {
-                                                            ...prevSelected,
-                                                            cdProduto: e.target.value || ''
-                                                        } as ComprasModel | undefined;
-                                                    });
-                                                }}
-                                                value={selected?.cdProduto}
-                                                raisedLabel
-                                                style={{ fontSize: '16px' }}
-                                                styleLabel={{ marginTop: '0', fontSize: 12 }}
-                                                styleDiv={{ margin: '0', padding: 0 }}
-                                            />
-                                        </div>
-                                    </DivLineMPEdit>
-                                </DivTwoInput>
-                                <DivTwoInput>
-                                    <DivLineMPEdit>
-                                        <div>
-                                            <Input
-                                                error=""
-                                                label="Data"
-                                                name={'dtCompra'}
-                                                onChange={(e) => {
-                                                    setSelected((prevSelected) => {
-                                                        return {
-                                                            ...prevSelected,
-                                                            dtCompra: e.target.value || null
-                                                        } as ComprasModel | undefined;
-                                                    });
-                                                }}
-                                                value={selected?.dtCompra ? selected?.dtCompra : ''}
-                                                raisedLabel
-                                                style={{ fontSize: '16px' }}
-                                                styleLabel={{ marginTop: '0', fontSize: 12 }}
-                                                styleDiv={{ margin: '0', padding: 0 }}
-                                            />
-                                        </div>
-                                    </DivLineMPEdit>
-                                    <DivLineMPEdit>
-                                        <div>
-                                            <Input
-                                                error=""
-                                                label="Valor Unitário"
-                                                name={'vlUnitario'}
-                                                onChange={(e) => {
-                                                    setSelected((prevSelected) => {
-                                                        return {
-                                                            ...prevSelected,
-                                                            vlUnitario: e.target.value || ''
-                                                        } as ComprasModel | undefined;
-                                                    });
-                                                }}
-                                                value={selected?.vlUnitario}
-                                                raisedLabel
-                                                style={{ fontSize: '16px' }}
-                                                styleLabel={{ marginTop: '0', fontSize: 12 }}
-                                                styleDiv={{ margin: '0', padding: 0 }}
-                                            />
-                                        </div>
-                                    </DivLineMPEdit>
-                                </DivTwoInput>
-                                <DivTwoInput>
-                                    <DivLineMPEdit>
-                                        <div>
-                                            <Input
-                                                error=""
-                                                label="Quantidade"
-                                                name={'quantidade'}
-                                                onChange={(e) => {
-                                                    setSelected((prevSelected) => {
-                                                        return {
-                                                            ...prevSelected,
-                                                            quantidade: e.target.value || ''
-                                                        } as ComprasModel | undefined;
-                                                    });
-                                                }}
-                                                value={selected?.quantidade}
-                                                raisedLabel
-                                                style={{ fontSize: '16px' }}
-                                                styleLabel={{ marginTop: '0', fontSize: 12 }}
-                                                styleDiv={{ margin: '0', padding: 0 }}
-                                            />
-                                        </div>
-                                    </DivLineMPEdit>
-                                    <DivLineMPEdit>
-                                        <div>
-                                            <Input
-                                                error=""
-                                                label="Valor Pago"
-                                                name={'totalPago'}
-                                                onChange={(e) => {
-                                                    setSelected((prevSelected) => {
-                                                        return {
-                                                            ...prevSelected,
-                                                            totalPago: e.target.value || 0
-                                                        } as ComprasModel | undefined;
-                                                    });
-                                                }}
-                                                value={selected?.totalPago || 0}
-                                                disabled
-                                                raisedLabel
-                                                style={{ fontSize: '16px' }}
-                                                styleLabel={{ marginTop: '0', fontSize: 12 }}
-                                                styleDiv={{ margin: '0', padding: 0 }}
-                                            />
-                                        </div>
-                                    </DivLineMPEdit>
-                                </DivTwoInput>
-                                <DivTwoInput>
-                                    <DivLineMPEdit>
-                                        <div>
-                                            <Input
-                                                error=""
-                                                label="Quantidade na Caixa"
-                                                name={'cxProduto'}
-                                                onChange={(e) => {
-                                                    setSelected((prevSelected) => {
-                                                        return {
-                                                            ...prevSelected,
-                                                            cxProduto: e.target.value || 0
-                                                        } as ComprasModel | undefined;
-                                                    });
-                                                }}
-                                                value={selected?.cxProduto || 0}
-                                                raisedLabel
-                                                style={{ fontSize: '16px' }}
-                                                styleLabel={{ marginTop: '0', fontSize: 12 }}
-                                                styleDiv={{ margin: '0', padding: 0 }}
-                                            />
-                                        </div>
-                                    </DivLineMPEdit>
-                                    <DivLineMPEdit>
-                                        <div>
-                                            <Input
-                                                error=""
-                                                label="Quantidade KG"
-                                                name={'kgProduto'}
-                                                onChange={(e) => {
-                                                    setSelected((prevSelected) => {
-                                                        return {
-                                                            ...prevSelected,
-                                                            kgProduto: e.target.value || 0
-                                                        } as ComprasModel | undefined;
-                                                    });
-                                                }}
-                                                value={selected?.kgProduto || 0}
-                                                raisedLabel
-                                                style={{ fontSize: '16px' }}
-                                                styleLabel={{ marginTop: '0', fontSize: 12 }}
-                                                styleDiv={{ margin: '0', padding: 0 }}
-                                            />
-                                        </div>
-                                    </DivLineMPEdit>
-                                </DivTwoInput>
-                            </ul>
-                        </>
-                    </div>
-                    <div>
-                        <div style={{ height: '60px' }}>
-                            <ButtonStyled
-                                onClick={handleEditRow}>
-                                <span className="text">Concluído</span>
-                                <span className="icon">
-                                    <svg aria-hidden="true" width="20px" data-icon="paper-plane" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                                        <path fill="currentColor" d="M476 3.2L12.5 270.6c-18.1 10.4-15.8 35.6 2.2 43.2L121 358.4l287.3-253.2c5.5-4.9 13.3 2.6 8.6 8.3L176 407v80.5c0 23.6 28.5 32.9 42.5 15.8L282 426l124.6 52.2c14.2 6 30.4-2.9 33-18.2l72-432C515 7.8 493.3-6.8 476 3.2z">
-                                        </path>
-                                    </svg>
-                                </span>
-                            </ButtonStyled>
-                        </div>
-                    </div>
-                </ContainerFlutuante>
-            }
+            {/* Editar Estoque */}
+            <IsEdit
+                editingScreen='Estoque'
+                setSelected={setSelected}
+                data={selected}
+                handleEditRow={handleEditRow}
+                inputsConfig={inputsConfig}
+                isEdit={isEdit}
+                products={[]}
+                setIsEdit={setIsEdit}
+            />
             <ContainerButton>
                 <Button
                     children='Cadastrar Estoque'
                     type="button"
                     onClick={handleSubmit}
-                    fontSize={20}
                     style={{ margin: '1rem 4rem 2rem 95%', height: '4rem', width: '12rem' }}
                 />
                 <FormAlert submitForm={submitForm} name={'Estoque'} />
             </ContainerButton>
 
             {/*Tabala */}
-            <div style={{ margin: '-3.5rem 0px -40px 3rem' }}>
-                <FiltroGeneric data={dataTable} setFilteredData={setDataTable} carregarDados={setRecarregue} type="date" />
-            </div>
+            <BoxTitleDefault>
+                <div>
+                    <FiltroGeneric data={dataTable} setFilteredData={setDataTable} carregarDados={setRecarregue} type="produto" />
+                </div>
+            </BoxTitleDefault>
             <GenericTable
                 columns={[
                     { label: 'Código', name: 'cdProduto' },

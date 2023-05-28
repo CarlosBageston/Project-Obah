@@ -19,22 +19,37 @@ padding: 24px 8px 8px 8px;
 export const DivProduto = styled.div`
 display: flex;
 align-items: center;
+padding-bottom: 8px;
+margin-top: 4px;
+margin-bottom: 6px;
+height: 3rem;
 `;
 export const NameProduto = styled.div`
-width: 15rem;
-padding: 0 8px;
+width: 18rem;
+padding: 34px 8px 0 8px;
+border: 2px solid #6a93ed;
+border-top: none;
 `;
 export const ValueProduto = styled.div`
 width: 10rem;
-padding: 0 8px;
+padding: 34px 8px 0 8px;
+border: 2px solid #6a93ed;
+border-top: none;
+border-left: none;
 `;
 export const QntProduto = styled.div`
 width: 10rem;
-padding: 0 8px;
+padding: 41.5px 8px 8px 8px;
+border: 2px solid #6a93ed;
+border-top: none;
+border-left: none;
 `;
 export const ResultProduto = styled.div`
 width: 10rem;
-padding: 0 8px;
+padding: 34px 8px 0 8px;
+border: 2px solid #6a93ed;
+border-top: none;
+border-left: none;
 `;
 
 export const ContainerTableCliente = styled.div<{isVisible?: boolean}>`
@@ -44,10 +59,8 @@ display: flex;
 width: 42rem;
 justify-content: flex-start;
 opacity: ${({ isVisible }) => isVisible ? 0 : 1};
-border: 2px solid #0000008c;
-border-radius: 8px;
-box-shadow: 4px 4px 13px 0px rgba(0,0,0,0.45);
 flex-direction: column;
+margin-top: -18px;
 
 ::-webkit-scrollbar {
     width: 8px;
@@ -74,8 +87,7 @@ display: flex;
 
 export const ContainerAll = styled.div`
 display: flex;
-align-items: flex-start;
-justify-content: space-between;
+padding: 0 4rem 0 4rem;
 `;
 export const DivButtonAndTable = styled.div`
 display: flex;
@@ -85,7 +97,38 @@ align-items: flex-end;
 
 export const DivInputs = styled.div`
 display: flex;
-width: 45rem;
+width: 37rem;
 justify-content: flex-start;
-padding-left: 4rem;
+`;
+export const BoxLabels = styled.div<{isVisible?: boolean}>`
+display: flex;
+width: 100%;
+padding-bottom: 8px;
+opacity: ${({ isVisible }) => isVisible ? 0 : 1};
+`;
+export const DivColumn = styled.div<{scrollActive: boolean}>`
+padding: 8px;
+width: ${({scrollActive}) => scrollActive ? '15.5rem' : '15.66rem'} ;
+border: 2px solid #6a93ed;
+border-radius: 20px;
+background-color: rgba(106, 147, 237, 0.13);
+display: flex;
+align-items: center;
+justify-content: center;
+box-shadow: 0px 9px 11px -5px rgb(106, 147, 237);
+`;
+
+export const DivColumnPrice = styled(DivColumn)`
+ width:${({scrollActive}) => scrollActive ? ' 8.6rem' : '8.72rem'}  
+`;
+export const DivColumnQntTotal = styled(DivColumn)`
+width: ${({scrollActive}) => scrollActive ? ' 8.7rem' : ' 8.8rem'}
+`;
+
+export const LabelsHeader = styled.p`
+font-weight: bold;
+color: #333333;
+text-transform: uppercase;
+font-size: 16px;
+margin: 0;
 `;

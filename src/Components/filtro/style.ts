@@ -3,11 +3,11 @@ import styled, { keyframes } from "styled-components";
 
 export const ContainerFilter = styled.div`
 display: flex;
-alignItem
 `;
 
 export const ContainerInput = styled.div<{isVisible: boolean}>`
 display: none;
+width: 18rem;
 ${({ isVisible }) =>
     isVisible &&
     `

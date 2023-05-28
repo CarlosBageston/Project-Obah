@@ -141,8 +141,6 @@ export default function Contato() {
                             />
 
                             <Button
-                                fontSize={16}
-                                primary={false}
                                 type={'button'}
                                 children={'Enviar'}
                                 onClick={handleSubmit}

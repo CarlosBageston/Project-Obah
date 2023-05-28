@@ -1,33 +1,28 @@
-import { addDoc, collection, CollectionReference, deleteDoc, doc, getDocs, updateDoc } from "firebase/firestore";
-import React, { useState, useEffect } from "react";
-import { db } from "../../../firebase";
-import Input from "../../../Components/input";
-import ProdutoModel from "./model/produtos";
-import Button from "../../../Components/button";
-import { Alert, AlertTitle, Autocomplete, FormControl, InputLabel, MenuItem, Select, Stack, TextField } from "@mui/material";
 import * as Yup from 'yup';
-import { useFormik } from 'formik';
-
+import { FormikTouched, useFormik } from 'formik';
+import { db } from "../../../firebase";
+import ProdutoModel from "./model/produtos";
+import Input from "../../../Components/input";
+import Button from "../../../Components/button";
+import GetData from "../../../firebase/getData";
+import { BoxTitleDefault } from "../estoque/style";
+import React, { useState, useEffect } from "react";
+import ComprasModel from "../compras/model/compras";
+import GenericTable from "../../../Components/table";
+import FiltroGeneric from "../../../Components/filtro";
+import { IsEdit } from "../../../Components/isEdit/isEdit";
+import FormAlert from "../../../Components/FormAlert/formAlert";
+import { IsAdding } from "../../../Components/isAdding/isAdding";
+import SituacaoProduto from "../compras/enumeration/situacaoProduto";
+import { FormControl, InputLabel, MenuItem, Select, } from "@mui/material";
+import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import {
     Box,
     ContainerInputs,
     DivInput,
     Title,
     ContainerButton,
-    ContainerFlutuante,
-    DivLineMP,
-    ContianerMP,
-    Paragrafo,
-    ButtonStyled,
-    DivLineMPEdit
 } from './style'
-import { DivTwoInput } from "../cadastroClientes/style";
-import GenericTable from "../../../Components/table";
-import FiltroGeneric from "../../../Components/filtro";
-import GetData from "../../../firebase/getData";
-import SituacaoProduto from "../compras/enumeration/situacaoProduto";
-import ComprasModel from "../compras/model/compras";
-import FormAlert from "../../../Components/FormAlert/formAlert";
 
 
 const objClean: ProdutoModel = {
@@ -47,7 +42,12 @@ export default function CadastroProduto() {
     const [selected, setSelected] = useState<ProdutoModel | undefined>();
     const [isVisibleTpProuto, setIsVisibleTpProduto] = useState<boolean>(false);
 
-
+    const inputsConfig = [
+        { label: 'Nome', propertyName: 'nmProduto' },
+        { label: 'Código do Produto', propertyName: 'cdProduto' },
+        { label: 'Valor de Venda', propertyName: 'vlVendaProduto' },
+        { label: 'Valor Pago', propertyName: 'vlPagoProduto' },
+    ];
     const [initialValues, setInitialValues] = useState<ProdutoModel>({ ...objClean });
 
     //realizando busca no banco de dados
@@ -234,7 +234,6 @@ export default function CadastroProduto() {
         return setIsVisibleTpProduto(false)
     }, [values.tpProduto])
 
-    const filterTpProduto = comprasDataTable.filter(item => item.tpProduto === SituacaoProduto.COMPRADO)
     return (
         <Box>
             <Title>Cadastro de Novos Produtos</Title>
@@ -322,261 +321,47 @@ export default function CadastroProduto() {
                     />
                 </DivInput>
             </ContainerInputs>
-            {isVisibleTpProuto &&
-                <ContainerFlutuante >
-                    <div>
-                        <Title style={{ margin: '0 0 8px 0' }}>Matéria-Prima</Title>
-                        <Paragrafo>Informe a matéria-prima e a quantidade utilizada no produto a ser cadastrado</Paragrafo>
-                    </div>
-                    <div>
-                        <Stack spacing={3} sx={{ width: 500 }}>
-                            <Autocomplete
-                                multiple
-                                id="tags-standard"
-                                options={filterTpProduto}
-                                getOptionLabel={(item) => item.nmProduto}
-                                onChange={(e, value) => {
-                                    setFieldValue('mpFabricado',
-                                        value.map((mp) => ({
-                                            nmProduto: mp.nmProduto,
-                                        }))
-                                    );
-                                }}
-                                renderInput={(params) => (
-                                    <TextField
-                                        {...params}
-                                        variant="standard"
-                                        label="Selecione MP necessaria para fabricar"
-                                        placeholder="matéria-prima"
-                                    />
-                                )}
-                            />
-                        </Stack>
-                        {touched.mpFabricado && errors.mpFabricado && (
-                            //@ts-ignore
-                            <div style={{ color: 'red' }}>{errors.mpFabricado}</div>
-                        )}
-                    </div>
-                    <ContianerMP>
-                        {values.mpFabricado &&
-                            values.mpFabricado.map(mp => (
-                                <>
-                                    <ul>
-                                        <DivLineMP>
-                                            <div style={{ width: '18rem' }}>
-                                                <li>{mp.nmProduto}</li>
-                                            </div>
-                                            <div>
-                                                <Input
-                                                    error=""
-                                                    label="quantidade"
-                                                    name={mp.nmProduto}
-                                                    onChange={(e) => {
-                                                        const newMpFabricado = [...values.mpFabricado];
-                                                        const index = newMpFabricado.findIndex((item) => item.nmProduto === mp.nmProduto);
-                                                        newMpFabricado[index].quantidade = e.target.value.replace(',', '.');
-                                                        setFieldValue("mpFabricado", newMpFabricado);
-                                                    }}
-                                                    value={mp.quantidade}
-                                                    style={{ fontSize: '1rem' }}
-                                                    styleLabel={{ marginTop: '-20px' }}
-                                                    styleDiv={{ margin: '0', padding: 0 }}
-                                                />
-                                            </div>
-                                        </DivLineMP>
-                                    </ul>
-                                </>
-                            ))}
-                    </ContianerMP>
-                    <div style={{ height: '60px' }}>
-                        <ButtonStyled
-                            onClick={() => setIsVisibleTpProduto(false)}>
-                            <span className="text">Concluído</span>
-                            <span className="icon">
-                                <svg aria-hidden="true" width="20px" data-icon="paper-plane" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                                    <path fill="currentColor" d="M476 3.2L12.5 270.6c-18.1 10.4-15.8 35.6 2.2 43.2L121 358.4l287.3-253.2c5.5-4.9 13.3 2.6 8.6 8.3L176 407v80.5c0 23.6 28.5 32.9 42.5 15.8L282 426l124.6 52.2c14.2 6 30.4-2.9 33-18.2l72-432C515 7.8 493.3-6.8 476 3.2z">
-                                    </path>
-                                </svg>
-                            </span>
-                        </ButtonStyled>
-                    </div>
-                </ContainerFlutuante>
-            }
-            {/* Editar o cliente */}
+            {/*Adicionando Produto */}
+            <IsAdding
+                addingScreen="Produto"
+                data={comprasDataTable}
+                isAdding={isVisibleTpProuto}
+                products={values.mpFabricado}
+                setFieldValue={setFieldValue}
+                setIsVisibleTpProduto={setIsVisibleTpProduto}
+                errors={errors.mpFabricado as FormikTouched<any> | undefined}
+                touched={touched}
+            />
 
-            {isEdit &&
-                <ContainerFlutuante >
-                    <div>
-                        <Title style={{ margin: '0 0 8px 0' }}>Editar Produto</Title>
-                        <Paragrafo>Alterar dados do Produto e da matéria prima utilizado</Paragrafo>
-                    </div>
-                    <div>
-                        <>
-                            <ul>
-                                <DivTwoInput style={{ display: 'flex' }}>
-                                    <DivLineMPEdit>
-                                        <div>
-                                            <Input
-                                                error=""
-                                                label="Nome"
-                                                name={'nmProduto'}
-                                                onChange={(e) => {
-                                                    setSelected((prevSelected) => {
-                                                        return {
-                                                            ...prevSelected,
-                                                            nmProduto: e.target.value || ''
-                                                        } as ProdutoModel | undefined;
-                                                    });
-                                                }}
-                                                value={selected?.nmProduto}
-                                                raisedLabel
-                                                style={{ fontSize: '16px' }}
-                                                styleLabel={{ marginTop: '0', fontSize: 12 }}
-                                                styleDiv={{ margin: '0', padding: 0 }}
-                                            />
-                                        </div>
-                                    </DivLineMPEdit>
-                                    <DivLineMPEdit>
-                                        <div>
-                                            <Input
-                                                error=""
-                                                label="Código do Produto"
-                                                name={'cdProduto'}
-                                                onChange={(e) => {
-                                                    setSelected((prevSelected) => {
-                                                        return {
-                                                            ...prevSelected,
-                                                            cdProduto: e.target.value || ''
-                                                        } as ProdutoModel | undefined;
-                                                    });
-                                                }}
-                                                value={selected?.cdProduto}
-                                                raisedLabel
-                                                style={{ fontSize: '16px' }}
-                                                styleLabel={{ marginTop: '0', fontSize: 12 }}
-                                                styleDiv={{ margin: '0', padding: 0 }}
-                                            />
-                                        </div>
-                                    </DivLineMPEdit>
-                                </DivTwoInput>
-                                <DivTwoInput>
-                                    <DivLineMPEdit>
-                                        <div>
-                                            <Input
-                                                error=""
-                                                label="Valor de Venda"
-                                                name={'vlVendaProduto'}
-                                                onChange={(e) => {
-                                                    setSelected((prevSelected) => {
-                                                        return {
-                                                            ...prevSelected,
-                                                            vlVendaProduto: e.target.value || ''
-                                                        } as ProdutoModel | undefined;
-                                                    });
-                                                }}
-                                                value={selected?.vlVendaProduto}
-                                                raisedLabel
-                                                style={{ fontSize: '16px' }}
-                                                styleLabel={{ marginTop: '0', fontSize: 12 }}
-                                                styleDiv={{ margin: '0', padding: 0 }}
-                                            />
-                                        </div>
-                                    </DivLineMPEdit>
-                                    <DivLineMPEdit>
-                                        <div>
-                                            <Input
-                                                error=""
-                                                label="Valor Pago"
-                                                name={'vlPagoProduto'}
-                                                onChange={(e) => {
-                                                    setSelected((prevSelected) => {
-                                                        return {
-                                                            ...prevSelected,
-                                                            vlPagoProduto: e.target.value || ''
-                                                        } as ProdutoModel | undefined;
-                                                    });
-                                                }}
-                                                value={selected?.vlPagoProduto}
-                                                raisedLabel
-                                                style={{ fontSize: '16px' }}
-                                                styleLabel={{ marginTop: '0', fontSize: 12 }}
-                                                styleDiv={{ margin: '0', padding: 0 }}
-                                            />
-                                        </div>
-                                    </DivLineMPEdit>
-                                </DivTwoInput>
-                            </ul>
-                        </>
-                    </div>
-                    <ContianerMP>
-                        {selected?.mpFabricado.map((mp, index) => (
-                            <>
-                                <ul>
-                                    <DivLineMP>
-                                        <div style={{ width: '18rem' }}>
-                                            <li>{mp.nmProduto}</li>
-                                        </div>
-                                        <div>
-                                            <Input
-                                                error=""
-                                                label="Quantidade"
-                                                name={mp.nmProduto}
-                                                onChange={(e) => {
-                                                    const newMps = [...selected.mpFabricado];
-                                                    newMps[index].quantidade = e.target.value;
-                                                    setSelected((prevSelected) => ({
-                                                        ...prevSelected,
-                                                        mpFabricado: newMps,
-                                                    } as ProdutoModel | undefined));
-                                                }}
-                                                value={mp.quantidade}
-                                                raisedLabel
-                                                style={{ fontSize: '1rem' }}
-                                                styleLabel={{ marginTop: '-20px' }}
-                                                styleDiv={{ margin: '0', padding: 0 }}
-                                            />
-                                        </div>
-                                    </DivLineMP>
-                                </ul>
-                            </>
-                        ))}
-                    </ContianerMP>
-                    <div>
-                        <div style={{ height: '60px' }}>
-                            <ButtonStyled
-                                onClick={handleEditRow}>
-                                <span className="text">Concluído</span>
-                                <span className="icon">
-                                    <svg aria-hidden="true" width="20px" data-icon="paper-plane" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                                        <path fill="currentColor" d="M476 3.2L12.5 270.6c-18.1 10.4-15.8 35.6 2.2 43.2L121 358.4l287.3-253.2c5.5-4.9 13.3 2.6 8.6 8.3L176 407v80.5c0 23.6 28.5 32.9 42.5 15.8L282 426l124.6 52.2c14.2 6 30.4-2.9 33-18.2l72-432C515 7.8 493.3-6.8 476 3.2z">
-                                        </path>
-                                    </svg>
-                                </span>
-                            </ButtonStyled>
-                        </div>
-                    </div>
-                </ContainerFlutuante>
-            }
+            {/* Editar o Produto */}
+            <IsEdit
+                editingScreen='Produto'
+                setSelected={setSelected}
+                data={selected}
+                handleEditRow={handleEditRow}
+                inputsConfig={inputsConfig}
+                isEdit={isEdit}
+                products={selected ? selected.mpFabricado : []}
+                setIsEdit={setIsEdit}
+            />
             <ContainerButton>
                 <Button
                     children='Cadastrar Produto'
                     type="button"
                     onClick={handleSubmit}
-                    fontSize={20}
                     style={{ margin: '1rem 4rem 2rem 95%', height: '4rem', width: '12rem' }}
                 />
 
                 <FormAlert submitForm={submitForm} name={'Produto'} />
             </ContainerButton>
+
             {/*Tabala */}
-            <div style={{ margin: '-3.5rem 0px -40px 3rem' }}>
-                <FiltroGeneric
-                    data={dataTable}
-                    setFilteredData={setDataTable}
-                    type="produto"
-                    carregarDados={setRecarregue}
-                />
-            </div>
+
+            <BoxTitleDefault>
+                <div>
+                    <FiltroGeneric data={dataTable} setFilteredData={setDataTable} carregarDados={setRecarregue} type="produto" />
+                </div>
+            </BoxTitleDefault>
             <GenericTable
                 columns={[
                     { label: 'Código', name: 'cdProduto' },

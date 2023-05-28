@@ -20,7 +20,7 @@ export const StyledButton = styled.button`
   position: relative;
   padding: 10px 20px;
   border-radius: 7px;
-  border: 1px solid rgb(61, 106, 255);
+  border: 1px solid ${props => props.theme.paletteColor.primaryBlue};
   font-size: 14px;
   text-transform: uppercase;
   font-weight: 600;
@@ -35,7 +35,7 @@ export const StyledButton = styled.button`
   box-shadow: 2px 2px 12px 1px rgba(0, 142, 236, 0.815);
 
   &:hover {
-    background: rgb(61, 106, 255);
+    background: ${props => props.theme.paletteColor.primaryBlue};
     box-shadow: 0 0 8px 1px rgba(0, 142, 236, 0.815);
     transition: all 0.2s ease-out;
     color: #fff;

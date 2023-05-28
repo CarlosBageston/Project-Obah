@@ -179,8 +179,6 @@ export default function Entregas() {
     return (
         <Box>
             <Title>Cadastro de Novas Entregas</Title>
-
-            <FormAlert submitForm={submitForm} name={'Entregas'} />
             <ContainerAll>
                 <DivInputs>
                     <FormControl
@@ -329,15 +327,8 @@ export default function Entregas() {
                     </div>
                 </DivButtonAndTable>
             </ContainerAll>
+            <FormAlert submitForm={submitForm} name={'Entregas'} />
             {/*Tabala */}
-            {/* <div style={{ margin: '-3.5rem 0px -35px 3rem' }}>
-                <FiltroGeneric
-                    data={dataTableEntregas}
-                    carregarDados={setRecarregue}
-                    setFilteredData={setDataTableEntregas}
-                    type='cliente'
-                />
-            </div> */}
             <BoxTitleDefault>
                 <div>
                     <FiltroGeneric data={dataTableEntregas} setFilteredData={setDataTableEntregas} carregarDados={setRecarregue} type="cliente" />

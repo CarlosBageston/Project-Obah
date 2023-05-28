@@ -38,7 +38,7 @@ box-shadow: rgba(0, 0, 0, 0.75) 2px 2px 6px -1px;
 export const DivTitle = styled.div`
 width: 100%;
 padding: 8px;
-background-color: #3758d8;
+background-color: ${props => props.theme.paletteColor.primaryBlue};
 border-radius: 4px 4px 0px 0px;
 box-shadow: 0px 3px 10px -4px rgba(0,0,0,0.71);
 `;

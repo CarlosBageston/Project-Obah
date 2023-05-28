@@ -114,8 +114,9 @@ export default function MenuLateral() {
     };
     const list = () => (
         <Box
-            sx={{ width: 250 }}
+            sx={{ width: 240 }}
             role="presentation"
+            style={{ overflow: 'hidden', paddingBottom: 10 }}
         >
             <List>
                 <Link to="/dashboard" style={{ textDecoration: 'none', color: 'white' }}>

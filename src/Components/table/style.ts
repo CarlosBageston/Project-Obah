@@ -70,7 +70,7 @@ cursor: ${props => props.isDisabled ? 'default' : 'pointer'};
 export const ButtonEdit = styled(Button)<{isDisabled?: boolean; isVisibleEdit?: boolean}>`
 display: ${props => props.isVisibleEdit ? 'none' : 'block'};
 margin-left: -60px;
-background-color: ${props => props.isDisabled ? '# #e0e0e0' : '#8585ff'};
+background-color: ${props => props.isDisabled ? '#e0e0e0' : '#8585ff'};
 border: ${props => props.isDisabled ? '1px solid #b5b5b5' : '1px solid blue' } ;
 `;
 

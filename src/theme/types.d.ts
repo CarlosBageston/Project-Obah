@@ -9,7 +9,8 @@ declare module 'styled-components' {
             colorLabel: string,
             backgroundInput: string,
             borderInput: string,
-            disabled: string
+            disabled: string,
+            primaryBlue: string
         },
         fontsDefault: {
             primaryFont: string,

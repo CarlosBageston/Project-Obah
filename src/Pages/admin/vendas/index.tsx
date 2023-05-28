@@ -1,8 +1,18 @@
-import { addDoc, collection, CollectionReference, getDocs } from "firebase/firestore";
-import React, { useState, useEffect } from "react";
+import * as Yup from 'yup';
+import { format } from "date-fns";
+import { useFormik } from 'formik';
 import { db } from "../../../firebase";
-import Input from "../../../Components/input";
 import VendaModel from "./model/vendas";
+import { CgAddR } from 'react-icons/cg';
+import Input from "../../../Components/input";
+import Button from "../../../Components/button";
+import GetData from "../../../firebase/getData";
+import React, { useState, useEffect } from "react";
+import { addDoc, collection } from "firebase/firestore";
+import ProdutosModel from "../cadastroProdutos/model/produtos";
+import FormAlert from "../../../Components/FormAlert/formAlert";
+import SituacaoProduto from "../compras/enumeration/situacaoProduto";
+import iceCreamSad from '../../../assets/Image/drawingSadIceCream.png'
 import {
     Box,
     ContainerAll,
@@ -27,17 +37,6 @@ import {
     DivMultiplicar,
     Title
 } from './style'
-import Button from "../../../Components/button";
-import { Alert, AlertTitle } from "@mui/material";
-import iceCreamSad from '../../../assets/Image/drawingSadIceCream.png'
-import { CgAddR } from 'react-icons/cg'
-import * as Yup from 'yup';
-import { useFormik } from 'formik';
-import ProdutosModel from "../cadastroProdutos/model/produtos";
-import { format } from "date-fns";
-import SituacaoProduto from "../compras/enumeration/situacaoProduto";
-import GetData from "../../../firebase/getData";
-import FormAlert from "../../../Components/FormAlert/formAlert";
 
 
 const objClean: VendaModel = {
@@ -49,7 +48,6 @@ const objClean: VendaModel = {
 }
 export default function Vendas() {
     const [barcode, setBarcode] = useState("");
-    // const [produto, setProduto] = useState<ProdutosModel[]>([]);
     const [qntBolas, setQntBolas] = useState<string>('');
     const [key, setKey] = useState<number>(0);
     const [multiplica, setMultiplica] = useState<string>('');
@@ -69,7 +67,7 @@ export default function Vendas() {
 
     const [initialValues, setInitialValues] = useState<VendaModel>({ ...objClean });
 
-    const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<VendaModel>({
+    const { values, handleSubmit, setFieldValue } = useFormik<VendaModel>({
         validateOnBlur: true,
         validateOnChange: true,
         initialValues,
@@ -375,9 +373,7 @@ export default function Vendas() {
                                 children='Finalizar venda'
                                 disabled={values.produtoEscaniado.length === 0 ? true : false}
                                 type="button"
-                                primary={true}
                                 onClick={handleSubmit}
-                                fontSize={20}
                                 style={{ height: 80, width: 200 }}
                             />
                         </div>

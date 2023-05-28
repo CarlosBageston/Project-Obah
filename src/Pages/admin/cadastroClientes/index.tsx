@@ -24,6 +24,7 @@ import {
     ContainerButton,
     TitleDefault,
 } from './style';
+import { BoxTitleDefault } from '../estoque/style';
 
 
 const objClean: ClienteModel = {
@@ -235,10 +236,16 @@ export default function CadastroCliente() {
                             <ButtonStyled onClick={() => setIsVisibleTpProduto(true)}> Adicionar Produtos</ButtonStyled>
                         </div>
                     </ContainerInfoCliente>
-
-
                     <FormAlert submitForm={submitForm} name={'Cliente'} />
                 </div>
+                <ContainerButton>
+                    <Button
+                        type={'button'}
+                        children={'Cadastrar Cliente'}
+                        onClick={handleSubmit}
+                        style={{ margin: '1rem 0 3rem 0', height: '4rem', width: '14rem' }}
+                    />
+                </ContainerButton>
                 {/*Adicionar Produtos */}
                 <IsAdding
                     data={produtosDataTable}
@@ -248,16 +255,7 @@ export default function CadastroCliente() {
                     products={values.produtos}
                     addingScreen='Cliente'
                 />
-                <ContainerButton>
-                    <Button
-                        fontSize={18}
-                        primary={false}
-                        type={'button'}
-                        children={'Cadastrar Cliente'}
-                        onClick={handleSubmit}
-                        style={{ margin: '1rem 4rem 3rem 100%', height: '4rem' }}
-                    />
-                </ContainerButton>
+
 
                 {/* Editar o cliente */}
                 <IsEdit
@@ -272,14 +270,11 @@ export default function CadastroCliente() {
                 />
 
                 {/*Tabela */}
-                <div style={{ margin: '-3.5rem 0px -35px 3rem' }}>
-                    <FiltroGeneric
-                        data={dataTable}
-                        carregarDados={setRecarregue}
-                        setFilteredData={setDataTable}
-                        type='cliente'
-                    />
-                </div>
+                <BoxTitleDefault>
+                    <div>
+                        <FiltroGeneric data={dataTable} setFilteredData={setDataTable} carregarDados={setRecarregue} type="cliente" />
+                    </div>
+                </BoxTitleDefault>
                 <GenericTable
                     columns={[
                         { label: 'Nome', name: 'nmCliente' },

@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from "react";
-
+import EstoqueModel from "./model/estoque";
+import GetData from "../../../firebase/getData";
+import VendasModel from "../vendas/model/vendas";
+import ComprasModel from "../compras/model/compras";
+import GenericTable from "../../../Components/table";
+import FiltroGeneric from "../../../Components/filtro";
+import { EntregaModel } from "../entregas/model/entrega";
+import SituacaoProduto from "../compras/enumeration/situacaoProduto";
 import {
     Box,
+    BoxFilterDefault,
+    BoxTitleDefault,
+    BoxTitleFilterDefault,
+    DivTitleDefault,
     Title,
+    TitleTableDefault,
 } from './style'
-import FiltroGeneric from "../../../Components/filtro";
-import GenericTable from "../../../Components/table";
-import GetData from "../../../firebase/getData";
-import ComprasModel from "../compras/model/compras";
-import VendasModel from "../vendas/model/vendas";
-import EstoqueModel from "./model/estoque";
-import SituacaoProduto from "../compras/enumeration/situacaoProduto";
-import { EntregaModel } from "../entregas/model/entrega";
 
 
 
@@ -142,16 +146,18 @@ export default function Estoque() {
             <div>
                 {/*Tabala Fabricado*/}
                 <div>
-
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <div style={{ margin: '-3.5rem 0px -12px 3rem' }}>
-                            <FiltroGeneric data={dataTableFabricado} setFilteredData={setDataTableFabricado} carregarDados={setRecarregue} type="produto" />
-                        </div>
-                        <div>
-                            <p>Tabela Fabricado</p>
-                        </div>
-
-                    </div>
+                    <BoxTitleFilterDefault>
+                        <BoxTitleDefault>
+                            <div>
+                                <FiltroGeneric data={dataTableComprado} setFilteredData={setDataTableComprado} carregarDados={setRecarregue} type="produto" />
+                            </div>
+                        </BoxTitleDefault>
+                        <BoxFilterDefault>
+                            <DivTitleDefault>
+                                <TitleTableDefault>Tabela Fabricado</TitleTableDefault>
+                            </DivTitleDefault>
+                        </BoxFilterDefault>
+                    </BoxTitleFilterDefault>
                     <GenericTable
                         columns={[
                             { label: 'Código', name: 'cdProduto' },
@@ -167,15 +173,19 @@ export default function Estoque() {
                 </div>
                 {/*Tabala Comprado*/}
                 <div>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <div style={{ margin: '-3.5rem 0px -12px 3rem' }}>
-                            <FiltroGeneric data={dataTableComprado} setFilteredData={setDataTableComprado} carregarDados={setRecarregue} type="produto" />
-                        </div>
-                        <div>
-                            <p>Tabela Compra</p>
-                        </div>
+                    <BoxTitleFilterDefault>
+                        <BoxTitleDefault>
+                            <div>
+                                <FiltroGeneric data={dataTableFabricado} setFilteredData={setDataTableFabricado} carregarDados={setRecarregue} type="produto" />
+                            </div>
+                        </BoxTitleDefault>
+                        <BoxFilterDefault>
+                            <DivTitleDefault>
+                                <TitleTableDefault>Tabela Compra</TitleTableDefault>
+                            </DivTitleDefault>
+                        </BoxFilterDefault>
+                    </BoxTitleFilterDefault>
 
-                    </div>
                     <GenericTable
                         columns={[
                             { label: 'Código', name: 'cdProduto' },

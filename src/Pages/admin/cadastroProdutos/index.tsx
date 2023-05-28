@@ -1,30 +1,28 @@
-import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
-import React, { useState, useEffect } from "react";
-import { db } from "../../../firebase";
-import Input from "../../../Components/input";
-import ProdutoModel from "./model/produtos";
-import Button from "../../../Components/button";
-import { Autocomplete, FormControl, InputLabel, MenuItem, Select, Stack, TextField } from "@mui/material";
 import * as Yup from 'yup';
-import { useFormik } from 'formik';
-
+import { FormikTouched, useFormik } from 'formik';
+import { db } from "../../../firebase";
+import ProdutoModel from "./model/produtos";
+import Input from "../../../Components/input";
+import Button from "../../../Components/button";
+import GetData from "../../../firebase/getData";
+import { BoxTitleDefault } from "../estoque/style";
+import React, { useState, useEffect } from "react";
+import ComprasModel from "../compras/model/compras";
+import GenericTable from "../../../Components/table";
+import FiltroGeneric from "../../../Components/filtro";
+import { IsEdit } from "../../../Components/isEdit/isEdit";
+import FormAlert from "../../../Components/FormAlert/formAlert";
+import { IsAdding } from "../../../Components/isAdding/isAdding";
+import SituacaoProduto from "../compras/enumeration/situacaoProduto";
+import { FormControl, InputLabel, MenuItem, Select, } from "@mui/material";
+import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import {
     Box,
     ContainerInputs,
     DivInput,
     Title,
     ContainerButton,
-    Paragrafo,
 } from './style'
-import GenericTable from "../../../Components/table";
-import FiltroGeneric from "../../../Components/filtro";
-import GetData from "../../../firebase/getData";
-import SituacaoProduto from "../compras/enumeration/situacaoProduto";
-import ComprasModel from "../compras/model/compras";
-import FormAlert from "../../../Components/FormAlert/formAlert";
-import { IsEdit } from "../../../Components/isEdit/isEdit";
-import { ButtonStyled, ContainerFlutuante, ContianerMP, DivLineMP } from "../../../Components/isEdit/style";
-import { IsAdding } from "../../../Components/isAdding/isAdding";
 
 
 const objClean: ProdutoModel = {
@@ -43,7 +41,6 @@ export default function CadastroProduto() {
     const [recarregue, setRecarregue] = useState<boolean>(true);
     const [selected, setSelected] = useState<ProdutoModel | undefined>();
     const [isVisibleTpProuto, setIsVisibleTpProduto] = useState<boolean>(false);
-    const [products, setProducts] = useState<ComprasModel[]>([]);
 
     const inputsConfig = [
         { label: 'Nome', propertyName: 'nmProduto' },
@@ -63,11 +60,6 @@ export default function CadastroProduto() {
         dataTable: comprasDataTable,
     } = GetData('Compras', recarregue) as { dataTable: ComprasModel[] };
 
-    useEffect(() => {
-        if (selected) {
-            setProducts(selected?.mpFabricado)
-        }
-    }, [selected])
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<ProdutoModel>({
         validateOnBlur: true,
         validateOnChange: true,
@@ -241,6 +233,7 @@ export default function CadastroProduto() {
         if (values.tpProduto === SituacaoProduto.FABRICADO) return setIsVisibleTpProduto(true)
         return setIsVisibleTpProduto(false)
     }, [values.tpProduto])
+
     return (
         <Box>
             <Title>Cadastro de Novos Produtos</Title>
@@ -336,7 +329,7 @@ export default function CadastroProduto() {
                 products={values.mpFabricado}
                 setFieldValue={setFieldValue}
                 setIsVisibleTpProduto={setIsVisibleTpProduto}
-                // errors={errors}
+                errors={errors.mpFabricado as FormikTouched<any> | undefined}
                 touched={touched}
             />
 
@@ -356,21 +349,19 @@ export default function CadastroProduto() {
                     children='Cadastrar Produto'
                     type="button"
                     onClick={handleSubmit}
-                    fontSize={20}
                     style={{ margin: '1rem 4rem 2rem 95%', height: '4rem', width: '12rem' }}
                 />
 
                 <FormAlert submitForm={submitForm} name={'Produto'} />
             </ContainerButton>
+
             {/*Tabala */}
-            <div style={{ margin: '-3.5rem 0px -40px 3rem' }}>
-                <FiltroGeneric
-                    data={dataTable}
-                    setFilteredData={setDataTable}
-                    type="produto"
-                    carregarDados={setRecarregue}
-                />
-            </div>
+
+            <BoxTitleDefault>
+                <div>
+                    <FiltroGeneric data={dataTable} setFilteredData={setDataTable} carregarDados={setRecarregue} type="produto" />
+                </div>
+            </BoxTitleDefault>
             <GenericTable
                 columns={[
                     { label: 'Código', name: 'cdProduto' },

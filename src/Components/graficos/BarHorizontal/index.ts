@@ -1,9 +1,9 @@
-import { collection, CollectionReference, getDocs } from "firebase/firestore";
-import moment from "moment";
-import { useState, useEffect } from "react";
-import { db } from "../../../firebase";
 import 'chart.js/auto'
+import moment from "moment";
+import { db } from "../../../firebase";
+import { useState, useEffect } from "react";
 import ComprasModel from "../../../Pages/admin/compras/model/compras";
+import { collection, CollectionReference, getDocs } from "firebase/firestore";
 
 
 export default function ChartBarHorizontal() {

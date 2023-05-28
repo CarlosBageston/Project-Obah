@@ -1,20 +1,19 @@
 
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import Menu from '../Components/Menu/Menu'
-import PrivateRoute from '../store/reducer/private';
-import CadastroCliente from '../Pages/admin/cadastroClientes';
-import CadastroProduto from '../Pages/admin/cadastroProdutos';
-import Dashboard from '../Pages/admin/dashboard';
-import Entregas from '../Pages/admin/entregas';
-import Vendas from '../Pages/admin/vendas';
-import Carousel from '../Pages/Carousel';
-import Contato from '../Pages/Contato';
-import Footer from '../Pages/Footer';
 import Login from '../Pages/login';
-import MaisVendidos from '../Pages/MaisVendidos';
+import Footer from '../Pages/Footer';
+import Contato from '../Pages/Contato';
 import SobreNos from '../Pages/SobreNos';
-import NovasCompras from '../Pages/admin/compras';
+import Carousel from '../Pages/Carousel';
+import Vendas from '../Pages/admin/vendas';
 import Estoque from '../Pages/admin/estoque';
+import Entregas from '../Pages/admin/entregas';
+import MaisVendidos from '../Pages/MaisVendidos';
+import Dashboard from '../Pages/admin/dashboard';
+import PrivateRoute from '../store/reducer/private';
+import AtualizarEstoque from '../Pages/admin/compras';
+import CadastroProduto from '../Pages/admin/cadastroProdutos';
+import CadastroCliente from '../Pages/admin/cadastroClientes';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 
 
 export default function Router() {
@@ -42,7 +41,7 @@ export default function Router() {
                     <Route path='/cadastro-cliente' element={<CadastroCliente />} />
                     <Route path='/cadastro-produto' element={<CadastroProduto />} />
                     <Route path='/entregas' element={<Entregas />} />
-                    <Route path='/compras' element={<NovasCompras />} />
+                    <Route path='/atualizar-estoque' element={<AtualizarEstoque />} />
                     <Route path='/estoque' element={<Estoque />} />
                 </Route>
             </Routes>

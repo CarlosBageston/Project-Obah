@@ -1,32 +1,33 @@
 import * as React from 'react';
-import { styled, Theme, CSSObject } from '@mui/material/styles';
 import Box from '@mui/material/Box';
-import MuiDrawer from '@mui/material/Drawer';
-import MuiAppBar, { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
 import List from '@mui/material/List';
 import Divider from '@mui/material/Divider';
-import IconButton from '@mui/material/IconButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import { Link, Outlet } from 'react-router-dom';
-import {
-    BoxTitle,
-    Title,
-    Image,
-    StyledListItemButton,
-    StyledListItemText,
-    Button
-} from './style';
-
+import MuiDrawer from '@mui/material/Drawer';
 import logo from '../../assets/Image/logo.png';
+import { Link, Outlet } from 'react-router-dom';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import { styled, Theme, CSSObject } from '@mui/material/styles';
+import MuiAppBar, { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
 
 //import de icon para menu
-import vendas from '../../assets/Icon/acquisition.png';
-import entrega from '../../assets/Icon/entrega-rapida.png';
-import compra from '../../assets/Icon/checklist.png';
-import dashboard from '../../assets/Icon/dashboard.png';
-import produto from '../../assets/Icon/add-product.png';
 import cliente from '../../assets/Icon/user.png';
 import estoque from '../../assets/Icon/stock.png';
+import compra from '../../assets/Icon/checklist.png';
+import vendas from '../../assets/Icon/acquisition.png';
+import dashboard from '../../assets/Icon/dashboard.png';
+import produto from '../../assets/Icon/add-product.png';
+import entrega from '../../assets/Icon/entrega-rapida.png';
+
+import {
+    Image,
+    Title,
+    Button,
+    BoxTitle,
+    StyledListItemText,
+    StyledListItemButton,
+} from './style';
+
+
 
 const drawerWidth = 240;
 
@@ -125,7 +126,7 @@ export default function MenuLateral() {
                         <StyledListItemText primary="Dashboard" />
                     </StyledListItemButton>
                 </Link>
-                <Link to="/compras" style={{ textDecoration: 'none', color: 'white' }}>
+                <Link to="/atualizar-estoque" style={{ textDecoration: 'none', color: 'white' }}>
                     <StyledListItemButton>
                         <ListItemIcon>
                             <Image src={compra} alt="Atualizar Estoque" width={32} />

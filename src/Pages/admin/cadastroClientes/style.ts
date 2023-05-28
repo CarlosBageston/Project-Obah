@@ -18,6 +18,7 @@ width: 100%;
 padding: 0 4rem 0 4rem;
 justify-content: space-between;
 align-items: flex-end;
+padding-bottom: 1rem;
 `;
 
 export const DivCliente = styled.div`
@@ -76,7 +77,11 @@ export const StyledTableRow = styleMui(TableRow)(({ theme }) => ({
     }));
 
 export const ContainerButton = styled.div`
-margin: 0px 12rem;
+display: flex;
+width: 95.5%;
+align-items: center;
+justify-content: flex-end;
+height: 8rem;
 `;
 
 export const ButtonStyled = styled.button`

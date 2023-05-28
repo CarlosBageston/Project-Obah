@@ -23,6 +23,7 @@ import {
     Title,
     ContainerButton,
 } from './style'
+import { BoxTitleDefault } from "../estoque/style";
 
 
 const objClean: ComprasModel = {
@@ -38,7 +39,7 @@ const objClean: ComprasModel = {
     qntMinima: null
 }
 
-export default function NovasCompras() {
+export default function AtualizarEstoque() {
     const [key, setKey] = useState<number>(0);
     const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
     const [initialValues, setInitialValues] = useState<ComprasModel>({ ...objClean });
@@ -458,16 +459,17 @@ export default function NovasCompras() {
                     children='Cadastrar Estoque'
                     type="button"
                     onClick={handleSubmit}
-                    fontSize={20}
                     style={{ margin: '1rem 4rem 2rem 95%', height: '4rem', width: '12rem' }}
                 />
                 <FormAlert submitForm={submitForm} name={'Estoque'} />
             </ContainerButton>
 
             {/*Tabala */}
-            <div style={{ margin: '-3.5rem 0px -40px 3rem' }}>
-                <FiltroGeneric data={dataTable} setFilteredData={setDataTable} carregarDados={setRecarregue} type="date" />
-            </div>
+            <BoxTitleDefault>
+                <div>
+                    <FiltroGeneric data={dataTable} setFilteredData={setDataTable} carregarDados={setRecarregue} type="produto" />
+                </div>
+            </BoxTitleDefault>
             <GenericTable
                 columns={[
                     { label: 'Código', name: 'cdProduto' },

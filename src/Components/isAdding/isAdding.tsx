@@ -6,7 +6,7 @@ import { TitleDefault } from "../../Pages/admin/cadastroClientes/style";
 import SituacaoProduto from "../../Pages/admin/compras/enumeration/situacaoProduto";
 import { BoxClose, ButtonStyled, ContainerFlutuante, ContianerMP, DivClose, DivLineMP, Paragrafo, StyledAiOutlineClose } from "../isEdit/style";
 
-interface IsEditProps {
+interface IsAddingProps {
     isAdding: boolean;
     data: any;
     products: any[];
@@ -17,7 +17,7 @@ interface IsEditProps {
     errors?: FormikTouched<any>;
 
 }
-export function IsAdding({ data, isAdding, setFieldValue, setIsVisibleTpProduto, products, addingScreen, errors, touched }: IsEditProps) {
+export function IsAdding({ data, isAdding, setFieldValue, setIsVisibleTpProduto, products, addingScreen, errors, touched }: IsAddingProps) {
     const [filterTpProdutoFabricado, setFilterTpProdutoFabricado] = useState<any>()
     const [filterTpProdutoComprado, setFilterTpProdutoComprado] = useState<any>()
 

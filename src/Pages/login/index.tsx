@@ -1,9 +1,12 @@
-import { Box, Container, DivInput, Image, Title, Input, Button, Error } from './style';
+import { Box, Container, DivInput, Title, Input, Button, Error, BoxLoading } from './style';
 import { useDispatch, useSelector } from 'react-redux';
 import { State, setEmail, setPassword, setError, setUser, setuserLogado } from '../../store/reducer/reducer';
-import { AuthError, signInWithEmailAndPassword } from 'firebase/auth';
+import { onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../firebase';
 import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Dots } from '../../store/assets/loadingStyle';
+import logo from '../../assets/Image/logo.png';
 
 
 
@@ -11,6 +14,23 @@ export default function Login() {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const { email, password, error } = useSelector((state: State) => state.user);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user) {
+                dispatch(setuserLogado(true));
+                navigate('/dashboard');
+            } else {
+                dispatch(setuserLogado(false));
+            }
+            setLoading(false);
+        });
+
+        return () => {
+            unsubscribe();
+        };
+    }, []);
 
     const authenticateUser = () => {
         signInWithEmailAndPassword(auth, email, password)
@@ -23,7 +43,7 @@ export default function Login() {
                 dispatch(setEmail(''));
                 navigate('/dashboard');
             })
-            .catch((error: AuthError) => {
+            .catch(() => {
                 dispatch(setError('E-mail ou senha inválidos'));
             });
     };
@@ -35,42 +55,51 @@ export default function Login() {
 
     return (
         <>
-            <Box>
-                <Container>
-                    <Title>Bem-vindo</Title>
-                    <DivInput>
-                        <Input
-                            type="text"
-                            id="email"
-                            name="email"
-                            value={email}
-                            placeholder='E-mail'
-                            onChange={e => dispatch(setEmail(e.target.value))}
-                        />
+            {loading ?
+                <BoxLoading>
+                    <div>
+                        <img src={logo} alt="logo da empresa" width={250} />
+                    </div>
+                    <Dots />
+                </BoxLoading>
+                :
+                <Box>
+                    <Container>
+                        <Title>Bem-vindo</Title>
+                        <DivInput>
+                            <Input
+                                type="text"
+                                id="email"
+                                name="email"
+                                value={email}
+                                placeholder='E-mail'
+                                onChange={e => dispatch(setEmail(e.target.value))}
+                            />
 
-                        <Input
-                            type="password"
-                            id="password"
-                            name="password"
-                            placeholder='Senha'
-                            value={password}
-                            onChange={e => dispatch(setPassword(e.target.value))}
-                            onKeyDown={e => onKeyPressAuthenticate(e)}
-                        />
-                        <Error>{error}</Error>
-                        <Button
-                            onKeyDown={e => onKeyPressAuthenticate(e)}
-                            onClick={authenticateUser}
-                        >
-                            Login
-                            <div className="arrow-wrapper">
-                                <div className="arrow"></div>
-                            </div>
-                        </Button>
-                    </DivInput>
+                            <Input
+                                type="password"
+                                id="password"
+                                name="password"
+                                placeholder='Senha'
+                                value={password}
+                                onChange={e => dispatch(setPassword(e.target.value))}
+                                onKeyDown={e => onKeyPressAuthenticate(e)}
+                            />
+                            <Error>{error}</Error>
+                            <Button
+                                onKeyDown={e => onKeyPressAuthenticate(e)}
+                                onClick={authenticateUser}
+                            >
+                                Login
+                                <div className="arrow-wrapper">
+                                    <div className="arrow"></div>
+                                </div>
+                            </Button>
+                        </DivInput>
 
-                </Container>
-            </Box>
+                    </Container>
+                </Box>
+            }
         </>
     )
 }

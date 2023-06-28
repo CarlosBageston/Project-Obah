@@ -47,6 +47,7 @@ box-shadow: 1px 4px 5px 1px #00000070;
 justify-content: space-around;
 align-items: center;
 flex-direction: column;
+z-index: 5;
 animation: scale-in-hor-center 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) 200ms both;
 @keyframes scale-in-hor-center {
   0% {

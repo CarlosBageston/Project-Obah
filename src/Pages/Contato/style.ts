@@ -13,7 +13,7 @@ position: absolute;
 background-image: url('../../../src/assets/Image/fundo.jpg');
 background-size: cover;
 background-repeat: no-repeat;
-background-position: center;
+background-position-y: 30%;
 height: 20rem;
 width: 100%;
 top: 0;

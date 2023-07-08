@@ -12,31 +12,13 @@ background-image: linear-gradient(to left top, #78a7ee, #a796e9, #d47fd0, #f26aa
   justify-content: center;
 }
 `;
-
-export const Image = styled.img`
- width: 400px;
-margin-top: 280px;
-position: absolute;
-bottom: 0;
-left: 0;
-animation: slide-picole .8s linear normal 1 forwards;
-transition: animation .4s;
-@keyframes slide-picole {
-  from {
-    margin-left: -500px;
-    opacity: 0;
-  }
-  to {
-    margin-left: 0;
-    opacity: 1;
-  }
-}
-@media screen and (max-width: 540px) {
-  width: 250px;
-}
- @media screen and ((min-width: 541px) and (max-width: 1024px)) {
-  width: 400px;
-}
+export const BoxLoading = styled.div`
+height: 100vh;
+width: 100%;
+display: flex;
+align-items: center;
+justify-content: center;
+flex-direction: column;
 `;
 
 export const Container = styled.div`

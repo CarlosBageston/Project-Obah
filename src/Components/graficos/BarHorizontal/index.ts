@@ -5,7 +5,16 @@ import { useState, useEffect } from "react";
 import ComprasModel from "../../../Pages/admin/compras/model/compras";
 import { collection, CollectionReference, getDocs } from "firebase/firestore";
 
-
+/**
+ * ChartBarHorizontal Component
+ * 
+ * Este componente exibe um gráfico de barras horizontais que representa a quantidade e valor total de compras por mês.
+ * Os dados são buscados no banco de dados e filtrados por mês.
+ * O gráfico é configurado com opções personalizadas, como posicionamento da legenda, título e dicas de ferramenta.
+ * Os dados são exibidos com rótulos de mês e valores de quantidade.
+ * 
+ * @returns Retorna um objeto contendo os dados do gráfico (dataHorizontal) e as opções de configuração (optionsHotizontal).
+ */
 export default function ChartBarHorizontal() {
     const [compras, setCompras] = useState<ComprasModel[]>([])
     const _collectioncompras = collection(db, 'Compras') as CollectionReference<ComprasModel>;

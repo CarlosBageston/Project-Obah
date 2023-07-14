@@ -235,7 +235,12 @@ export default function Vendas() {
     function cascao() {
         const produtoEncontrado = dataTableProduto.find((p) => p.cdProduto === '9788545200345');
         if (produtoEncontrado) {
-            const novoProduto = { ...produtoEncontrado, quantidadeVenda: 1 }
+
+            const valorVenda = Number(produtoEncontrado.vlVendaProduto.match(/\d+/g)?.join('.'));
+            const valorPago = Number(produtoEncontrado.vlPagoProduto.match(/\d+/g)?.join('.'));
+            const totalLucro = valorVenda - valorPago;
+
+            const novoProduto = { ...produtoEncontrado, quantidadeVenda: 1, vlLucro: totalLucro.toString(), vlTotalMult: `R$ ${valorVenda},00` }
             setFieldValue('produtoEscaniado', values.produtoEscaniado.concat(novoProduto));
         }
     }
@@ -244,7 +249,11 @@ export default function Vendas() {
     function casquinha() {
         const produtoEncontrado = dataTableProduto.find((p) => p.cdProduto === '9788534508476');
         if (produtoEncontrado) {
-            const novoProduto = { ...produtoEncontrado, quantidadeVenda: 1 }
+            const valorVenda = Number(produtoEncontrado.vlVendaProduto.match(/\d+/g)?.join('.'));
+            const valorPago = Number(produtoEncontrado.vlPagoProduto.match(/\d+/g)?.join('.'));
+            const totalLucro = valorVenda - valorPago;
+
+            const novoProduto = { ...produtoEncontrado, quantidadeVenda: 1, vlLucro: totalLucro.toString(), vlTotalMult: `R$ ${valorVenda},00` }
             setFieldValue('produtoEscaniado', values.produtoEscaniado.concat(novoProduto));
         }
     }

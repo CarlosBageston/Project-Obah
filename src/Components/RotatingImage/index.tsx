@@ -8,6 +8,14 @@ interface Props {
     width?: number;
 }
 
+/**
+ * Componente que exibe uma imagem que gira quando o mouse é colocado em cima dela.
+ * A imagem inicial é definida pelo prop "src" e a imagem girada é definida pelo prop "src2".
+ * O tamanho da imagem pode ser definido pelo prop "width".
+ * Quando o mouse é colocado em cima da imagem, ela é alterada para a imagem girada gradualmente.
+ * Quando o mouse é removido, a imagem retorna à posição inicial gradualmente.
+ */
+
 export const RotatingImage: React.FC<Props> = ({
     src,
     src2,

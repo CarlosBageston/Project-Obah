@@ -37,14 +37,13 @@ export default function Estoque() {
         loading,
     } = GetData('Entregas', recarregue) as { dataTable: EntregaModel[], loading: boolean, setDataTable: (data: EntregaModel[]) => void }
 
-
     useEffect(() => {
         let quantidadeVendas: { [key: string]: EstoqueModel } = {};
         const quantidadeCompras: { [key: string]: EstoqueModel } = {};
-
-        if (vendasDataTable.length !== 0) {
+        console.log(comprasDataTable)
+        if (vendasDataTable.length) {
             vendasDataTable.forEach(venda => {
-                if (venda.produtoEscaniado !== undefined) {
+                if (venda.produtoEscaniado) {
                     const produtosEscaniados = venda.produtoEscaniado;
                     produtosEscaniados.forEach(produto => {
                         const { cdProduto, nmProduto, quantidadeVenda, tpProduto, mpFabricado } = produto;
@@ -57,26 +56,26 @@ export default function Estoque() {
 
             });
         }
-        if (entregasDataTable.length !== 0) {
+        if (entregasDataTable.length) {
             entregasDataTable.forEach(entrega => {
                 const { quantidades } = entrega;
                 Object.entries(quantidades).forEach(([produto, quantidade]) => {
                     if (!quantidadeVendas[produto]) {
                         quantidadeVendas[produto] = { cdProduto: '', tpProduto: null, nmProduto: produto, quantidadeTotal: 0 };
                     }
-                    if (quantidade !== 0) {
+                    if (quantidade) {
                         quantidadeVendas[produto].quantidadeTotal += Number(quantidade);
                     }
                 });
             });
             quantidadeVendas = Object.entries(quantidadeVendas)
-                .filter(([produto, info]) => info.quantidadeTotal !== 0)
+                .filter(([produto, info]) => info.quantidadeTotal)
                 .reduce((acc, [produto, info]) => {
                     acc[produto] = info;
                     return acc;
                 }, {} as { [produto: string]: typeof quantidadeVendas[keyof typeof quantidadeVendas] });
         }
-        if (comprasDataTable.length !== 0) {
+        if (comprasDataTable.length) {
             comprasDataTable.forEach(venda => {
                 const { cdProduto, nmProduto, quantidade, tpProduto, cxProduto, kgProduto, qntMinima } = venda;
                 if (!quantidadeCompras[nmProduto]) {

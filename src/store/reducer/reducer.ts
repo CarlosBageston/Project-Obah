@@ -24,6 +24,17 @@ const initialState: UserState = {
   loading: false
 };
 
+/**
+* Redux Slice para gerenciar o estado do usuário.
+*  @param email - O email do usuário.
+*  @param password - A senha do usuário.
+*  @param error - Mensagem de erro, caso ocorra.
+*  @param userLogado - Indica se o usuário está logado ou não.
+*  @param user - O objeto de usuário.
+*  @param loading - Indica se o estado está em processo de carregamento.
+*  @returns O reducer do estado do usuário.
+*/
+
 const userSlice = createSlice({
   name: 'user',
   initialState,

@@ -2,10 +2,12 @@ import { Box, ContainerMenu, ContainerList, NavLinkScroll, ImageLogo, NavLinkRou
 import logo from '../../assets/Image/logo.png'
 import { MdAdminPanelSettings } from 'react-icons/md'
 
+/**
+ * Componente que exibe o menu da aplicação.
+ * O menu contém links para as seções "Queridinhos", "Sobre nós" e "Contato", além de um link para o painel de administração.
+ */
 
 export default function Menu() {
-
-
     return (
         <>
             <Box id='menu'>

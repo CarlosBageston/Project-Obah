@@ -5,6 +5,16 @@ import { EntregaModel } from "../../../Pages/admin/entregas/model/entrega";
 import { db } from "../../../firebase";
 import 'chart.js/auto'
 
+/**
+ * ChartLine Component
+ * 
+ * Este componente exibe um gráfico de linha que representa a quantidade e o valor total das entregas por mês.
+ * Os dados são buscados no banco de dados e filtrados por mês.
+ * O gráfico é configurado com opções personalizadas, como posicionamento da legenda, título e dicas de ferramenta.
+ * Os dados são exibidos com rótulos de mês e valores de quantidade.
+ * 
+ * @returns Retorna um objeto contendo os dados do gráfico (dataLine), as opções de configuração (optionsLine), uma referência (ref) e os dados por mês (dadosPorMes).
+ */
 
 export default function ChartLine() {
     const [entregas, setEntregas] = useState<EntregaModel[]>([])

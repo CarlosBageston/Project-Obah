@@ -102,6 +102,13 @@ const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' 
 
 );
 
+/**
+ * Componente que exibe um menu lateral com opções de navegação.
+ * O menu inclui links para as seguintes páginas: Dashboard, Atualizar Estoque,
+ * Cadastro de Produto, Cadastro de Cliente, Painel de Venda, Entregas e Estoque.
+ * O menu pode ser aberto e fechado, exibindo ou ocultando as opções de navegação.
+ */
+
 export default function MenuLateral() {
     const [open, setOpen] = React.useState(false);
 

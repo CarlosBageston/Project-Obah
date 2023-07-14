@@ -13,6 +13,22 @@ interface Props {
     clienteProps?: string,
 
 }
+
+/**
+ * FiltroGeneric Component
+ * 
+ * @param data Dados a serem filtrados
+ * @param setFilteredData Função para definir os dados filtrados
+ * @param type Tipo de filtro: "cliente" ou "produto"
+ * @param carregarDados Função para atualizar o estado de carregamento dos dados
+ * @param clienteProps Propriedade adicional para o tipo "cliente" (opcional)
+ * 
+ * Este componente exibe um campo de filtro que permite ao usuário selecionar um valor para filtrar os dados fornecidos.
+ * Dependendo do tipo de filtro especificado, o componente renderiza um Autocomplete com opções de clientes ou produtos.
+ * Quando um valor é selecionado no Autocomplete, a função de filtro correspondente é chamada para filtrar os dados.
+ * O componente também permite cancelar o filtro e redefinir os dados filtrados para os dados originais.
+ */
+
 const FiltroGeneric = ({ data, setFilteredData, type, carregarDados, clienteProps }: Props) => {
     const [valueClient, setValueClient] = useState<any>();
     const [valueproduct, setValueproduct] = useState<any>();

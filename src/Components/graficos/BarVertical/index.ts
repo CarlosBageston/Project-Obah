@@ -6,7 +6,16 @@ import { db } from "../../../firebase";
 import 'chart.js/auto'
 import GetData from "../../../firebase/getData";
 
-
+/**
+ * ChartBarVertical Component
+ * 
+ * Este componente exibe um gráfico de barras verticais que representa a quantidade, valor total e valor de lucro das vendas por mês.
+ * Os dados são buscados no banco de dados e filtrados por mês.
+ * O gráfico é configurado com opções personalizadas, como posicionamento da legenda, título e dicas de ferramenta.
+ * Os dados são exibidos com rótulos de mês e valores de quantidade.
+ * 
+ * @returns Retorna um objeto contendo os dados do gráfico (dataVertical), as opções de configuração (optionsVertical) e os dados por mês (dadosPorMesVertical).
+ */
 export default function ChartBarVertical() {
     const [recarregue, setRecarregue] = useState<boolean>(true);
     // const [vendas, setVendas] = useState<ProdutoModel[]>([])

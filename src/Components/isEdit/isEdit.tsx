@@ -1,18 +1,25 @@
-import { ChangeEvent, SetStateAction } from "react";
-import ClienteModel from "../../Pages/admin/cadastroClientes/model/cliente";
-import { TitleDefault } from "../../Pages/admin/cadastroClientes/style";
 import Input from "../input";
+import { ChangeEvent, SetStateAction } from "react";
+import { TitleDefault } from "../../Pages/admin/cadastroClientes/style";
+import ClienteModel from "../../Pages/admin/cadastroClientes/model/cliente";
 import ProdutosModel from "../../Pages/admin/cadastroProdutos/model/produtos";
-import { ContainerFlutuante, ButtonStyled, ContianerMP, DivLineMP, Paragrafo, BoxBottom, BoxTop, DivClose, BoxClose, StyledAiOutlineClose } from "./style";
-
-
+import {
+    BoxTop,
+    DivClose,
+    BoxClose,
+    BoxBottom,
+    Paragrafo,
+    DivLineMP,
+    ContianerMP,
+    ButtonStyled,
+    ContainerFlutuante,
+    StyledAiOutlineClose
+} from "./style";
 
 export interface InputConfig {
     label: string;
     propertyName: string;
 }
-
-
 
 interface IsEditProps {
     isEdit: boolean;
@@ -24,6 +31,29 @@ interface IsEditProps {
     editingScreen: 'Cliente' | 'Produto' | 'Estoque';
     setIsEdit: React.Dispatch<SetStateAction<boolean>>
 }
+
+/**
+ * IsEdit Component
+ * 
+ * Este componente exibe um formulário flutuante para editar os dados de um cliente, produto ou estoque.
+ * O componente recebe várias propriedades para configurar e personalizar o formulário de edição.
+ * Ele inclui a lógica e manipulação de eventos para alterar os valores dos campos do formulário,
+ * formatar valores monetários, exibir os campos de acordo com a tela de edição selecionada,
+ * e concluir a edição dos dados.
+ * O formulário flutuante de edição é exibido apenas quando `isEdit` é verdadeiro.
+ * 
+ * @param isEdit Indica se o formulário flutuante de edição está visível.
+ * @param inputsConfig As configurações dos campos de entrada do formulário.
+ * @param data Os dados a serem editados.
+ * @param products Os produtos ou matérias-primas relacionados ao cliente ou produto a serem editados.
+ * @param handleEditRow Função para concluir a edição dos dados.
+ * @param setSelected Função para definir os dados selecionados ou editados.
+ * @param editingScreen A tela de edição atual, que pode ser 'Cliente', 'Produto' ou 'Estoque'.
+ * @param setIsEdit Função para controlar a visibilidade do formulário flutuante de edição.
+ * 
+ * @returns Retorna o formulário flutuante de edição de clientes, produtos ou estoque.
+ */
+
 export function IsEdit({ data, handleEditRow, inputsConfig, isEdit, products, setSelected, editingScreen, setIsEdit }: IsEditProps) {
     const handleChange = (e: ChangeEvent<HTMLInputElement>, propertyName: string) => {
         const { value } = e.target;

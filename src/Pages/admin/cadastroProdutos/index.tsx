@@ -1,10 +1,10 @@
 import * as Yup from 'yup';
-import { FormikTouched, useFormik } from 'formik';
 import { db } from "../../../firebase";
 import ProdutoModel from "./model/produtos";
 import Input from "../../../Components/input";
 import Button from "../../../Components/button";
 import GetData from "../../../firebase/getData";
+import { FormikTouched, useFormik } from 'formik';
 import { BoxTitleDefault } from "../estoque/style";
 import React, { useState, useEffect } from "react";
 import ComprasModel from "../compras/model/compras";
@@ -208,7 +208,6 @@ export default function CadastroProduto() {
                     if (produtoEncontrado.cxProduto) {
                         const caixa = produtoEncontrado.cxProduto;
                         const quantidadeUsada = mp.quantidade;
-                        console.log(values.mpFabricado)
                         result = Number(valueFormat) / Number(caixa) * Number(quantidadeUsada);
 
                     } else if (produtoEncontrado.kgProduto) {

@@ -15,8 +15,29 @@ interface IsAddingProps {
     addingScreen: 'Cliente' | 'Produto';
     touched?: FormikTouched<any>;
     errors?: FormikTouched<any>;
-
 }
+
+/**
+ * IsAdding Component
+ * 
+ * Este componente exibe um formulário flutuante para adicionar matérias-primas ou produtos.
+ * O componente recebe várias propriedades para configurar e personalizar o comportamento do formulário.
+ * Ele inclui a lógica e manipulação de eventos para selecionar matérias-primas ou produtos, especificar quantidades ou valores,
+ * exibir erros de validação e concluir a adição.
+ * O formulário flutuante é exibido apenas quando `isAdding` é verdadeiro.
+ * 
+ * @param isAdding Indica se o formulário flutuante de adição está visível.
+ * @param data Os dados disponíveis para seleção de matérias-primas ou produtos.
+ * @param products Os produtos selecionados ou as matérias-primas adicionadas.
+ * @param setFieldValue Função para definir o valor de um campo no formulário.
+ * @param setIsVisibleTpProduto Função para controlar a visibilidade do formulário flutuante.
+ * @param addingScreen A tela de adição atual, que pode ser 'Cliente' ou 'Produto'.
+ * @param errors Os erros de validação dos campos do formulário.
+ * @param touched Os campos do formulário que foram tocados.
+ * 
+ * @returns Retorna o formulário flutuante de adição de matérias-primas ou produtos.
+ */
+
 export function IsAdding({ data, isAdding, setFieldValue, setIsVisibleTpProduto, products, addingScreen, errors, touched }: IsAddingProps) {
     const [filterTpProdutoFabricado, setFilterTpProdutoFabricado] = useState<any>()
     const [filterTpProdutoComprado, setFilterTpProdutoComprado] = useState<any>()

@@ -11,7 +11,6 @@ import {
     FiEditStyled
 } from './style';
 
-
 type TableColumn = {
     name: string;
     label: string;
@@ -30,6 +29,24 @@ type TableProps = {
     isVisibleEdit?: boolean;
     isVisibledDelete?: boolean;
 };
+
+/**
+ * Componente de tabela genérica que exibe dados em colunas e linhas.
+ * 
+ * @param columns - As colunas da tabela.
+ * @param data - Os dados a serem exibidos na tabela.
+ * @param isLoading - Indica se a tabela está em processo de carregamento.
+ * @param error - Mensagem de erro, caso ocorra.
+ * @param styleDiv - Estilos CSS para o container da tabela.
+ * @param onSelectedRow - Função chamada ao selecionar uma linha da tabela.
+ * @param onDelete - Função chamada ao excluir uma linha da tabela.
+ * @param onEdit - Função chamada ao editar uma linha da tabela.
+ * @param isDisabled - Indica se os botões de excluir e editar estão desabilitados.
+ * @param isVisibleEdit - Indica se o botão de editar está visível.
+ * @param isVisibledDelete - Indica se o botão de excluir está visível.
+ * 
+ * @returns O componente da tabela genérica.
+ */
 
 const GenericTable = ({ columns, data, isLoading, error, styleDiv, onSelectedRow, onDelete, onEdit, isDisabled, isVisibleEdit, isVisibledDelete }: TableProps) => {
     const [selectedRowId, setSelectedRowId] = useState<string | undefined>(undefined);

@@ -8,6 +8,12 @@ import MenuLateral from '../../Components/menuLateral';
 import { Box, Dots } from '../assets/loadingStyle';
 import logo from '../../assets/Image/logo.png';
 
+/**
+* Componente de rota privada que verifica se o usuário está logado antes de renderizar o conteúdo da rota.
+* Se o usuário estiver logado, exibe o menu lateral. Caso contrário, redireciona para a página de login.
+* @returns O componente de rota privada.
+*/
+
 export default function PrivateRoute() {
     const { userLogado } = useSelector((state: State) => state.user);
     const dispatch = useDispatch();

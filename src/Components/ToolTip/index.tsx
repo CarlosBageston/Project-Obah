@@ -4,7 +4,11 @@ import { Box, StyledIcon, Title } from './style'
 interface Props {
     tooltipRef: React.RefObject<HTMLDivElement>;
 }
-
+/**
+ * Componente de Tooltip que exibe um botão de "Voltar ao Topo" quando o elemento alvo está visível no viewport.
+ * @param tooltipRef - Referência para o elemento que será observado pelo IntersectionObserver.
+ * @returns  O componente de Tooltip.
+*/
 export default function ToolTip({ tooltipRef }: Props) {
     const [isVisible, setIsVisible] = useState(false);
 

@@ -3,6 +3,9 @@ import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 
+/**
+ * Inicializando conexão com o banco de dados do Firebase.
+ */
 const firebaseConfig = {
     apiKey: import.meta.env.VITE_KEY,
     authDomain:import.meta.env.VITE_AUTHDOMAIN,

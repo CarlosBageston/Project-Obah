@@ -10,7 +10,15 @@ export interface ButtonProps {
     disabled?: boolean | undefined
 }
 
-
+/**
+ * Button Component
+ * 
+ * @param onClick Função de clique do botão
+ * @param children Conteúdo do botão
+ * @param type Tipo do botão: "button", "submit" ou "reset"
+ * @param style Estilo CSS do botão
+ * @param disabled Indica se o botão está desabilitado
+ */
 function Button({ children, onClick, type, style, disabled }: ButtonProps) {
     return (
         <StyledButton

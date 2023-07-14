@@ -228,6 +228,7 @@ export default function AtualizarEstoque() {
         };
 
         const lastProduct = getProduct();
+        console.log(lastProduct)
         if (values.tpProduto === SituacaoProduto.COMPRADO) {
             if (lastProduct) {
                 setSelectAutoComplete(true);

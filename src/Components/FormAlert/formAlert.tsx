@@ -7,6 +7,18 @@ interface Props {
     submitForm: boolean | undefined,
     name: string
 }
+
+/**
+ * FormAlert Component
+ * 
+ * @param submitForm Indica se o formulário foi submetido (true: sucesso, false: falha)
+ * @param name Nome do item cadastrado no formulário
+ * 
+ * Este componente exibe um alerta visual para indicar o resultado de uma submissão de formulário.
+ * Dependendo do valor de "submitForm", o componente exibirá um alerta de sucesso ou erro por um determinado período de tempo.
+ * O nome do item cadastrado é utilizado no conteúdo do alerta para fornecer informações específicas.
+ */
+
 const FormAlert = ({ submitForm, name }: Props) => {
 
     const [fail, setFail] = useState(false);

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
 import EstoqueModel from "./model/estoque";
 import GetData from "../../../firebase/getData";
 import VendasModel from "../vendas/model/vendas";
+import React, { useState, useEffect } from "react";
 import ComprasModel from "../compras/model/compras";
 import GenericTable from "../../../Components/table";
 import FiltroGeneric from "../../../Components/filtro";
@@ -9,12 +9,12 @@ import { EntregaModel } from "../entregas/model/entrega";
 import SituacaoProduto from "../compras/enumeration/situacaoProduto";
 import {
     Box,
-    BoxFilterDefault,
-    BoxTitleDefault,
-    BoxTitleFilterDefault,
-    DivTitleDefault,
     Title,
+    BoxTitleDefault,
+    DivTitleDefault,
+    BoxFilterDefault,
     TitleTableDefault,
+    BoxTitleFilterDefault,
 } from './style'
 
 

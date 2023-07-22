@@ -1,4 +1,3 @@
-import React, { useState, useEffect, useRef } from "react";
 import * as Yup from 'yup';
 import { useFormik } from 'formik';
 import { db } from "../../../firebase";
@@ -8,6 +7,7 @@ import GetData from "../../../firebase/getData";
 import Button from "../../../Components/button";
 import GenericTable from "../../../Components/table";
 import FiltroGeneric from "../../../Components/filtro";
+import React, { useState, useEffect, useRef } from "react";
 import ClienteModel from "../cadastroClientes/model/cliente";
 import formatDate from "../../../Components/masks/formatDate";
 import FormAlert from "../../../Components/FormAlert/formAlert";
@@ -16,21 +16,21 @@ import { FormControl, InputLabel, MenuItem, Select, SelectChangeEvent } from "@m
 import {
     Box,
     Title,
-    ContainerTableCliente,
-    TextTable,
-    DivProduto,
-    DivInputs,
-    DivButtonAndTable,
-    ContainerAll,
-    NameProduto,
-    QntProduto,
-    ResultProduto,
-    ValueProduto,
     DivColumn,
     BoxLabels,
+    DivInputs,
+    TextTable,
+    QntProduto,
+    DivProduto,
+    NameProduto,
     LabelsHeader,
+    ContainerAll,
+    ValueProduto,
+    ResultProduto,
     DivColumnPrice,
+    DivButtonAndTable,
     DivColumnQntTotal,
+    ContainerTableCliente,
 } from './style'
 import { BoxTitleDefault } from "../estoque/style";
 

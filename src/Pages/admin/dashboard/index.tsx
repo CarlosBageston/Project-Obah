@@ -1,21 +1,21 @@
 import { Bar, Line } from "react-chartjs-2";
-import ChartBarVertical from "../../../Components/graficos/BarVertical";
 import ChartLine from "../../../Components/graficos/Line";
+import ChartBarVertical from "../../../Components/graficos/BarVertical";
 import ChartBarHorizontal from "../../../Components/graficos/BarHorizontal";
 import {
     Box,
-    ContainerGrafic,
-    ContainerTwoGrafic,
-    Container,
-    ContainerResult,
+    Title,
     DivResult,
-    TextResult,
     Paragraph,
     SumResult,
-    DivGraficHortizontal,
-    DivGraficVertical,
+    Container,
+    TextResult,
     DivGraficLine,
-    Title
+    ContainerResult,
+    ContainerGrafic,
+    DivGraficVertical,
+    ContainerTwoGrafic,
+    DivGraficHortizontal,
 } from './style'
 
 export default function Dashboard() {

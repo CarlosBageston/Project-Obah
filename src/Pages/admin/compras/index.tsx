@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from "react";
 import * as Yup from 'yup';
 import { useFormik } from 'formik';
 import { db } from "../../../firebase";
@@ -6,6 +5,7 @@ import ComprasModel from "./model/compras";
 import Input from "../../../Components/input";
 import Button from "../../../Components/button";
 import GetData from "../../../firebase/getData";
+import React, { useState, useEffect } from "react";
 import GenericTable from "../../../Components/table";
 import FiltroGeneric from "../../../Components/filtro";
 import { IsEdit } from "../../../Components/isEdit/isEdit";

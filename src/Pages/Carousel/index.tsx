@@ -1,7 +1,7 @@
-import { BoxDefault, ContainerCarousel, Title, ContainerTitle, SubTitle } from './style'
 import Slider from "react-slick";
-import sorvete from '../../assets/Image/sorvete.png'
 import Menu from '../../Components/Menu/Menu';
+import sorvete from '../../assets/Image/sorvete.png';
+import { BoxDefault, ContainerCarousel, Title, ContainerTitle, SubTitle } from './style';
 
 
 export default function Carousel() {

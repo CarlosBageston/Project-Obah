@@ -1,34 +1,33 @@
 import Slider from "react-slick";
 import "leaflet/dist/leaflet.css";
-import { FC, useEffect, useRef, useState } from "react";
-import useObserver from "../../hooks/useObserver";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import 'leaflet/dist/leaflet.css';
+import ToolTip from "../../Components/ToolTip";
+import useObserver from "../../hooks/useObserver";
+import { useEffect, useRef, useState } from "react";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 
 //Import Imagens/Icons
+import iconFacebook from '../../assets/Icon/facebook-icon.png'
+import iconwhatsapp from '../../assets/Icon/whatsapp-icon.png'
+import iconinstagram from '../../assets/Icon/instagram-icon.png'
 import sorveteriaExterna from '../../assets/Image/Sorveteriadentro.jpg'
 import sorveteriaInterna from '../../assets/Image/chiquinho-sorvetes.webp'
-import iconFacebook from '../../assets/Icon/facebook-icon.png'
-import iconinstagram from '../../assets/Icon/instagram-icon.png'
-import iconwhatsapp from '../../assets/Icon/whatsapp-icon.png'
 
 //Import Style
 import {
     Box,
-    ContainerTitle,
-    Contagem,
     Title,
-    CotainerSlide,
-    ContainerAllSlide,
-    CotainerSobre,
-    ContainerAllMap,
-    ContainerInfo,
-    ContainerIcons,
-    ContainerButton,
     Button,
-
+    Contagem,
+    CotainerSobre,
+    ContainerInfo,
+    CotainerSlide,
+    ContainerIcons,
+    ContainerTitle,
+    ContainerAllMap,
+    ContainerButton,
+    ContainerAllSlide,
 } from "./style";
-import ToolTip from "../../Components/ToolTip";
 
 
 export default function SobreNos() {

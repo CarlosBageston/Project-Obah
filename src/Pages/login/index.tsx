@@ -1,12 +1,12 @@
-import { Box, Container, DivInput, Title, Input, Button, Error, BoxLoading } from './style';
-import { useDispatch, useSelector } from 'react-redux';
-import { State, setEmail, setPassword, setError, setUser, setuserLogado } from '../../store/reducer/reducer';
-import { onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../firebase';
-import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { Dots } from '../../store/assets/loadingStyle';
 import logo from '../../assets/Image/logo.png';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { Dots } from '../../store/assets/loadingStyle';
+import { onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
+import { Box, Container, DivInput, Title, Input, Button, Error, BoxLoading } from './style';
+import { State, setEmail, setPassword, setError, setUser, setuserLogado } from '../../store/reducer/reducer';
 
 
 

@@ -1,9 +1,10 @@
 import * as Yup from 'yup';
 import { useFormik } from 'formik';
 import { useRef, useState } from 'react';
+import ContatoModel from './model/contato';
 import Input from '../../Components/input';
 import Button from '../../Components/button';
-import ContatoModel from './model/contato';
+import ToolTip from '../../Components/ToolTip';
 import formatPhone from '../../Components/masks/maskTelefone';
 
 //Import Imagens/Icons
@@ -15,25 +16,24 @@ import iconinstagram from '../../assets/Icon/instagram-icon.png';
 //import do styled components
 import {
     Box,
-    ContainerBox,
-    Imagem,
-    ContainerAll,
-    ContainerContato,
-    ContainerTitle,
     Title,
-    SubTitleBox,
-    TitleBox,
-    ContainerIcons,
     Ancora,
+    Imagem,
+    TitleBox,
+    SubTitleBox,
+    ContainerBox,
+    ContainerAll,
+    ContainerIcons,
+    ContainerTitle,
+    ContainerContato,
 } from './style';
-import ToolTip from '../../Components/ToolTip';
 
 
 
 export default function Contato() {
     const targetRef = useRef<HTMLDivElement>(null);
 
-    const [initialValues, setInitialValues] = useState<ContatoModel>({
+    const initialValues: ContatoModel = ({
         msgContato: '',
         nmContato: '',
         tfContato: '',

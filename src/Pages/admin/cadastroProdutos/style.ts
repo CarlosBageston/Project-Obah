@@ -65,13 +65,16 @@ export const ContainerButton = styled.div`
 margin: 16px 12rem;
 `;
 
-
-
 export const Paragrafo = styled.p`
 width: 30rem;
 font-size: 16px;
 text-align: center;
 `;
 
-
+export const DivSituacaoProduto = styled.div`
+display: flex;
+justify-content: space-between;
+width: 27rem;
+margin-top: 8px;
+`;
 

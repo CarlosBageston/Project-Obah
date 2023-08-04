@@ -14,14 +14,15 @@ import { IsEdit } from "../../../Components/isEdit/isEdit";
 import FormAlert from "../../../Components/FormAlert/formAlert";
 import { IsAdding } from "../../../Components/isAdding/isAdding";
 import SituacaoProduto from "../compras/enumeration/situacaoProduto";
-import { FormControl, InputLabel, MenuItem, Select, } from "@mui/material";
 import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { Checkbox, FormControl, FormControlLabel, InputLabel, MenuItem, Select, } from "@mui/material";
 import {
     Box,
-    ContainerInputs,
-    DivInput,
     Title,
+    DivInput,
+    ContainerInputs,
     ContainerButton,
+    DivSituacaoProduto,
 } from './style'
 
 
@@ -31,6 +32,7 @@ const objClean: ProdutoModel = {
     vlPagoProduto: '',
     vlVendaProduto: '',
     tpProduto: null,
+    stEntrega: false,
     mpFabricado: []
 }
 
@@ -100,6 +102,7 @@ export default function CadastroProduto() {
             vlPagoProduto: '',
             vlVendaProduto: '',
             tpProduto: null,
+            stEntrega: false,
             mpFabricado: []
         })
         setKey(Math.random());
@@ -232,7 +235,6 @@ export default function CadastroProduto() {
         if (values.tpProduto === SituacaoProduto.FABRICADO) return setIsVisibleTpProduto(true)
         return setIsVisibleTpProduto(false)
     }, [values.tpProduto])
-
     return (
         <Box>
             <Title>Cadastro de Novos Produtos</Title>
@@ -260,38 +262,42 @@ export default function CadastroProduto() {
                         styleDiv={{ marginTop: 4 }}
                         style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                     />
-                    <FormControl
-                        variant="standard"
-                        sx={{ mb: 2, minWidth: 120 }}
-                        style={{ width: '13rem' }}
-                    >
-                        <InputLabel style={{ color: '#4d68af', fontWeight: 'bold', paddingLeft: 4 }} id="standard-label">Situação do produto</InputLabel>
-                        <Select
-                            key={`tpProduto-${key}`}
-                            name='tpProduto'
-                            id="standard"
-                            onBlur={handleBlur}
-                            label="Selecione..."
-                            labelId="standard-label"
-                            onChange={e => setFieldValue(e.target.name, e.target.value)}
-                            value={values.tpProduto}
-                            style={{ borderBottom: '1px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
+                    <DivSituacaoProduto>
+                        <FormControl
+                            variant="standard"
+                            sx={{ mb: 2, minWidth: 120 }}
+                            style={{ width: '13rem', display: 'flex', justifyContent: 'center' }}
                         >
-                            <MenuItem
-                                value={SituacaoProduto.FABRICADO}
+                            <InputLabel style={{ color: '#4d68af', fontWeight: 'bold', paddingLeft: 4 }} id="standard-label">Situação do produto</InputLabel>
+                            <Select
+                                key={`tpProduto-${key}`}
+                                name='tpProduto'
+                                id="standard"
+                                onBlur={handleBlur}
+                                label="Selecione..."
+                                labelId="standard-label"
+                                onChange={e => setFieldValue(e.target.name, e.target.value)}
+                                value={values.tpProduto}
+                                style={{ borderBottom: '1px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                             >
-                                Fabricado
-                            </MenuItem>
-                            <MenuItem
-                                value={SituacaoProduto.COMPRADO}
-                            >
-                                Comprado
-                            </MenuItem>
-                        </Select>
-                        {touched.tpProduto && errors.tpProduto && (
-                            <div style={{ color: 'red' }}>{errors.tpProduto}</div>
-                        )}
-                    </FormControl>
+                                <MenuItem
+                                    value={SituacaoProduto.FABRICADO}
+                                >
+                                    Fabricado
+                                </MenuItem>
+                                <MenuItem
+                                    value={SituacaoProduto.COMPRADO}
+                                >
+                                    Comprado
+                                </MenuItem>
+                            </Select>
+                            {touched.tpProduto && errors.tpProduto && (
+                                <div style={{ color: 'red' }}>{errors.tpProduto}</div>
+                            )}
+                        </FormControl>
+                        <FormControlLabel control={<Checkbox checked={values.stEntrega} onChange={(e) => setFieldValue("stEntrega", e.target.checked)} />} label="Venda no atacado?" />
+
+                    </DivSituacaoProduto>
                 </DivInput>
                 <DivInput>
                     <Input

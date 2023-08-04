@@ -5,14 +5,17 @@ import Input from "../../../Components/input";
 import { EntregaModel } from "./model/entrega";
 import GetData from "../../../firebase/getData";
 import Button from "../../../Components/button";
+import { AiTwotonePrinter } from 'react-icons/ai';
 import GenericTable from "../../../Components/table";
 import FiltroGeneric from "../../../Components/filtro";
+import { Autocomplete, TextField } from "@mui/material";
 import React, { useState, useEffect, useRef } from "react";
+import { NotaFiscal } from '../../../Components/notaFiscal';
 import ClienteModel from "../cadastroClientes/model/cliente";
 import formatDate from "../../../Components/masks/formatDate";
 import FormAlert from "../../../Components/FormAlert/formAlert";
 import { addDoc, collection, deleteDoc, doc } from "firebase/firestore";
-import { FormControl, InputLabel, MenuItem, Select, SelectChangeEvent } from "@mui/material";
+
 import {
     Box,
     Title,
@@ -22,6 +25,7 @@ import {
     TextTable,
     QntProduto,
     DivProduto,
+    DivButtons,
     NameProduto,
     LabelsHeader,
     ContainerAll,
@@ -51,8 +55,9 @@ export default function Entregas() {
     const [clienteCurrent, setClienteCurrent] = useState<ClienteModel[]>([]);
     const [quantidades, setQuantidades] = useState<{ [key: string]: number }>({});
     const [scrollActive, setScrollActive] = useState<boolean>(false)
-    const [initialValues, setInitialValues] = useState<EntregaModel>({ ...objClean });
+    const [shouldShow, setShouldShow] = useState<boolean>(false);
 
+    const initialValues: EntregaModel = ({ ...objClean });
     const ref = useRef<HTMLDivElement>(null);
 
     //realizando busca no banco de dados
@@ -121,10 +126,10 @@ export default function Entregas() {
     }
 
     //manupulando evento de onchange do Select
-    async function hundleCliente(event: SelectChangeEvent<string>) {
-        const clienteSelecionado = event.target.value;
-        const clienteCerto = dataTableCliente.filter(cliente => cliente.nmCliente === clienteSelecionado)
-        setClienteCurrent(clienteCerto)
+    function handleClienteChange(event: React.SyntheticEvent<Element, Event>, value: any) {
+        const clienteSelecionado = value;
+        const clienteEncontrado = dataTableCliente.filter(cliente => cliente.nmCliente === clienteSelecionado.nmCliente)
+        setClienteCurrent(clienteEncontrado)
         setFieldValue('cliente.nmCliente', clienteSelecionado)
     }
     //fazendo a soma dos lucros e do valor total
@@ -181,41 +186,25 @@ export default function Entregas() {
             <Title>Cadastro de Novas Entregas</Title>
             <ContainerAll>
                 <DivInputs>
-                    <FormControl
-                        variant="standard"
-                        sx={{ m: 1, minWidth: 120 }}
-                        style={{ paddingRight: '2rem' }}
-                    >
-                        <InputLabel style={{ color: '#4d68af', fontWeight: 'bold', paddingLeft: 4 }} id="standard-label">Nome do Cliente</InputLabel>
-                        <Select
-                            key={`cliente-${key}`}
-                            name='cliente'
-                            id="standard"
-                            onBlur={handleBlur}
-                            label="Selecione..."
-                            labelId="standard-label"
-                            onChange={hundleCliente}
-                            value={values.cliente?.nmCliente}
-                            style={{ borderBottom: '1px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
-                            MenuProps={{
-                                autoFocus: false,
-                                PaperProps: {
-                                    style: {
-                                        height: 200,
-                                        overflow: 'auto'
-                                    }
-                                }
-                            }}
-                        >
-                            {dataTableCliente.map(cliente => (
-                                <MenuItem
-                                    key={cliente.id}
-                                    value={cliente.nmCliente}
-                                >
-                                    {cliente.nmCliente}
-                                </MenuItem>
-                            ))}
-                        </Select>
+                    <div>
+                        <Autocomplete
+                            id="tags-standard"
+                            options={dataTableCliente}
+                            getOptionLabel={(item: any) => item.nmCliente}
+                            onChange={handleClienteChange}
+                            style={{ borderBottom: '1px solid #6e6dc0', color: 'black', backgroundImage: 'linear-gradient(to top, #b2beed1a, #b2beed1a, #b2beed1a, #b2beed12, #ffffff)' }}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    variant="standard"
+                                    label="Cliente"
+                                    placeholder="Selecione..."
+                                    InputLabelProps={{
+                                        style: { fontSize: '1.3rem', fontWeight: '500', color: '#4d68b7' }
+                                    }}
+                                />
+                            )}
+                        />
                         <Input
                             key={`dtEntrega-${key}`}
                             maxLength={10}
@@ -227,7 +216,7 @@ export default function Entregas() {
                             error={touched.dtEntrega && errors.dtEntrega ? errors.dtEntrega : ''}
                             styleDiv={{ marginTop: 8 }}
                         />
-                    </FormControl>
+                    </div>
                     <div>
                         <Input
                             key={`vlEntrega-${key}`}
@@ -316,15 +305,29 @@ export default function Entregas() {
                             </>
                         ))}
                     </ContainerTableCliente>
-
-                    <div>
+                    {shouldShow &&
+                        <NotaFiscal
+                            resultCalculo={resultCalculo}
+                            values={values}
+                            clienteCurrent={clienteCurrent}
+                            setShouldShow={setShouldShow}
+                            shouldShow={shouldShow}
+                        />}
+                    <DivButtons>
+                        <Button
+                            children={<AiTwotonePrinter size={30} />}
+                            type='button'
+                            style={{ margin: '0rem 0px 2rem 0px', height: '4rem', width: '5rem' }}
+                            disabled={values.dtEntrega === ""}
+                            onClick={() => setShouldShow(true)}
+                        />
                         <Button
                             children='Cadastrar Entrega'
                             type="button"
                             onClick={handleSubmit}
                             style={{ margin: '2rem 0px 4rem 0px', height: '4rem', width: '12rem' }}
                         />
-                    </div>
+                    </DivButtons>
                 </DivButtonAndTable>
             </ContainerAll>
             <FormAlert submitForm={submitForm} name={'Entregas'} />

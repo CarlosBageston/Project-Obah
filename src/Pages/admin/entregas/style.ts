@@ -98,7 +98,7 @@ align-items: flex-end;
 export const DivInputs = styled.div`
 display: flex;
 width: 37rem;
-justify-content: flex-start;
+justify-content: space-around;
 `;
 export const BoxLabels = styled.div<{isVisible?: boolean}>`
 display: flex;
@@ -131,4 +131,11 @@ color: #333333;
 text-transform: uppercase;
 font-size: 16px;
 margin: 0;
+`;
+
+export const DivButtons = styled.div`
+display: flex;
+align-items: center;
+justify-content: space-around;
+width: 19rem;
 `;

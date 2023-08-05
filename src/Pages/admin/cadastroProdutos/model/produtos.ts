@@ -15,7 +15,9 @@ interface ProdutosModel {
     cdProduto: string,
     vlPagoProduto: string,
     vlVendaProduto: string,
-    tpProduto: SituacaoProduto | null
+    tpProduto: SituacaoProduto | null,
+    stEntrega?: boolean,
     mpFabricado: ComprasModel[]
+    valorItem?: Number
 }
 export default ProdutosModel

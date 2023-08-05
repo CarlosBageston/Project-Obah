@@ -30,6 +30,7 @@
     "react-router-dom": "^6.8.2",
     "react-scroll": "^1.8.9",
     "react-slick": "^0.29.0",
+    "react-to-print": "^2.14.13",
     "react-transition-group": "^4.4.5",
     "slick-carousel": "^1.8.1",
     "styled-components": "^5.3.8",

@@ -5,6 +5,7 @@ import { Autocomplete, Stack, TextField } from '@mui/material';
 import { TitleDefault } from "../../Pages/admin/cadastroClientes/style";
 import SituacaoProduto from "../../Pages/admin/compras/enumeration/situacaoProduto";
 import { BoxClose, ButtonStyled, ContainerFlutuante, ContianerMP, DivClose, DivLineMP, Paragrafo, StyledAiOutlineClose } from "../isEdit/style";
+import ProdutosModel from "../../Pages/admin/cadastroProdutos/model/produtos";
 
 interface IsAddingProps {
     isAdding: boolean;
@@ -45,7 +46,7 @@ export function IsAdding({ data, isAdding, setFieldValue, setIsVisibleTpProduto,
 
     useEffect(() => {
         if (addingScreen === 'Cliente') {
-            const filterFabricado = data.filter((item: any) => item.tpProduto === SituacaoProduto.FABRICADO)
+            const filterFabricado = data.filter((item: ProdutosModel) => item.tpProduto === SituacaoProduto.FABRICADO || item.stEntrega)
             setFilterTpProdutoFabricado(filterFabricado)
         } else {
             const filterComprado = data.filter((item: any) => item.tpProduto === SituacaoProduto.COMPRADO)

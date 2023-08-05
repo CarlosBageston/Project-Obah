@@ -17,7 +17,7 @@ justify-content: center;
 flex-direction: column;
 `
 export const ContainerInput = styled.div`
-width: 78%;
+width: 79%;
 `
 
 export const ContainerProdutos = styled.div`

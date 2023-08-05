@@ -8,13 +8,13 @@ import Button from "../../../Components/button";
 import { AiTwotonePrinter } from 'react-icons/ai';
 import GenericTable from "../../../Components/table";
 import FiltroGeneric from "../../../Components/filtro";
-import { Autocomplete, TextField } from "@mui/material";
-import React, { useState, useEffect, useRef } from "react";
 import { NotaFiscal } from '../../../Components/notaFiscal';
+import React, { useState, useEffect, useRef } from "react";
 import ClienteModel from "../cadastroClientes/model/cliente";
 import formatDate from "../../../Components/masks/formatDate";
 import FormAlert from "../../../Components/FormAlert/formAlert";
 import { addDoc, collection, deleteDoc, doc } from "firebase/firestore";
+import { Autocomplete, AutocompleteChangeReason, TextField } from "@mui/material";
 
 import {
     Box,
@@ -51,7 +51,6 @@ export default function Entregas() {
     const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
     const [selected, setSelected] = useState<EntregaModel>();
     const [recarregue, setRecarregue] = useState<boolean>(true);
-    const [resultCalculo, setResultCalculo] = useState<number[]>([]);
     const [clienteCurrent, setClienteCurrent] = useState<ClienteModel[]>([]);
     const [quantidades, setQuantidades] = useState<{ [key: string]: number }>({});
     const [scrollActive, setScrollActive] = useState<boolean>(false)
@@ -126,23 +125,28 @@ export default function Entregas() {
     }
 
     //manupulando evento de onchange do Select
-    function handleClienteChange(event: React.SyntheticEvent<Element, Event>, value: any) {
-        const clienteSelecionado = value;
-        const clienteEncontrado = dataTableCliente.filter(cliente => cliente.nmCliente === clienteSelecionado.nmCliente)
-        setClienteCurrent(clienteEncontrado)
-        setFieldValue('cliente.nmCliente', clienteSelecionado)
+    function handleClienteChange(event: React.SyntheticEvent<Element, Event>, value: any, reason: AutocompleteChangeReason) {
+        if (reason === 'clear' || reason === 'removeOption') {
+            cleanState()
+        } else {
+            cleanState()
+            const clienteSelecionado = value;
+            const clienteEncontrado = dataTableCliente.filter(cliente => cliente.nmCliente === clienteSelecionado.nmCliente)
+            setClienteCurrent(clienteEncontrado)
+            setFieldValue('cliente.nmCliente', clienteSelecionado)
+
+        }
     }
+
     //fazendo a soma dos lucros e do valor total
     useEffect(() => {
-        //inicializando array para guardar o calculo antes da soma total
-        const temp: number[] = [];
         //calculando o Total da entrega
         const result = clienteCurrent.flatMap((cliente) =>
             cliente.produtos.map((produto) => {
                 const quantidade = quantidades[produto.nmProduto] ?? 0;
                 const valor = Number(produto.vlVendaProduto.match(/\d+/g)?.join('.'));
                 const total = quantidade * valor;
-                temp.push(total)
+                produto.valorItem = total;
                 return total;
             })
         );
@@ -151,13 +155,12 @@ export default function Entregas() {
             cliente.produtos.map((produto) => {
                 const quantidade = quantidades[produto.nmProduto] ?? 0;
                 const valorPago = Number(produto.vlPagoProduto.match(/\d+/g)?.join('.'));
-                const valorVenda = Number(produto.vlVendaProduto.match(/\d+/g)?.join('.'));;
+                const valorVenda = Number(produto.vlVendaProduto.match(/\d+/g)?.join('.'));
                 const totalLucro = valorVenda - valorPago;
-                const total = totalLucro * quantidade
+                const total = totalLucro * quantidade;
                 return total;
             })
         );
-        setResultCalculo(temp);
 
         //somando todos os valores de total da entrega
         const sum = result.reduce((total, number) => total + number, 0);
@@ -292,13 +295,7 @@ export default function Entregas() {
                                             />
                                         </QntProduto>
                                         <ResultProduto>
-                                            <TextTable>
-                                                R$ {
-                                                    !Number.isNaN(resultCalculo[index]) &&
-                                                        resultCalculo[index] !== undefined ?
-                                                        resultCalculo[index].toFixed(2) : 0
-                                                }
-                                            </TextTable>
+                                            <TextTable>R$ {produto.valorItem?.toString().replace('.', ',')}</TextTable>
                                         </ResultProduto>
                                     </DivProduto>
                                 ))}
@@ -307,11 +304,9 @@ export default function Entregas() {
                     </ContainerTableCliente>
                     {shouldShow &&
                         <NotaFiscal
-                            resultCalculo={resultCalculo}
                             values={values}
                             clienteCurrent={clienteCurrent}
                             setShouldShow={setShouldShow}
-                            shouldShow={shouldShow}
                         />}
                     <DivButtons>
                         <Button

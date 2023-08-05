@@ -60,6 +60,5 @@ a {
   text-decoration: none;
 }
 
-/* Adicione qualquer estilo adicional que você precise abaixo */
 `
 export default GlobalStyle

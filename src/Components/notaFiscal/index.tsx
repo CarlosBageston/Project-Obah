@@ -1,23 +1,26 @@
-import { TableContainer, Paper, Table, TableHead, TableRow, TableCell, TableBody } from "@mui/material";
+import Button from "../button";
+import { format } from "date-fns";
+import ReactToPrint from "react-to-print";
+import { AiTwotonePrinter } from "react-icons/ai";
+import { useEffect, useRef, useState } from "react";
 import { EntregaModel } from "../../Pages/admin/entregas/model/entrega";
 import ClienteModel from "../../Pages/admin/cadastroClientes/model/cliente";
-import { useEffect, useState } from "react";
-import { format } from "date-fns";
+import { TableContainer, Table, TableHead, TableRow, TableCell, TableBody } from "@mui/material";
 
 
+import { BoxClose, StyledAiOutlineClose } from "../isEdit/style";
 import { Box, DivSubHeader, Title, TotalValue, DivClosePrint, ContainerFlutuantePrint } from "./style";
-import { BoxClose, ButtonStyled, StyledAiOutlineClose } from "../isEdit/style";
 
 interface Props {
-    resultCalculo: number[],
     values: EntregaModel,
     clienteCurrent: ClienteModel[],
-    setShouldShow: React.Dispatch<React.SetStateAction<boolean>>,
-    shouldShow: boolean
+    setShouldShow: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-export function NotaFiscal({ resultCalculo, values, clienteCurrent, setShouldShow, shouldShow }: Props) {
+export function NotaFiscal({ values, clienteCurrent, setShouldShow }: Props) {
     const [horaAtual, setHoraAtual] = useState('');
+
+    const ref = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const data = new Date();
@@ -43,67 +46,78 @@ export function NotaFiscal({ resultCalculo, values, clienteCurrent, setShouldSho
                 Imprimir Cupom Fiscal
             </Title>
             <Box>
-                <div>
-                    <Title>SORVETERIA OBAH LTDA</Title>
-                    <p>R. Uruguai, 115 - Santa Luzia, Dois Vizinhos - PR, 85660-000</p>
-                    <DivSubHeader>
-                        <div>
-                            <p>CNPJ: 88.060.864/0001-40</p>
-                            <p>IE: 940.82689-63</p>
-                            <p>IM: 08641569</p>
-                        </div>
-                        <div>
-                            <p>Data e Hora da venda</p>
-                            <p>{values.dtEntrega}</p>
-                            <p>{horaAtual}</p>
-                        </div>
-                    </DivSubHeader>
-                </div>
-                <hr style={{ border: "1px dashed #b0b0b0" }} />
-                <div style={{ margin: "1rem 0 1rem 0" }}>
-                    <h1>CUPOM FISCAL</h1>
-                    <TableContainer>
-                        <Table >
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell>ITEM</TableCell>
-                                    <TableCell>CÓD.</TableCell>
-                                    <TableCell>DESC.</TableCell>
-                                    <TableCell align="right">VALOR</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {clienteCurrent.map((cliente) => (
-                                    <>
-                                        {cliente.produtos
-                                            .filter((produto, index) => resultCalculo[index] !== 0)
-                                            .map((produto, index) => (
-                                                <TableRow key={produto.cdProduto}>
-                                                    <TableCell>{formatIndex(index + 1)}</TableCell>
-                                                    <TableCell>{produto.cdProduto.substring(0, 3)}</TableCell>
-                                                    <TableCell component="th" scope="row">{produto.nmProduto}</TableCell>
-                                                    <TableCell align="right">
-                                                        {!Number.isNaN(resultCalculo[index]) && resultCalculo[index] !== undefined
-                                                            ? resultCalculo[index].toFixed(2)
-                                                            : 0}
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                    </>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                </div>
-                <hr style={{ border: "1px dashed #b0b0b0" }} />
-                <div style={{ margin: "1rem 0 1rem 0" }}>
-                    <TotalValue>VALOR TOTAL R$ {values.vlEntrega}</TotalValue>
+                <div style={{ padding: 16 }} ref={ref}>
+                    <div>
+                        <Title>SORVETERIA OBAH LTDA</Title>
+                        <p>R. Uruguai, 115 - Santa Luzia, Dois Vizinhos - PR, 85660-000</p>
+                        <DivSubHeader>
+                            <div>
+                                <p>CNPJ: 88.060.864/0001-40</p>
+                                <p>IE: 940.82689-63</p>
+                                <p>IM: 08641569</p>
+                            </div>
+                            <div>
+                                <p>Data e Hora da venda</p>
+                                <p>{values.dtEntrega}</p>
+                                <p>{horaAtual}</p>
+                            </div>
+                        </DivSubHeader>
+                    </div>
+                    <hr style={{ border: "1px dashed #b0b0b0" }} />
+                    <div style={{ margin: "1rem 0 1rem 0" }}>
+                        <h1>CUPOM FISCAL</h1>
+                        <TableContainer>
+                            <Table >
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell>ITEM</TableCell>
+                                        <TableCell>CÓD.</TableCell>
+                                        <TableCell>DESC.</TableCell>
+                                        <TableCell align="right">VALOR</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {clienteCurrent.map((cliente) => (
+                                        <>
+                                            {cliente.produtos
+                                                .filter(produto => produto.valorItem !== 0)
+                                                .map((produto, index) => (
+                                                    <TableRow key={produto.cdProduto}>
+                                                        <TableCell>{formatIndex(index + 1)}</TableCell>
+                                                        <TableCell>{produto.cdProduto.substring(0, 3)}</TableCell>
+                                                        <TableCell component="th" scope="row">{produto.nmProduto}</TableCell>
+                                                        <TableCell align="right"> {
+                                                            Number(produto.valorItem) % 1 === 0
+                                                                ? `R$ ${produto.valorItem?.toFixed(0)},00`
+                                                                : ` R$ ${produto.valorItem?.toFixed(2).replace('.', ',')}`}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                        </>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </div>
+                    <hr style={{ border: "1px dashed #b0b0b0" }} />
+                    <div style={{ margin: "1rem 0 1rem 0" }}>
+                        <TotalValue>VALOR TOTAL R$ {values.vlEntrega}</TotalValue>
+                    </div>
                 </div>
             </Box>
             <div>
-                <ButtonStyled>
-                    Confirmar
-                </ButtonStyled>
+                <ReactToPrint
+                    trigger={() =>
+                        <Button
+                            type='button'
+                            disabled={values.dtEntrega === ""}
+                            style={{ display: 'flex', alignItems: 'center', marginBottom: 24 }}
+                        >
+                            Confirmar <AiTwotonePrinter size={30} />
+                        </Button>
+                    }
+                    content={() => ref.current}
+                />
             </div>
         </ContainerFlutuantePrint>
     )

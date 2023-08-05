@@ -6,7 +6,6 @@ height: auto;
 padding-top: 28px;
 `;
 export const Box = styled.div`
-padding: 1rem;
 border: 1px solid #dddddd;
 border-radius: 8px;
 margin: 12px 0;

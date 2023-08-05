@@ -40,7 +40,6 @@ export default function Estoque() {
     useEffect(() => {
         let quantidadeVendas: { [key: string]: EstoqueModel } = {};
         const quantidadeCompras: { [key: string]: EstoqueModel } = {};
-        console.log(comprasDataTable)
         if (vendasDataTable.length) {
             vendasDataTable.forEach(venda => {
                 if (venda.produtoEscaniado) {

@@ -33,6 +33,21 @@ flex-direction: column;
     transform: rotate(180deg);
 }
 `
+
+export const Title = styled.h1`
+font-family: 'DynaPuff', cursive;
+font-weight: 500;
+font-size: 3rem;
+margin-bottom: 3rem;
+color: #fffa00;
+text-shadow: 3px 3px 3px rgba(0, 0, 0, 1);
+`
+
+export const NameIceCream = styled.h1`
+color: #fffa00;
+text-shadow: 3px 3px 3px rgba(0, 0, 0, 1);
+font-family: 'DynaPuff', cursive;
+`;
 export const ContainerAllImage = styled.div`
 display: flex;
 align-items: center;

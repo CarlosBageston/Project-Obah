@@ -50,7 +50,7 @@ export default function Vendas() {
     const [barcode, setBarcode] = useState("");
     const [qntBolas, setQntBolas] = useState<string>('');
     const [key, setKey] = useState<number>(0);
-    const [multiplica, setMultiplica] = useState<string>('');
+    const [multiplica, setMultiplica] = useState<number | undefined>(undefined);
     const [recarregue, setRecarregue] = useState<boolean>(true);
 
 
@@ -65,7 +65,7 @@ export default function Vendas() {
         dataTable: dataTableProduto,
     } = GetData('Produtos', recarregue) as { dataTable: ProdutosModel[] };
 
-    const [initialValues, setInitialValues] = useState<VendaModel>({ ...objClean });
+    const initialValues: VendaModel = ({ ...objClean });
 
     const { values, handleSubmit, setFieldValue } = useFormik<VendaModel>({
         validateOnBlur: true,
@@ -89,24 +89,24 @@ export default function Vendas() {
     //lendo codigo de barras em tempo real, fazendo busca no banco e multiplicando valor caso necessario
     useEffect(() => {
         const isBarcodeNumeric = !isNaN(Number(barcode));
-        if (multiplica !== '' && isBarcodeNumeric) {
+        if (multiplica && isBarcodeNumeric) {
             const produtoEncontrado = dataTableProduto.find((p) => p.cdProduto === barcode);
             if (produtoEncontrado) {
                 //calculando total da venda
                 const valorFormat = produtoEncontrado.vlVendaProduto.match(/\d+/g)?.join('.');
-                const valorTotal = Number(multiplica) * Number(valorFormat);
+                const valorTotal = multiplica * Number(valorFormat);
 
                 //calculando total de lucro
                 const valorVenda = Number(produtoEncontrado.vlVendaProduto.match(/\d+/g)?.join('.'));
                 const valorPago = Number(produtoEncontrado.vlPagoProduto.match(/\d+/g)?.join('.'));
                 const total = valorVenda - valorPago;
-                const totalLucro = total * Number(multiplica)
+                const totalLucro = total * multiplica
 
-                const novoProduto = { ...produtoEncontrado, vlTotalMult: `R$ ${valorTotal},00`, quantidadeVenda: Number(multiplica), vlLucro: totalLucro.toString() };
+                const novoProduto = { ...produtoEncontrado, vlTotalMult: `R$ ${valorTotal},00`, quantidadeVenda: multiplica, vlLucro: totalLucro.toString() };
                 setFieldValue('produtoEscaniado', values.produtoEscaniado.concat(novoProduto));
             }
             setBarcode('')
-            setMultiplica('')
+            setMultiplica(undefined)
             setKey(Math.random())
         } else if (isBarcodeNumeric) {
             const produtoEncontrado = dataTableProduto.find((p) => p.cdProduto === barcode);
@@ -130,24 +130,24 @@ export default function Vendas() {
         let isLetra = /^(?=\p{L})[\p{L}\d\s]+$/u.test(codigoDeBarras);
 
         if (e.key === 'Enter' && isLetra) {
-            if (multiplica !== '') {
+            if (multiplica) {
                 const produtoEncontrado = dataTableProduto.find((p) => p.nmProduto.toLowerCase() === barcode.toLowerCase());
                 if (produtoEncontrado) {
 
                     //calculando total da venda
                     const valorFormat = produtoEncontrado.vlVendaProduto.match(/\d+/g)?.join('.');
-                    const valorTotal = Number(multiplica) * Number(valorFormat);
+                    const valorTotal = multiplica * Number(valorFormat);
 
                     //calculando total de lucro
                     const valorVenda = Number(produtoEncontrado.vlVendaProduto.match(/\d+/g)?.join('.'));
                     const valorPago = Number(produtoEncontrado.vlPagoProduto.match(/\d+/g)?.join('.'));
                     const total = valorVenda - valorPago;
-                    const totalLucro = total * Number(multiplica)
+                    const totalLucro = total * multiplica
 
-                    const novoProduto = { ...produtoEncontrado, vlTotalMult: `R$ ${valorTotal},00`, quantidadeVenda: Number(multiplica), vlLucro: totalLucro.toString() };
+                    const novoProduto = { ...produtoEncontrado, vlTotalMult: `R$ ${valorTotal},00`, quantidadeVenda: multiplica, vlLucro: totalLucro.toString() };
                     setFieldValue('produtoEscaniado', values.produtoEscaniado.concat(novoProduto));
                     setBarcode('');
-                    setMultiplica('');
+                    setMultiplica(undefined);
                     setKey(Math.random())
                     setProdutoNotFound(false)
                 } else {
@@ -306,7 +306,7 @@ export default function Vendas() {
                             style={{ fontSize: 14 }}
                             styleDiv={{ marginTop: 4, }}
                             styleLabel={{ fontSize: 16, }}
-                            onChange={e => setMultiplica(e.target.value)}
+                            onChange={e => setMultiplica(parseFloat(e.target.value))}
                             error={''}
                             onKeyPress={handleMultiplicaKeyPress}
                         />

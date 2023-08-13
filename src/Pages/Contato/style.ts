@@ -56,7 +56,7 @@ margin-top: 4rem;
 `
 export const ContainerBox = styled.div`
 width: 30em;
-height: 35rem;
+height: 33rem;
 background-color: rgb(163 163 163);
 padding: 1rem;
 background-color: #72000c;
@@ -71,6 +71,9 @@ font-size: 3rem;
 
 export const SubTitleBox = styled(TitleBox)`
 font-size: 2.1rem;
+`
+export const SubTitleWhatsapp = styled(TitleBox)`
+font-size: 1.4rem;
 `
 
 export const ContainerIcons = styled.div`

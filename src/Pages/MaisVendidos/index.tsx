@@ -1,4 +1,4 @@
-import { Box, ContainerAllImage, ContainerImgName } from './style'
+import { Box, ContainerAllImage, ContainerImgName, NameIceCream, Title } from './style'
 import { RotatingImage } from '../../Components/RotatingImage';
 
 //import das Imagens
@@ -18,31 +18,31 @@ export default function MaisVendidos() {
         <>
             <Box id='maisVendidos'>
                 <div>
-                    <h1>Mais vendidos</h1>
+                    <Title>Mais vendidos</Title>
                 </div>
                 <ContainerAllImage>
                     <ContainerImgName>
                         <RotatingImage src={image3} alt="logo" width={150} src2={image7} />
                         <div>
-                            <h1>Moreninha</h1>
+                            <NameIceCream>Moreninha</NameIceCream>
                         </div>
                     </ContainerImgName>
                     <ContainerImgName>
                         <RotatingImage src={image1} alt="logo" width={150} src2={image4} />
                         <div>
-                            <h1>Loirinha</h1>
+                            <NameIceCream>Loirinha</NameIceCream>
                         </div>
                     </ContainerImgName>
                     <ContainerImgName>
                         <RotatingImage src={image5} alt="logo" width={150} src2={image6} />
                         <div>
-                            <h1>Taça Sundae</h1>
+                            <NameIceCream>Taça Sundae</NameIceCream>
                         </div>
                     </ContainerImgName>
                     <ContainerImgName>
                         <RotatingImage src={image2} alt="logo" width={150} src2={image8} />
                         <div>
-                            <h1>Potes de Sorvete</h1>
+                            <NameIceCream>Pote de Sorvete</NameIceCream>
                         </div>
                     </ContainerImgName>
                 </ContainerAllImage>

@@ -14,6 +14,8 @@ import AtualizarEstoque from '../Pages/admin/compras';
 import CadastroProduto from '../Pages/admin/cadastroProdutos';
 import CadastroCliente from '../Pages/admin/cadastroClientes';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import CadastroColaborador from '../Pages/admin/cadastroColaborador';
+import CartaoPonto from '../Pages/admin/cartaoPonto';
 
 
 export default function Router() {
@@ -43,6 +45,8 @@ export default function Router() {
                     <Route path='/entregas' element={<Entregas />} />
                     <Route path='/atualizar-estoque' element={<AtualizarEstoque />} />
                     <Route path='/estoque' element={<Estoque />} />
+                    <Route path='/colaborador' element={<CadastroColaborador />} />
+                    <Route path='/cartao-ponto' element={<CartaoPonto />} />
                 </Route>
             </Routes>
             <Footer />

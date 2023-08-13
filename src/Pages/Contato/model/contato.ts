@@ -12,7 +12,8 @@ interface ContatoModel {
     nmContato: string,
     tfContato: string,
     msgContato: string,
-    emailContato: string
+    emailContato: string,
+    msgOpenContato: boolean
 }
 
 export default ContatoModel

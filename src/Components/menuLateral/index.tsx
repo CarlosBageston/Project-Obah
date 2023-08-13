@@ -17,6 +17,7 @@ import vendas from '../../assets/Icon/acquisition.png';
 import dashboard from '../../assets/Icon/dashboard.png';
 import produto from '../../assets/Icon/add-product.png';
 import entrega from '../../assets/Icon/entrega-rapida.png';
+import colaborador from '../../assets/Icon/employee.png';
 
 import {
     Image,
@@ -180,6 +181,22 @@ export default function MenuLateral() {
                             <Image src={estoque} alt="Estoque" width={32} />
                         </ListItemIcon>
                         <StyledListItemText primary="Estoque" />
+                    </StyledListItemButton>
+                </Link>
+                <Link to="/colaborador" style={{ textDecoration: 'none', color: 'white' }}>
+                    <StyledListItemButton>
+                        <ListItemIcon>
+                            <Image src={colaborador} alt="Colaborador" width={32} />
+                        </ListItemIcon>
+                        <StyledListItemText primary="Colaborador" />
+                    </StyledListItemButton>
+                </Link>
+                <Link to="/cartao-ponto" style={{ textDecoration: 'none', color: 'white' }}>
+                    <StyledListItemButton>
+                        <ListItemIcon>
+                            <Image src={colaborador} alt="Cartão Ponto" width={32} />
+                        </ListItemIcon>
+                        <StyledListItemText primary="Cartão Ponto" />
                     </StyledListItemButton>
                 </Link>
             </List>

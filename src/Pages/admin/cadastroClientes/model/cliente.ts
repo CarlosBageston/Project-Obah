@@ -1,12 +1,12 @@
+import ProdutosModel from "../../cadastroProdutos/model/produtos"
 
 
 /**
- * Modelo de Cliente
+* Modelo de Cliente
 *
 * @author Carlos Bageston
 */
 
-import ProdutosModel from "../../cadastroProdutos/model/produtos"
 
 
 

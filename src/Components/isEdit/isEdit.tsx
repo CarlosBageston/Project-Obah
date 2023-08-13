@@ -28,7 +28,7 @@ interface IsEditProps {
     products: any[];
     handleEditRow: () => void;
     setSelected: React.Dispatch<React.SetStateAction<any | undefined>>;
-    editingScreen: 'Cliente' | 'Produto' | 'Estoque';
+    editingScreen: 'Cliente' | 'Produto' | 'Estoque' | 'Colaborador';
     setIsEdit: React.Dispatch<SetStateAction<boolean>>
 }
 
@@ -187,10 +187,20 @@ export function IsEdit({ data, handleEditRow, inputsConfig, isEdit, products, se
                     <ContainerFlutuante >
                         <div>
                             <TitleDefault style={{ margin: '0 0 8px 0' }}>
-                                Editar Estoque
+                                {
+                                    editingScreen === 'Estoque' ?
+                                        'Editar Estoque'
+                                        :
+                                        'Editar Colaborador'
+                                }
                             </TitleDefault>
                             <Paragrafo>
-                                Editar produtos do estoque
+                                {
+                                    editingScreen === 'Estoque' ?
+                                        'Editar produtos do estoque'
+                                        :
+                                        'Editar Informações do Colaborador'
+                                }
                             </Paragrafo>
                         </div>
                         <BoxBottom>

@@ -133,7 +133,7 @@ export default function Entregas() {
             const clienteSelecionado = value;
             const clienteEncontrado = dataTableCliente.filter(cliente => cliente.nmCliente === clienteSelecionado.nmCliente)
             setClienteCurrent(clienteEncontrado)
-            setFieldValue('cliente.nmCliente', clienteSelecionado)
+            setFieldValue('cliente.nmCliente', clienteSelecionado.nmCliente)
 
         }
     }

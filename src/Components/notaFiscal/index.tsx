@@ -71,7 +71,7 @@ export function NotaFiscal({ values, clienteCurrent, setShouldShow }: Props) {
                                 <TableHead>
                                     <TableRow>
                                         <TableCell>ITEM</TableCell>
-                                        {/* <TableCell>CÓD.</TableCell> */}
+                                        <TableCell>CÓD.</TableCell>
                                         <TableCell>DESC.</TableCell>
                                         <TableCell align="right">VALOR</TableCell>
                                     </TableRow>
@@ -84,7 +84,7 @@ export function NotaFiscal({ values, clienteCurrent, setShouldShow }: Props) {
                                                 .map((produto, index) => (
                                                     <TableRow key={produto.cdProduto}>
                                                         <TableCell>{formatIndex(index + 1)}</TableCell>
-                                                        {/* <TableCell>{produto.cdProduto.substring(0, 3)}</TableCell> */}
+                                                        <TableCell>{produto.cdProduto.substring(0, 3)}</TableCell>
                                                         <TableCell component="th" scope="row">{produto.nmProduto}</TableCell>
                                                         <TableCell align="right"> {
                                                             Number(produto.valorItem) % 1 === 0

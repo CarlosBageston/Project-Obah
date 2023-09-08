@@ -220,17 +220,6 @@ export default function CadastroColaborador() {
                                 styleDiv={{ marginTop: 4 }}
                                 style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                             />
-                            <Input
-                                key={`vlHora-${key}`}
-                                label='Salário - valor por hora'
-                                name='vlHora'
-                                onBlur={handleBlur}
-                                value={values.vlHora ?? ''}
-                                onChange={e => setFieldValue(e.target.name, e.target.value)}
-                                error={touched.vlHora && errors.vlHora ? errors.vlHora : ''}
-                                styleDiv={{ marginTop: 4 }}
-                                style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
-                            />
                         </DivInput>
                     </ContainerInputs>
                     <FormAlert submitForm={submitForm} name={'Colaborador'} />

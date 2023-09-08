@@ -22,6 +22,8 @@ import {
     TableContainer,
     AutocompleteChangeReason,
 } from "@mui/material";
+import DatePicker from '../../../Components/datePicker/datePicker';
+import moment from 'moment';
 
 const objClean: CartaoPontoModel = {
     colaborador: undefined,
@@ -81,6 +83,7 @@ export default function CartaoPonto() {
     function handleColaboradorChange(event: React.SyntheticEvent<Element, Event>, value: ColaboradorModel | null, reason: AutocompleteChangeReason) {
         if (reason === 'clear' || reason === 'removeOption') {
             cleanState()
+            setCurrentCartaoPonto([])
         } else {
             cleanState()
             setCurrentColaborador(value);
@@ -94,9 +97,51 @@ export default function CartaoPonto() {
         }
     }
 
-    useEffect(() => {
-        if (currentColaborador) {
-            const filteredData = dataTable.filter(cartao => cartao.colaborador?.idCartaoPonto === currentColaborador.idCartaoPonto);
+    function cleanSearch() {
+        setFieldValue('dtInicio', '')
+        setFieldValue('dtTermino', '')
+        setCurrentCartaoPonto([])
+    }
+
+    // colaborador
+    //     (map)
+
+
+    // idCartaoPonto
+    // "123456"
+    //     (string)
+
+
+    // vlHora
+    // 10
+    //     (number)
+
+
+    // dtTrabalhada
+    // "30/08/2023"
+    //     (string)
+
+
+    // hrInicio
+    // "06:00"
+    //     (string)
+
+
+    // hrTermino
+    // "08:00"
+    function handleSearch() {
+        if (currentColaborador && values.dtInicio && values.dtTermino) {
+            const dateInicial = values.dtInicio
+            const dateTermino = values.dtTermino
+            console.log(dateInicial, dateTermino)
+            const filteredData = dataTable.filter(cartao => {
+                const cartaoDate = moment(cartao.dtTrabalhada, 'DD/MM/YYYY').toDate();
+                console.log(cartaoDate)
+
+                return cartaoDate >= dateInicial && cartaoDate <= dateTermino &&
+                    cartao.colaborador?.idCartaoPonto === currentColaborador.idCartaoPonto;
+            });
+            console.log(filteredData)
             const result = filteredData.map(hora => {
                 const hrInicio = hora.hrInicio;
                 const hrTermino = hora.hrTermino;
@@ -109,7 +154,6 @@ export default function CartaoPonto() {
 
                 // Calculando a diferença em milissegundos
                 const diffMilliseconds = terminoDate.getTime() - inicioDate.getTime();
-                console.log(diffMilliseconds)
 
                 // Convertendo a diferença para horas
                 const diffHours = diffMilliseconds / (1000 * 60 * 60);
@@ -123,7 +167,8 @@ export default function CartaoPonto() {
             setSumTotalPago(totalSum)
             setCurrentCartaoPonto(result)
         }
-    }, [currentColaborador]);
+    }
+
     return (
         <Box>
             <div style={{ display: 'flex', marginTop: '2rem', alignItems: 'center', justifyContent: 'center' }}>
@@ -153,7 +198,21 @@ export default function CartaoPonto() {
                         )}
                     />
                 </div>
-                <Input
+                <DatePicker
+                    label='Data Inicio'
+                    onChange={(date) => setFieldValue('dtInicio', date)}
+                    value={values.dtInicio}
+                    key={`dtInicio-${key}`}
+                />
+
+                <DatePicker
+                    label='Data Termino'
+                    onChange={(date) => setFieldValue('dtTermino', date)}
+                    value={values.dtTermino}
+                    key={`dtTermino-${key}`}
+                />
+
+                {/* <Input
                     key={`dtInicio-${key}`}
                     maxLength={10}
                     name="dtInicio"
@@ -174,17 +233,19 @@ export default function CartaoPonto() {
                     onChange={e => setFieldValue(e.target.name, formatDate(e.target.value))}
                     error={touched.dtTermino && errors.dtTermino ? errors.dtTermino : ''}
                     styleDiv={{ margin: '0 1rem', width: '20rem' }}
-                />
+                /> */}
                 <div style={{ display: 'flex' }}>
 
                     <ButtonFilter
                         type="button"
                         startIcon={<BiSearchAlt size={25} />}
+                        onClick={handleSearch}
                     >
                     </ButtonFilter>
                     <ButtonFilter
                         type="button"
                         startIcon={<IoMdClose size={25} color='red' />}
+                        onClick={cleanSearch}
                     >
                     </ButtonFilter>
                 </div>

@@ -13,7 +13,7 @@ import FiltroGeneric from "../../../Components/filtro";
 import { IsEdit } from "../../../Components/isEdit/isEdit";
 import FormAlert from "../../../Components/FormAlert/formAlert";
 import { IsAdding } from "../../../Components/isAdding/isAdding";
-import SituacaoProduto from "../compras/enumeration/situacaoProduto";
+import SituacaoProduto from "../../../enumeration/situacaoProduto";
 import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { Checkbox, FormControl, FormControlLabel, InputLabel, MenuItem, Select, } from "@mui/material";
 import {

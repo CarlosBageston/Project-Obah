@@ -1,14 +1,14 @@
 import * as Yup from 'yup';
+import moment from 'moment';
 import { useFormik } from "formik";
 import { IoMdClose } from "react-icons/io";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { BiSearchAlt } from "react-icons/bi";
-import Input from "../../../Components/input";
 import GetData from "../../../firebase/getData";
 import CartaoPontoModel from "./model/cartaoponto";
 import { Box, DivTable, TotalValue } from "./style";
-import formatDate from "../../../Components/masks/formatDate";
 import { ButtonFilter } from "../../../Components/filtro/style";
+import DatePicker from '../../../Components/datePicker/datePicker';
 import ColaboradorModel from "../cadastroColaborador/model/colaborador";
 import {
     Paper,
@@ -22,17 +22,17 @@ import {
     TableContainer,
     AutocompleteChangeReason,
 } from "@mui/material";
-import DatePicker from '../../../Components/datePicker/datePicker';
-import moment from 'moment';
+import { realtimeDb } from '../../../firebase';
+import { onValue, ref } from 'firebase/database';
+import ActionCartaoPontoEnum from '../../../enumeration/action';
 
 const objClean: CartaoPontoModel = {
-    colaborador: undefined,
     dtInicio: '',
     dtTermino: '',
-    dtTrabalhada: '',
-    hrInicio: '',
-    hrTermino: '',
-    vlPagoColaborador: null
+    action: undefined,
+    datetime: undefined,
+    uid: undefined,
+    vlHora: undefined
 }
 export default function CartaoPonto() {
 
@@ -43,39 +43,35 @@ export default function CartaoPonto() {
     const [currentColaborador, setCurrentColaborador] = useState<ColaboradorModel | null>();
     const [initialValues, setInitialValues] = useState<CartaoPontoModel>({ ...objClean });
     const [currentCartaoPonto, setCurrentCartaoPonto] = useState<CartaoPontoModel[]>([])
-    const [sumTotalPago, setSumTotalPago] = useState<number>();
-
+    const [sumTotalPago, setSumTotalPago ] = useState<number>();
+    const [sumHoraTrabalhada, setHoraTrabalhada ] = useState<number>();
+    const [dataRealTime, setDataRealTime ] = useState<CartaoPontoModel[]>([])
     //realizando busca no banco de dados
     const {
         dataTable: dataTableColabroador,
     } = GetData('Colaborador', recarregue) as { dataTable: ColaboradorModel[] };
-    const {
-        dataTable,
-    } = GetData('CartaoPonto', recarregue) as { dataTable: CartaoPontoModel[], loading: boolean, setDataTable: (data: CartaoPontoModel[]) => void };
 
 
-    const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<CartaoPontoModel>({
+    const { values, setFieldValue } = useFormik<CartaoPontoModel>({
         validateOnBlur: true,
         validateOnChange: true,
         initialValues,
         validationSchema: Yup.object().shape({
-            dtInicio: Yup.string().required('Campo obrigatório'),
-            dtTermino: Yup.string().required('Campo obrigatório'),
-            colaborador: Yup.string().required('Campo obrigatório'),
+        dtInicio: Yup.string().required('Campo obrigatório'),
+        dtTermino: Yup.string().required('Campo obrigatório'),
+        colaborador: Yup.string().required('Campo obrigatório'),
         }),
         onSubmit: () => { },
     });
-
-
+    
     function cleanState() {
         setInitialValues({
-            colaborador: undefined,
             dtInicio: '',
             dtTermino: '',
-            dtTrabalhada: '',
-            hrInicio: '',
-            hrTermino: '',
-            vlPagoColaborador: null,
+            action: undefined,
+            datetime: undefined,
+            uid: undefined,
+            vlHora: undefined
         })
         setKey(Math.random());
     }
@@ -96,78 +92,80 @@ export default function CartaoPonto() {
             }
         }
     }
-
+    
     function cleanSearch() {
         setFieldValue('dtInicio', '')
         setFieldValue('dtTermino', '')
         setCurrentCartaoPonto([])
     }
-
-    // colaborador
-    //     (map)
-
-
-    // idCartaoPonto
-    // "123456"
-    //     (string)
-
-
-    // vlHora
-    // 10
-    //     (number)
-
-
-    // dtTrabalhada
-    // "30/08/2023"
-    //     (string)
-
-
-    // hrInicio
-    // "06:00"
-    //     (string)
-
-
-    // hrTermino
-    // "08:00"
+    
+    function calcularHorasTrabalhadas(data: CartaoPontoModel[]) {
+        let horasTrabalhadas = 0;
+        let valorPago = 0;
+      
+        for (let i = 0; i < data.length; i++) {
+          const entrada = data[i];
+          const saida = data[i + 1];
+      
+          if (entrada && saida && entrada.action === 0 && saida.action === 1) {
+            const horaEntrada = entrada.datetime ? new Date(entrada.datetime).getTime() : 0;
+            const horaSaida = saida.datetime ? new Date(saida.datetime).getTime() : 0;
+            const diffMilliseconds = horaSaida - horaEntrada;
+            const diffHours = diffMilliseconds / (1000 * 60 * 60);
+      
+            const vlHora = entrada.vlHora;
+      
+            if (!isNaN(diffHours) && !isNaN(vlHora as number)) {
+              horasTrabalhadas += diffHours;
+              valorPago += diffHours * Number(vlHora);
+            }
+      
+            i++;
+          }
+        }
+      
+        return { horasTrabalhadas, valorPago };
+      }
+      
     function handleSearch() {
         if (currentColaborador && values.dtInicio && values.dtTermino) {
-            const dateInicial = values.dtInicio
-            const dateTermino = values.dtTermino
-            console.log(dateInicial, dateTermino)
-            const filteredData = dataTable.filter(cartao => {
-                const cartaoDate = moment(cartao.dtTrabalhada, 'DD/MM/YYYY').toDate();
-                console.log(cartaoDate)
-
+            const dateInicial = moment(values.dtInicio).format("DD/MM/YYYY")
+            const dateTermino = moment(values.dtTermino).format("DD/MM/YYYY")
+            const filteredData = dataRealTime.filter(cartao => {
+                const cartaoDate = moment(cartao.datetime).format("DD/MM/YYYY");
                 return cartaoDate >= dateInicial && cartaoDate <= dateTermino &&
-                    cartao.colaborador?.idCartaoPonto === currentColaborador.idCartaoPonto;
+                cartao.uid === currentColaborador.idCartaoPonto;
             });
-            console.log(filteredData)
-            const result = filteredData.map(hora => {
-                const hrInicio = hora.hrInicio;
-                const hrTermino = hora.hrTermino;
-                const vlPago = hora.colaborador?.vlHora
-                // Convertendo as strings de hora para objetos de hora
-                const inicioParts = hrInicio.split(':');
-                const terminoParts = hrTermino.split(':');
-                const inicioDate = new Date(0, 0, 0, parseInt(inicioParts[0]), parseInt(inicioParts[1]));
-                const terminoDate = new Date(0, 0, 0, parseInt(terminoParts[0]), parseInt(terminoParts[1]));
-
-                // Calculando a diferença em milissegundos
-                const diffMilliseconds = terminoDate.getTime() - inicioDate.getTime();
-
-                // Convertendo a diferença para horas
-                const diffHours = diffMilliseconds / (1000 * 60 * 60);
-                if (vlPago && diffHours) {
-                    const total = diffHours * vlPago
-                    hora.vlPagoColaborador = total;
-                }
-                return hora;
+            filteredData.map((item) => {
+                const funcionarioEncontrado = dataTableColabroador.find(id => id.idCartaoPonto = item.uid)
+                item.vlHora = funcionarioEncontrado?.vlHora
+                item.id = Math.random().toString()
             })
-            const totalSum = result.reduce((total, hora) => total + (hora.vlPagoColaborador || 0), 0);
-            setSumTotalPago(totalSum)
-            setCurrentCartaoPonto(result)
+            console.log(filteredData)
+            const { horasTrabalhadas, valorPago } = calcularHorasTrabalhadas(filteredData)
+            setSumTotalPago(valorPago)
+            setCurrentCartaoPonto(filteredData)
+            setHoraTrabalhada(horasTrabalhadas)
         }
     }
+    
+    useEffect(() => {
+        const cartaoPontoRef = ref(realtimeDb, 'CartaoPonto');
+        onValue(cartaoPontoRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data !== null && typeof data === 'object') {
+                const dataArray:any[] = [];
+                Object.keys(data).forEach((key) => {
+                    const item = data[key];
+                    dataArray.push(item); 
+                });
+                setDataRealTime(dataArray);
+            } else {
+                console.log('Nenhum dado encontrado ou formato incorreto.');
+            }
+        });
+    }, []);
+    
 
     return (
         <Box>
@@ -211,29 +209,6 @@ export default function CartaoPonto() {
                     value={values.dtTermino}
                     key={`dtTermino-${key}`}
                 />
-
-                {/* <Input
-                    key={`dtInicio-${key}`}
-                    maxLength={10}
-                    name="dtInicio"
-                    onBlur={handleBlur}
-                    label="Data Inicio"
-                    value={values.dtInicio}
-                    onChange={e => setFieldValue(e.target.name, formatDate(e.target.value))}
-                    error={touched.dtInicio && errors.dtInicio ? errors.dtInicio : ''}
-                    styleDiv={{ margin: '0 1rem', width: '20rem' }}
-                />
-                <Input
-                    key={`dtTermino-${key}`}
-                    maxLength={10}
-                    name="dtTermino"
-                    onBlur={handleBlur}
-                    label="Data Termino"
-                    value={values.dtTermino}
-                    onChange={e => setFieldValue(e.target.name, formatDate(e.target.value))}
-                    error={touched.dtTermino && errors.dtTermino ? errors.dtTermino : ''}
-                    styleDiv={{ margin: '0 1rem', width: '20rem' }}
-                /> */}
                 <div style={{ display: 'flex' }}>
 
                     <ButtonFilter
@@ -270,13 +245,13 @@ export default function CartaoPonto() {
                                             key={row.id}
                                             sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                                         >
-                                            <TableCell>{row.dtTrabalhada}</TableCell>
-                                            <TableCell>{row.hrInicio}</TableCell>
-                                            <TableCell>{row.hrTermino}</TableCell>
-                                            <TableCell>{row.vlPagoColaborador && row.vlPagoColaborador % 1 === 0 ?
-                                                ` ${row.vlPagoColaborador.toFixed(0)},00`
+                                            <TableCell>{moment(row.datetime).format("DD/MM/YYYY")}</TableCell>
+                                            <TableCell>{row.action === ActionCartaoPontoEnum.ENTRADA ? moment(row.datetime).format("HH:MM:SS") : ""}</TableCell>
+                                            <TableCell>{row.action === ActionCartaoPontoEnum.SAIDA ? moment(row.datetime).format("HH:MM:SS") : ""}</TableCell>
+                                            <TableCell>{row.vlHora && row.vlHora % 1 === 0 ?
+                                                ` ${row.vlHora.toFixed(0)},00`
                                                 :
-                                                `${row.vlPagoColaborador?.toString().replace('.', ',')}`
+                                                `${row.vlHora?.toString().replace('.', ',')}`
                                             }</TableCell>
                                         </TableRow>
                                     ))}
@@ -285,6 +260,12 @@ export default function CartaoPonto() {
                         </TableContainer>
                     </DivTable>
                     <div>
+                        <TotalValue>Total de Horas Trabalhadas: 
+                            {sumHoraTrabalhada && sumHoraTrabalhada % 1 === 0 ?
+                                ` ${sumHoraTrabalhada?.toFixed(0)},00`
+                                :
+                                ` ${sumHoraTrabalhada?.toFixed(2).replace('.', ',')}`}
+                        </TotalValue>
                         <TotalValue>Valor Total: R$
                             {sumTotalPago && sumTotalPago % 1 === 0 ?
                                 ` ${sumTotalPago?.toFixed(0)},00`
@@ -292,6 +273,7 @@ export default function CartaoPonto() {
                                 ` ${sumTotalPago?.toFixed(2).replace('.', ',')}`}
                         </TotalValue>
                     </div>
+                    
                 </>
             }
         </Box>

@@ -14,7 +14,7 @@ interface ColaboradorModel {
     bairroColaborador: string,
     cidadeColaborador: string,
     nrCasaColaborador: string,
-    idCartaoPonto: string,
-    vlHora: number | null
+    idCartaoPonto?: number,
+    vlHora?: number
 }
 export default ColaboradorModel

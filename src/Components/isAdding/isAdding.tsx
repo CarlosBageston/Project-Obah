@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { FormikErrors, FormikTouched } from "formik";
 import { Autocomplete, Stack, TextField } from '@mui/material';
 import { TitleDefault } from "../../Pages/admin/cadastroClientes/style";
-import SituacaoProduto from "../../Pages/admin/compras/enumeration/situacaoProduto";
+import SituacaoProduto from "../../enumeration/situacaoProduto";
 import { BoxClose, ButtonStyled, ContainerFlutuante, ContianerMP, DivClose, DivLineMP, Paragrafo, StyledAiOutlineClose } from "../isEdit/style";
 import ProdutosModel from "../../Pages/admin/cadastroProdutos/model/produtos";
 

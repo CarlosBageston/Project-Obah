@@ -6,7 +6,7 @@ import ComprasModel from "../compras/model/compras";
 import GenericTable from "../../../Components/table";
 import FiltroGeneric from "../../../Components/filtro";
 import { EntregaModel } from "../entregas/model/entrega";
-import SituacaoProduto from "../compras/enumeration/situacaoProduto";
+import SituacaoProduto from "../../../enumeration/situacaoProduto";
 import {
     Box,
     Title,

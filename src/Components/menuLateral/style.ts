@@ -1,5 +1,6 @@
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
+import { IoIosArrowUp } from "react-icons/io";
 import styled from "styled-components";
 
 
@@ -60,6 +61,12 @@ export const StyledListItemButton = styled(ListItemButton)`
     }
   }
 `;
+
+export const StyledListItemButtonSubOpcao = styled(StyledListItemButton)`
+ && {
+  margin-left: 20px;
+ }
+  `;
 
 export const Image = styled.img `
   filter: invert(100%) drop-shadow(0 0 0.5px #FF2E63) drop-shadow(0 0 0.5px #FF2E63) drop-shadow(0 0 0.5px #FF2E63) ;
@@ -133,3 +140,15 @@ cursor: pointer;
   transform: scale(0.85);
 }
 `;
+
+export const Icon = styled(IoIosArrowUp)<{openSubOpcao: boolean}>`
+  font-size: 25px;
+  color: #ffff;
+  transform: ${({ openSubOpcao }) => (openSubOpcao ? 'rotate(180deg)' : 'none')};
+  transition: transform 0.3s linear;
+
+  ${StyledListItemButton}:hover & {
+    color: black;
+  }
+`;
+

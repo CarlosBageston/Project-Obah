@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { BiSearchAlt } from "react-icons/bi";
 import GetData from "../../../firebase/getData";
 import CartaoPontoModel from "./model/cartaoponto";
-import { Box, DivTable, TotalValue } from "./style";
+import { Box, DivTable, TotalValue, BoxDate, DivFull } from "./style";
 import { ButtonFilter } from "../../../Components/filtro/style";
 import DatePicker from '../../../Components/datePicker/datePicker';
 import ColaboradorModel from "../cadastroColaborador/model/colaborador";
@@ -25,6 +25,7 @@ import {
 import { realtimeDb } from '../../../firebase';
 import { onValue, ref } from 'firebase/database';
 import ActionCartaoPontoEnum from '../../../enumeration/action';
+import { TitleDefault } from '../cadastroClientes/style';
 
 const objClean: CartaoPontoModel = {
     dtInicio: '',
@@ -129,11 +130,16 @@ export default function CartaoPonto() {
       
     function handleSearch() {
         if (currentColaborador && values.dtInicio && values.dtTermino) {
-            const dateInicial = moment(values.dtInicio).format("DD/MM/YYYY")
-            const dateTermino = moment(values.dtTermino).format("DD/MM/YYYY")
+            const dataFormattedInicio = new Date(values.dtInicio)
+            const dataFormattedTermino = new Date(values.dtTermino)
+
+            const dateInicio = moment(dataFormattedInicio).format("DD/MM/YYYY");
+            const dateTermino = moment(dataFormattedTermino).format("DD/MM/YYYY")
+
             const filteredData = dataRealTime.filter(cartao => {
                 const cartaoDate = moment(cartao.datetime).format("DD/MM/YYYY");
-                return cartaoDate >= dateInicial && cartaoDate <= dateTermino &&
+
+                return cartaoDate >= dateInicio && cartaoDate <= dateTermino &&
                 cartao.uid === currentColaborador.idCartaoPonto;
             });
             filteredData.map((item) => {
@@ -141,7 +147,6 @@ export default function CartaoPonto() {
                 item.vlHora = funcionarioEncontrado?.vlHora
                 item.id = Math.random().toString()
             })
-            console.log(filteredData)
             const { horasTrabalhadas, valorPago } = calcularHorasTrabalhadas(filteredData)
             setSumTotalPago(valorPago)
             setCurrentCartaoPonto(filteredData)
@@ -160,8 +165,6 @@ export default function CartaoPonto() {
                     dataArray.push(item); 
                 });
                 setDataRealTime(dataArray);
-            } else {
-                console.log('Nenhum dado encontrado ou formato incorreto.');
             }
         });
     }, []);
@@ -169,7 +172,8 @@ export default function CartaoPonto() {
 
     return (
         <Box>
-            <div style={{ display: 'flex', marginTop: '2rem', alignItems: 'center', justifyContent: 'center' }}>
+            <TitleDefault>Histórico Cartão Ponto</TitleDefault>
+            <DivFull>
                 <div>
                     <Autocomplete
                         id="tags-standard"
@@ -196,19 +200,21 @@ export default function CartaoPonto() {
                         )}
                     />
                 </div>
-                <DatePicker
-                    label='Data Inicio'
-                    onChange={(date) => setFieldValue('dtInicio', date)}
-                    value={values.dtInicio}
-                    key={`dtInicio-${key}`}
-                />
+                <BoxDate>
+                    <DatePicker
+                        label='Data Inicio'
+                        onChange={(date) => setFieldValue('dtInicio', date)}
+                        value={values.dtInicio}
+                        key={`dtInicio-${key}`}
+                    />
 
-                <DatePicker
-                    label='Data Termino'
-                    onChange={(date) => setFieldValue('dtTermino', date)}
-                    value={values.dtTermino}
-                    key={`dtTermino-${key}`}
-                />
+                    <DatePicker
+                        label='Data Termino'
+                        onChange={(date) => setFieldValue('dtTermino', date)}
+                        value={values.dtTermino}
+                        key={`dtTermino-${key}`}
+                    />
+                </BoxDate>
                 <div style={{ display: 'flex' }}>
 
                     <ButtonFilter
@@ -224,7 +230,7 @@ export default function CartaoPonto() {
                     >
                     </ButtonFilter>
                 </div>
-            </div>
+            </DivFull>
 
             {currentCartaoPonto.length > 0 &&
                 <>
@@ -248,10 +254,10 @@ export default function CartaoPonto() {
                                             <TableCell>{moment(row.datetime).format("DD/MM/YYYY")}</TableCell>
                                             <TableCell>{row.action === ActionCartaoPontoEnum.ENTRADA ? moment(row.datetime).format("HH:MM:SS") : ""}</TableCell>
                                             <TableCell>{row.action === ActionCartaoPontoEnum.SAIDA ? moment(row.datetime).format("HH:MM:SS") : ""}</TableCell>
-                                            <TableCell>{row.vlHora && row.vlHora % 1 === 0 ?
+                                            <TableCell>{row.vlHora && row.vlHora % 1 === 0 && typeof row.vlHora === 'number' ?
                                                 ` ${row.vlHora.toFixed(0)},00`
                                                 :
-                                                `${row.vlHora?.toString().replace('.', ',')}`
+                                                `${row.vlHora?.toString()+',00'}`
                                             }</TableCell>
                                         </TableRow>
                                     ))}

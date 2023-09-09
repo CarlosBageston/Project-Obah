@@ -45,6 +45,7 @@ export default function CadastroColaborador() {
         { label: 'Rua', propertyName: 'ruaColaborador' },
         { label: 'Numero', propertyName: 'nrCasaColaborador' },
         { label: 'ID Cartão Ponto', propertyName: 'idCartaoPonto' },
+        { label: 'Salário - valor por hora', propertyName: 'vlHora'}
     ];
 
     const {

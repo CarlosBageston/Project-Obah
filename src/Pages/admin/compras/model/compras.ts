@@ -4,7 +4,7 @@
 * @author Carlos Bageston
 */
 
-import SituacaoProduto from "../enumeration/situacaoProduto"
+import SituacaoProduto from "../../../../enumeration/situacaoProduto"
 
 
 interface ComprasModel {

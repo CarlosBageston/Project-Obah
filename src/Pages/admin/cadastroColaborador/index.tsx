@@ -25,8 +25,8 @@ const objClean: ColaboradorModel = {
     nrCasaColaborador: '',
     bairroColaborador: '',
     cidadeColaborador: '',
-    idCartaoPonto: '',
-    vlHora: null
+    idCartaoPonto: undefined,
+    vlHora: undefined
 }
 export default function CadastroColaborador() {
 
@@ -77,8 +77,8 @@ export default function CadastroColaborador() {
             nrCasaColaborador: '',
             bairroColaborador: '',
             cidadeColaborador: '',
-            idCartaoPonto: '',
-            vlHora: null
+            idCartaoPonto: undefined,
+            vlHora: undefined
         })
         setKey(Math.random());
     }
@@ -179,7 +179,7 @@ export default function CadastroColaborador() {
                                 label='ID Cartão Ponto'
                                 name='idCartaoPonto'
                                 onBlur={handleBlur}
-                                value={formatPhone(values.idCartaoPonto)}
+                                value={values.idCartaoPonto}
                                 onChange={e => setFieldValue(e.target.name, e.target.value)}
                                 error={touched.idCartaoPonto && errors.idCartaoPonto ? errors.idCartaoPonto : ''}
                                 styleDiv={{ marginTop: 4 }}

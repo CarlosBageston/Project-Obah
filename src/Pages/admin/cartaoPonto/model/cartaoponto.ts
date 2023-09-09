@@ -1,4 +1,4 @@
-import ColaboradorModel from "../../cadastroColaborador/model/colaborador"
+import ActionCartaoPontoEnum from "../../../../enumeration/action"
 
 
 /**
@@ -9,13 +9,12 @@ import ColaboradorModel from "../../cadastroColaborador/model/colaborador"
 
 
 interface CartaoPontoModel {
-    id?: string,
-    colaborador?: ColaboradorModel,
+    id?: string
+    vlHora?: number
+    datetime?: Date
+    uid?: number
+    action?: ActionCartaoPontoEnum
     dtInicio: string | Date,
     dtTermino: string | Date,
-    dtTrabalhada: string,
-    hrInicio: string,
-    hrTermino: string,
-    vlPagoColaborador: number | null
 }
 export default CartaoPontoModel

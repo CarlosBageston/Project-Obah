@@ -11,7 +11,7 @@ import React, { useState, useEffect } from "react";
 import { addDoc, collection } from "firebase/firestore";
 import ProdutosModel from "../cadastroProdutos/model/produtos";
 import FormAlert from "../../../Components/FormAlert/formAlert";
-import SituacaoProduto from "../compras/enumeration/situacaoProduto";
+import SituacaoProduto from "../../../enumeration/situacaoProduto";
 import iceCreamSad from '../../../assets/Image/drawingSadIceCream.png'
 import {
     Box,

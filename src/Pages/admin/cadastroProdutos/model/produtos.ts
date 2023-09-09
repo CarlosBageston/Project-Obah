@@ -1,5 +1,5 @@
 
-import SituacaoProduto from "../../compras/enumeration/situacaoProduto"
+import SituacaoProduto from "../../../../enumeration/situacaoProduto"
 import ComprasModel from "../../compras/model/compras"
 
 /**

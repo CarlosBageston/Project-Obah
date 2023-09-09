@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { useState } from 'react';
 import Box from '@mui/material/Box';
 import List from '@mui/material/List';
 import Divider from '@mui/material/Divider';
@@ -18,6 +18,8 @@ import dashboard from '../../assets/Icon/dashboard.png';
 import produto from '../../assets/Icon/add-product.png';
 import entrega from '../../assets/Icon/entrega-rapida.png';
 import colaborador from '../../assets/Icon/employee.png';
+import gestao from '../../assets/Icon/gestao.png'
+import cartaoPonto from '../../assets/Icon/cartao-ponto.png'
 
 import {
     Image,
@@ -26,7 +28,11 @@ import {
     BoxTitle,
     StyledListItemText,
     StyledListItemButton,
+    StyledListItemButtonSubOpcao,
+    Icon,
 } from './style';
+import { ArrowCircleDown } from '@mui/icons-material';
+import { IoIosArrowUp } from 'react-icons/io';
 
 
 
@@ -111,8 +117,12 @@ const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' 
  */
 
 export default function MenuLateral() {
-    const [open, setOpen] = React.useState(false);
+    const [open, setOpen] = useState(false);
+    const [openSubOpcao, setOpenSubOpcao] = useState(false);
 
+    const handleClick = () => {
+        setOpenSubOpcao(!openSubOpcao);
+    };
     const handleDrawerOpen = () => {
         setOpen(true);
     };
@@ -183,22 +193,33 @@ export default function MenuLateral() {
                         <StyledListItemText primary="Estoque" />
                     </StyledListItemButton>
                 </Link>
-                <Link to="/colaborador" style={{ textDecoration: 'none', color: 'white' }}>
-                    <StyledListItemButton>
-                        <ListItemIcon>
-                            <Image src={colaborador} alt="Colaborador" width={32} />
-                        </ListItemIcon>
-                        <StyledListItemText primary="Colaborador" />
-                    </StyledListItemButton>
-                </Link>
-                <Link to="/cartao-ponto" style={{ textDecoration: 'none', color: 'white' }}>
-                    <StyledListItemButton>
-                        <ListItemIcon>
-                            <Image src={colaborador} alt="Cartão Ponto" width={32} />
-                        </ListItemIcon>
-                        <StyledListItemText primary="Cartão Ponto" />
-                    </StyledListItemButton>
-                </Link>
+                <StyledListItemButton onClick={handleClick}>
+                    <ListItemIcon>
+                        <Image src={gestao} alt="Gestão" width={32} />
+                    </ListItemIcon>
+                    <StyledListItemText primary="Gestão" />
+                    <Icon openSubOpcao={openSubOpcao} />
+                </StyledListItemButton>
+                {openSubOpcao && 
+                    <div style={{backgroundColor: '#3b2e87'}}>
+                        <Link to="/colaborador" style={{ textDecoration: 'none', color: 'white' }} onClick={handleClick}>
+                            <StyledListItemButtonSubOpcao>
+                                <ListItemIcon>
+                                    <Image src={colaborador} alt="Colaborador" width={32} />
+                                </ListItemIcon>
+                                <StyledListItemText primary="Colaborador" />
+                            </StyledListItemButtonSubOpcao>
+                        </Link>
+                        <Link to="/cartao-ponto" style={{ textDecoration: 'none', color: 'white' }} onClick={handleClick}>
+                            <StyledListItemButtonSubOpcao>
+                                <ListItemIcon>
+                                    <Image src={cartaoPonto} alt="Cartão Ponto" width={32} />
+                                </ListItemIcon>
+                                <StyledListItemText primary="Cartão Ponto" />
+                            </StyledListItemButtonSubOpcao>
+                        </Link>
+                    </div>
+                }
             </List>
         </Box>
     );

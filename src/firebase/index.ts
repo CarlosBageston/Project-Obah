@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
+import { getDatabase } from 'firebase/database';
 
 /**
  * Inicializando conexão com o banco de dados do Firebase.
@@ -20,5 +21,6 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore();
 const auth = getAuth(app);
 const storage = getStorage();
+const realtimeDb = getDatabase(app);
 
-export {db, auth, storage};
+export {db, auth, storage, realtimeDb};

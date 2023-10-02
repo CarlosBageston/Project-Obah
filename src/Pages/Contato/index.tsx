@@ -182,7 +182,7 @@ export default function Contato() {
                             />
                             <Button
                                 type={'button'}
-                                children={'Enviar'}
+                                label={'Enviar'}
                                 onClick={handleSubmit}
                                 style={{ margin: '15px 0px' }}
                             />

@@ -68,6 +68,7 @@ export default function Estoque() {
                 });
             });
             quantidadeVendas = Object.entries(quantidadeVendas)
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 .filter(([produto, info]) => info.quantidadeTotal)
                 .reduce((acc, [produto, info]) => {
                     acc[produto] = info;

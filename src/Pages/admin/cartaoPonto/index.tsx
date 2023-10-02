@@ -40,17 +40,16 @@ export default function CartaoPonto() {
 
 
     const [key, setKey] = useState<number>(0);
-    const [recarregue, setRecarregue] = useState<boolean>(true);
     const [currentColaborador, setCurrentColaborador] = useState<ColaboradorModel | null>();
     const [initialValues, setInitialValues] = useState<CartaoPontoModel>({ ...objClean });
     const [currentCartaoPonto, setCurrentCartaoPonto] = useState<CartaoPontoModel[]>([])
-    const [sumTotalPago, setSumTotalPago ] = useState<number>();
-    const [sumHoraTrabalhada, setHoraTrabalhada ] = useState<number>();
-    const [dataRealTime, setDataRealTime ] = useState<CartaoPontoModel[]>([])
+    const [sumTotalPago, setSumTotalPago] = useState<number>();
+    const [sumHoraTrabalhada, setHoraTrabalhada] = useState<number>();
+    const [dataRealTime, setDataRealTime] = useState<CartaoPontoModel[]>([])
     //realizando busca no banco de dados
     const {
         dataTable: dataTableColabroador,
-    } = GetData('Colaborador', recarregue) as { dataTable: ColaboradorModel[] };
+    } = GetData('Colaborador', true) as { dataTable: ColaboradorModel[] };
 
 
     const { values, setFieldValue } = useFormik<CartaoPontoModel>({
@@ -58,13 +57,13 @@ export default function CartaoPonto() {
         validateOnChange: true,
         initialValues,
         validationSchema: Yup.object().shape({
-        dtInicio: Yup.string().required('Campo obrigatório'),
-        dtTermino: Yup.string().required('Campo obrigatório'),
-        colaborador: Yup.string().required('Campo obrigatório'),
+            dtInicio: Yup.string().required('Campo obrigatório'),
+            dtTermino: Yup.string().required('Campo obrigatório'),
+            colaborador: Yup.string().required('Campo obrigatório'),
         }),
         onSubmit: () => { },
     });
-    
+
     function cleanState() {
         setInitialValues({
             dtInicio: '',
@@ -93,41 +92,41 @@ export default function CartaoPonto() {
             }
         }
     }
-    
+
     function cleanSearch() {
         setFieldValue('dtInicio', '')
         setFieldValue('dtTermino', '')
         setCurrentCartaoPonto([])
     }
-    
+
     function calcularHorasTrabalhadas(data: CartaoPontoModel[]) {
         let horasTrabalhadas = 0;
         let valorPago = 0;
-      
+
         for (let i = 0; i < data.length; i++) {
-          const entrada = data[i];
-          const saida = data[i + 1];
-      
-          if (entrada && saida && entrada.action === 0 && saida.action === 1) {
-            const horaEntrada = entrada.datetime ? new Date(entrada.datetime).getTime() : 0;
-            const horaSaida = saida.datetime ? new Date(saida.datetime).getTime() : 0;
-            const diffMilliseconds = horaSaida - horaEntrada;
-            const diffHours = diffMilliseconds / (1000 * 60 * 60);
-      
-            const vlHora = entrada.vlHora;
-      
-            if (!isNaN(diffHours) && !isNaN(vlHora as number)) {
-              horasTrabalhadas += diffHours;
-              valorPago += diffHours * Number(vlHora);
+            const entrada = data[i];
+            const saida = data[i + 1];
+
+            if (entrada && saida && entrada.action === 0 && saida.action === 1) {
+                const horaEntrada = entrada.datetime ? new Date(entrada.datetime).getTime() : 0;
+                const horaSaida = saida.datetime ? new Date(saida.datetime).getTime() : 0;
+                const diffMilliseconds = horaSaida - horaEntrada;
+                const diffHours = diffMilliseconds / (1000 * 60 * 60);
+
+                const vlHora = entrada.vlHora;
+
+                if (!isNaN(diffHours) && !isNaN(vlHora as number)) {
+                    horasTrabalhadas += diffHours;
+                    valorPago += diffHours * Number(vlHora);
+                }
+
+                i++;
             }
-      
-            i++;
-          }
         }
-      
+
         return { horasTrabalhadas, valorPago };
-      }
-      
+    }
+
     function handleSearch() {
         if (currentColaborador && values.dtInicio && values.dtTermino) {
             const dataFormattedInicio = new Date(values.dtInicio)
@@ -140,7 +139,7 @@ export default function CartaoPonto() {
                 const cartaoDate = moment(cartao.datetime).format("DD/MM/YYYY");
 
                 return cartaoDate >= dateInicio && cartaoDate <= dateTermino &&
-                cartao.uid === currentColaborador.idCartaoPonto;
+                    cartao.uid === currentColaborador.idCartaoPonto;
             });
             filteredData.map((item) => {
                 const funcionarioEncontrado = dataTableColabroador.find(id => id.idCartaoPonto = item.uid)
@@ -153,22 +152,22 @@ export default function CartaoPonto() {
             setHoraTrabalhada(horasTrabalhadas)
         }
     }
-    
+
     useEffect(() => {
         const cartaoPontoRef = ref(realtimeDb, 'CartaoPonto');
         onValue(cartaoPontoRef, (snapshot) => {
             const data = snapshot.val();
             if (data !== null && typeof data === 'object') {
-                const dataArray:any[] = [];
+                const dataArray: any[] = [];
                 Object.keys(data).forEach((key) => {
                     const item = data[key];
-                    dataArray.push(item); 
+                    dataArray.push(item);
                 });
                 setDataRealTime(dataArray);
             }
         });
     }, []);
-    
+
 
     return (
         <Box>
@@ -257,7 +256,7 @@ export default function CartaoPonto() {
                                             <TableCell>{row.vlHora && row.vlHora % 1 === 0 && typeof row.vlHora === 'number' ?
                                                 ` ${row.vlHora.toFixed(0)},00`
                                                 :
-                                                `${row.vlHora?.toString()+',00'}`
+                                                `${row.vlHora?.toString() + ',00'}`
                                             }</TableCell>
                                         </TableRow>
                                     ))}
@@ -266,7 +265,7 @@ export default function CartaoPonto() {
                         </TableContainer>
                     </DivTable>
                     <div>
-                        <TotalValue>Total de Horas Trabalhadas: 
+                        <TotalValue>Total de Horas Trabalhadas:
                             {sumHoraTrabalhada && sumHoraTrabalhada % 1 === 0 ?
                                 ` ${sumHoraTrabalhada?.toFixed(0)},00`
                                 :
@@ -279,7 +278,7 @@ export default function CartaoPonto() {
                                 ` ${sumTotalPago?.toFixed(2).replace('.', ',')}`}
                         </TotalValue>
                     </div>
-                    
+
                 </>
             }
         </Box>

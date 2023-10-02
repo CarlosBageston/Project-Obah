@@ -267,7 +267,7 @@ export default function Entregas() {
                     <ContainerTableCliente isVisible={values.cliente?.nmCliente ? false : true} ref={ref}>
                         {clienteCurrent.map(cliente => (
                             <>
-                                {cliente.produtos.map((produto, index) => (
+                                {cliente.produtos.map((produto) => (
                                     <DivProduto key={produto.nmProduto}>
                                         <NameProduto>
                                             <TextTable>{produto.nmProduto}</TextTable>
@@ -310,14 +310,14 @@ export default function Entregas() {
                         />}
                     <DivButtons>
                         <Button
-                            children={<AiTwotonePrinter size={30} />}
+                            label={<AiTwotonePrinter size={30} />}
                             type='button'
                             style={{ margin: '0rem 0px 2rem 0px', height: '4rem', width: '5rem' }}
                             disabled={values.dtEntrega === ""}
                             onClick={() => setShouldShow(true)}
                         />
                         <Button
-                            children='Cadastrar Entrega'
+                            label='Cadastrar Entrega'
                             type="button"
                             onClick={handleSubmit}
                             style={{ margin: '2rem 0px 4rem 0px', height: '4rem', width: '12rem' }}

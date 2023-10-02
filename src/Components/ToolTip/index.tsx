@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Box, StyledIcon, Title } from './style'
 
 interface Props {

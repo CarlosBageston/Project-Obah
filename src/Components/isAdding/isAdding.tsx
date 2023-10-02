@@ -143,6 +143,7 @@ export function IsAdding({ data, isAdding, setFieldValue, setIsVisibleTpProduto,
                     {addingScreen === 'Produto' && touched && errors &&
                         (
                             (touched.mpFabricado && errors.mpFabricado) && (
+                                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                                 //@ts-ignore
                                 <div style={{ color: 'red' }}>{errors.mpFabricado}</div>
                             )

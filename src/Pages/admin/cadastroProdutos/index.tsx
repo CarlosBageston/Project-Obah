@@ -351,7 +351,7 @@ export default function CadastroProduto() {
             />
             <ContainerButton>
                 <Button
-                    children='Cadastrar Produto'
+                    label='Cadastrar Produto'
                     type="button"
                     onClick={handleSubmit}
                     style={{ margin: '1rem 4rem 2rem 95%', height: '4rem', width: '12rem' }}

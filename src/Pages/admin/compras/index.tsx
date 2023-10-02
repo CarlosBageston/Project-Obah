@@ -14,7 +14,7 @@ import formatDate from "../../../Components/masks/formatDate";
 import ProdutosModel from "../cadastroProdutos/model/produtos";
 import FormAlert from "../../../Components/FormAlert/formAlert";
 import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
-import { Autocomplete, FormControl, InputLabel, MenuItem, Select, TextField } from "@mui/material";
+import { Autocomplete, AutocompleteChangeReason, FormControl, InputLabel, MenuItem, Select, TextField } from "@mui/material";
 
 import {
     Box,
@@ -36,7 +36,8 @@ const objClean: ComprasModel = {
     tpProduto: null,
     cxProduto: null,
     kgProduto: null,
-    qntMinima: null
+    qntMinima: null,
+    nrOrdem: undefined
 }
 
 export default function AtualizarEstoque() {
@@ -47,7 +48,7 @@ export default function AtualizarEstoque() {
     const [selectAutoComplete, setSelectAutoComplete] = useState<boolean>(false);
     const [selected, setSelected] = useState<ComprasModel | undefined>();
     const [isEdit, setIsEdit] = useState<boolean>(false);
-    const [uniqueNames, setUniqueNames] = useState<any[]>([])
+    const [uniqueNames, setUniqueNames] = useState<any[]>([]);
     const inputsConfig = [
         { label: 'Nome Do Produto', propertyName: 'nmProduto' },
         { label: 'Código do Produto', propertyName: 'cdProduto' },
@@ -87,11 +88,11 @@ export default function AtualizarEstoque() {
             cxProduto: Yup.number().optional().nullable(),
             tpProduto: Yup.number().transform((value) => (isNaN(value) ? undefined : value)).required('Campo obrigatório'),
             quantidade: Yup.number().transform((value) => (isNaN(value) ? undefined : value)).required('Campo obrigatório'),
-            qntMinima: Yup.number().transform((value) => (isNaN(value) ? undefined : value)).required('Campo obrigatório')
+            qntMinima: Yup.number().transform((value) => (isNaN(value) ? undefined : value)).required('Campo obrigatório'),
+            nrOrdem: Yup.number().optional().nullable()
         }),
         onSubmit: hundleSubmitForm,
     });
-
     //Limpa formulario
     function cleanState() {
         setInitialValues({
@@ -104,7 +105,8 @@ export default function AtualizarEstoque() {
             tpProduto: null,
             cxProduto: null,
             kgProduto: null,
-            qntMinima: null
+            qntMinima: null,
+            nrOrdem: undefined
         })
         setKey(Math.random());
     }
@@ -120,12 +122,13 @@ export default function AtualizarEstoque() {
         }
         setSelected(undefined)
     }
-
     //enviando formulario
     async function hundleSubmitForm() {
+        const newNrOrdem = values.nrOrdem || values.nrOrdem === 0 ? values.nrOrdem + 1 : 0;
+        const valuesUpdate = { ...values, nrOrdem: newNrOrdem };
 
         await addDoc(collection(db, "Compras"), {
-            ...values
+            ...valuesUpdate
         })
             .then(() => {
                 setSubmitForm(true)
@@ -212,58 +215,50 @@ export default function AtualizarEstoque() {
         setIsEdit(false)
         setSelected(undefined)
     }
-    //fazendo autocomplete dos inputs
-    useEffect(() => {
-        const getProduct = () => {
-            const filteredProducts = dataTable.filter(
-                (produto) => produto.nmProduto === values.nmProduto
-            );
-            const sortedProducts = filteredProducts.sort(
-                (a, b) =>
-                    (b.dtCompra instanceof Date ? b.dtCompra.getTime() : 0) -
-                    (a.dtCompra instanceof Date ? a.dtCompra.getTime() : 0)
-            );
-            const lastProduct = sortedProducts[0];
-            return lastProduct;
-        };
 
-        const lastProduct = getProduct();
-        if (values.tpProduto === SituacaoProduto.COMPRADO) {
-            if (lastProduct) {
-                setSelectAutoComplete(true);
-                setFieldValue('cdProduto', lastProduct.cdProduto);
-                setFieldValue('vlUnitario', lastProduct.vlUnitario);
-                setFieldValue('qntMinima', lastProduct.qntMinima);
+    function lastProduct(filterUniqueNames: ComprasModel[] | ProdutosModel[], names: string[]) {
+        const maxProductsByUniqueNames = names.map((uniqueName) => {
+            const filteredProducts = filterUniqueNames
+                .filter((prod) => prod.nmProduto === uniqueName && prod.nrOrdem !== undefined)
+                .sort((a, b) => (a.nrOrdem || 0) - (b.nrOrdem || 0));
+
+            if (filteredProducts.length > 0) {
+                return filteredProducts[filteredProducts.length - 1];
+            } else {
+                return null;
             }
-        } else {
-            const fabricadoAutoComplete = produtoDataTable.find(
-                (produto) =>
-                    produto.tpProduto === SituacaoProduto.FABRICADO &&
-                    produto.nmProduto === values.nmProduto
-            );
-            if (lastProduct) {
-                setSelectAutoComplete(true);
-                setFieldValue('cdProduto', lastProduct.cdProduto);
-                setFieldValue('vlUnitario', fabricadoAutoComplete?.vlPagoProduto);
-                setFieldValue('qntMinima', lastProduct.qntMinima);
-            } else if (fabricadoAutoComplete) {
-                setFieldValue('vlUnitario', fabricadoAutoComplete.vlPagoProduto);
-            }
+        });
+        return maxProductsByUniqueNames;
+    }
+
+    function handleAutoComplete(newValue: ComprasModel, reason: AutocompleteChangeReason) {
+        if (reason === 'clear' || reason === 'removeOption') {
+            setSelectAutoComplete(false);
+            setFieldValue('cdProduto', '');
+            setFieldValue('vlUnitario', '');
+            setFieldValue('qntMinima', '');
+        } else if (newValue) {
+            setSelectAutoComplete(true);
+            setFieldValue('nrOrdem', newValue.nrOrdem);
+            setFieldValue('cdProduto', newValue.cdProduto);
+            setFieldValue('vlUnitario', newValue.vlUnitario);
+            setFieldValue('qntMinima', newValue.qntMinima);
+            setFieldValue('nmProduto', newValue.nmProduto);
         }
-    }, [values.nmProduto, dataTable, values.tpProduto]);
-
-
+    }
     //tornando valores unicos no array/não repete
     useEffect(() => {
-
         if (values.tpProduto === SituacaoProduto.COMPRADO) {
-            const filterUniqueNames = dataTable.filter(produtos => produtos.tpProduto === SituacaoProduto.COMPRADO)
-            const uniqueNames = Array.from(new Set(filterUniqueNames.map(nome => nome.nmProduto)));
-            setUniqueNames(uniqueNames)
+            const filterUniqueNames = dataTable.filter((produtos) => produtos.tpProduto === SituacaoProduto.COMPRADO);
+            const uniqueNames = Array.from(new Set(filterUniqueNames.map((nome) => nome.nmProduto)));
+            const maxProductsByUniqueNames = lastProduct(filterUniqueNames, uniqueNames);
+            setUniqueNames(maxProductsByUniqueNames);
         } else {
             const filterUniqueNames = produtoDataTable.filter(produtos => produtos.tpProduto === SituacaoProduto.FABRICADO)
             const uniqueNames = Array.from(new Set(filterUniqueNames.map(nome => nome.nmProduto)));
-            setUniqueNames(uniqueNames)
+            const maxProductsByUniqueNames = lastProduct(filterUniqueNames, uniqueNames);
+
+            setUniqueNames(maxProductsByUniqueNames);
         }
     }, [values.tpProduto])
 
@@ -305,17 +300,10 @@ export default function AtualizarEstoque() {
                         )}
                     </FormControl>
                     <Autocomplete
-                        value={values.nmProduto}
                         options={uniqueNames}
-                        onChange={(e, newValue, reason) => {
-                            setFieldValue('nmProduto', newValue);
-                            if (reason === 'clear' || reason === 'removeOption') {
-                                setSelectAutoComplete(false);
-                                setFieldValue('cdProduto', '');
-                                setFieldValue('vlUnitario', '');
-                                setFieldValue('qntMinima', '');
-                            }
-                        }}
+                        getOptionLabel={(option) => option.nmProduto || ""}
+                        onChange={(e, newValue, reason) => handleAutoComplete(newValue, reason)}
+                        disabled={values.tpProduto === null}
                         freeSolo
                         renderInput={(params) => (
                             <TextField
@@ -329,10 +317,6 @@ export default function AtualizarEstoque() {
                                         fontSize: '24px',
                                         paddingLeft: 6,
                                     }
-                                }}
-                                onBlur={handleBlur}
-                                onChange={(e) => {
-                                    setFieldValue('nmProduto', e.target.value);
                                 }}
                             />
                         )}
@@ -456,7 +440,7 @@ export default function AtualizarEstoque() {
             />
             <ContainerButton>
                 <Button
-                    children='Cadastrar Estoque'
+                    label='Cadastrar Estoque'
                     type="button"
                     onClick={handleSubmit}
                     style={{ margin: '1rem 4rem 2rem 95%', height: '4rem', width: '12rem' }}

@@ -31,8 +31,6 @@ import {
     StyledListItemButtonSubOpcao,
     Icon,
 } from './style';
-import { ArrowCircleDown } from '@mui/icons-material';
-import { IoIosArrowUp } from 'react-icons/io';
 
 
 
@@ -200,8 +198,8 @@ export default function MenuLateral() {
                     <StyledListItemText primary="Gestão" />
                     <Icon openSubOpcao={openSubOpcao} />
                 </StyledListItemButton>
-                {openSubOpcao && 
-                    <div style={{backgroundColor: '#3b2e87'}}>
+                {openSubOpcao &&
+                    <div style={{ backgroundColor: '#3b2e87' }}>
                         <Link to="/colaborador" style={{ textDecoration: 'none', color: 'white' }} onClick={handleClick}>
                             <StyledListItemButtonSubOpcao>
                                 <ListItemIcon>

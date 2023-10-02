@@ -139,17 +139,17 @@ export default function SobreNos() {
                             <ContainerIcons>
                                 <a
                                     href="https://www.facebook.com/carloseduardo.bageston/"
-                                    target="_blank"
+                                    target="_blank" rel="noreferrer"
                                 >
                                     <img src={iconFacebook} alt="icone facebook" /></a>
                                 <a
                                     href="https://www.instagram.com/carlosbageston/"
-                                    target="_blank"
+                                    target="_blank" rel="noreferrer"
                                 >
                                     <img src={iconinstagram} alt="icone instagram" /></a>
                                 <a
                                     href="https://api.whatsapp.com/send?phone=5546999358718&text=Oi,%20tenho%20interesse%20em%20adquirir%20seus%20produtos%20:)"
-                                    target="_blank"
+                                    target="_blank" rel="noreferrer"
                                 >
                                     <img src={iconwhatsapp} alt="icone whatsapp" />
                                 </a>

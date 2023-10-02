@@ -45,6 +45,7 @@ export default function CadastroColaborador() {
         { label: 'Rua', propertyName: 'ruaColaborador' },
         { label: 'Numero', propertyName: 'nrCasaColaborador' },
         { label: 'ID Cartão Ponto', propertyName: 'idCartaoPonto' },
+        { label: 'Salário - valor por hora', propertyName: 'vlHora' }
     ];
 
     const {
@@ -238,7 +239,7 @@ export default function CadastroColaborador() {
                 <ContainerButton>
                     <Button
                         type={'button'}
-                        children={'Cadastrar Colaborador'}
+                        label={'Cadastrar Colaborador'}
                         onClick={handleSubmit}
                         style={{ margin: '1rem 0 3rem 0', height: '4rem', width: '14rem' }}
                     />

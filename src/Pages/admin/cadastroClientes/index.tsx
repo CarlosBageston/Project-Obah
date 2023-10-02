@@ -230,6 +230,7 @@ export default function CadastroCliente() {
                         </DivCliente>
                         <div>
                             {touched.produtos && errors.produtos && (
+                                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                                 //@ts-ignore
                                 <div style={{ color: 'red' }}>{errors.produtos}</div>
                             )}
@@ -241,7 +242,7 @@ export default function CadastroCliente() {
                 <ContainerButton>
                     <Button
                         type={'button'}
-                        children={'Cadastrar Cliente'}
+                        label={'Cadastrar Cliente'}
                         onClick={handleSubmit}
                         style={{ margin: '1rem 0 3rem 0', height: '4rem', width: '14rem' }}
                     />

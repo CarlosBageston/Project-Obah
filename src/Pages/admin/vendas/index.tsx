@@ -51,7 +51,6 @@ export default function Vendas() {
     const [qntBolas, setQntBolas] = useState<string>('');
     const [key, setKey] = useState<number>(0);
     const [multiplica, setMultiplica] = useState<number | undefined>(undefined);
-    const [recarregue, setRecarregue] = useState<boolean>(true);
 
 
     const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
@@ -63,7 +62,7 @@ export default function Vendas() {
     //realizando busca no banco de dados
     const {
         dataTable: dataTableProduto,
-    } = GetData('Produtos', recarregue) as { dataTable: ProdutosModel[] };
+    } = GetData('Produtos', true) as { dataTable: ProdutosModel[] };
 
     const initialValues: VendaModel = ({ ...objClean });
 
@@ -127,7 +126,7 @@ export default function Vendas() {
     //buscando por nome do produto no banco e multiplicando valor caso necessario
     const handleMultiplicaKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
         const codigoDeBarras = e.currentTarget.value;
-        let isLetra = /^(?=\p{L})[\p{L}\d\s]+$/u.test(codigoDeBarras);
+        const isLetra = /^(?=\p{L})[\p{L}\d\s]+$/u.test(codigoDeBarras);
 
         if (e.key === 'Enter' && isLetra) {
             if (multiplica) {
@@ -379,7 +378,7 @@ export default function Vendas() {
                         </div>
                         <div>
                             <Button
-                                children='Finalizar venda'
+                                label='Finalizar venda'
                                 disabled={values.produtoEscaniado.length === 0 ? true : false}
                                 type="button"
                                 onClick={handleSubmit}

@@ -98,12 +98,6 @@ export function IsEdit({ data, handleEditRow, inputsConfig, isEdit, products, se
             mpFabricado: newMps,
         } as ProdutosModel | undefined));
     }
-
-    const windowClose = () => {
-        if (editingScreen === 'Cliente') {
-            setSelected([])
-        }
-    }
     return (
         <>
             {isEdit && (

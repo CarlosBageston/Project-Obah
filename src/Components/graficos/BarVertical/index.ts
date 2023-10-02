@@ -1,8 +1,5 @@
-import { collection, CollectionReference, getDocs } from "firebase/firestore";
 import moment from "moment";
-import { useState, useEffect } from "react";
 import ProdutoModel from "../../../Pages/admin/vendas/model/vendas";
-import { db } from "../../../firebase";
 import 'chart.js/auto'
 import GetData from "../../../firebase/getData";
 
@@ -17,23 +14,11 @@ import GetData from "../../../firebase/getData";
  * @returns Retorna um objeto contendo os dados do gráfico (dataVertical), as opções de configuração (optionsVertical) e os dados por mês (dadosPorMesVertical).
  */
 export default function ChartBarVertical() {
-    const [recarregue, setRecarregue] = useState<boolean>(true);
-    // const [vendas, setVendas] = useState<ProdutoModel[]>([])
-    // const _collectionVendas = collection(db, 'Vendas') as CollectionReference<ProdutoModel>;
-
-    // //buscar dados no banco 
-    // useEffect(() => {
-    //     const getVendas = async () => {
-    //         const data = await getDocs<ProdutoModel>(_collectionVendas);
-    //         setVendas(data.docs.map(doc => ({ ...doc.data(), id: doc.id })));
-    //     };
-    //     getVendas();
-    // }, []);
-
+    
     //realizando busca no banco de dados
     const {
         dataTable: dataTableVendas,
-    } = GetData('Vendas', recarregue) as { dataTable: ProdutoModel[] };
+    } = GetData('Vendas', true) as { dataTable: ProdutoModel[] };
 
     //filtrando dados por data
     const mesesDesejados = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];

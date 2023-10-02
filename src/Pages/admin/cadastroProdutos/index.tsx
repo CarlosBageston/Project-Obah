@@ -24,6 +24,7 @@ import {
     ContainerButton,
     DivSituacaoProduto,
 } from './style'
+import { useUniqueNames } from '../../../hooks/useUniqueName';
 
 
 const objClean: ProdutoModel = {
@@ -165,67 +166,47 @@ export default function CadastroProduto() {
         setSelected(undefined)
     }
 
-    useEffect(() => {
+    function calculateTotalValue(mpList: ComprasModel[], comprasDataTable: ComprasModel[]) {
         let soma = 0;
-        if (isEdit && selected) {
-            for (const mp of selected.mpFabricado) {
-                const produtoEncontrado = comprasDataTable.find(produto => produto.nmProduto === mp.nmProduto);
+        for (const mp of mpList) {
+            const produtoEncontrado = comprasDataTable.find(produto => produto.nmProduto === mp.nmProduto);
 
-                if (produtoEncontrado) {
-                    const valorPago = produtoEncontrado.vlUnitario;
-                    const valueFormat = valorPago.match(/\d+/g)?.join('.');
-                    let result = 0;
+            if (produtoEncontrado) {
+                const valorPago = produtoEncontrado.vlUnitario;
+                const valueFormat = valorPago.match(/\d+/g)?.join('.');
+                let result = 0;
 
-                    if (produtoEncontrado.cxProduto) {
-                        const caixa = produtoEncontrado.cxProduto;
-                        const quantidadeUsada = mp.quantidade;
-                        console.log(values.mpFabricado)
-                        result = Number(valueFormat) / Number(caixa) * Number(quantidadeUsada);
+                if (produtoEncontrado.cxProduto) {
+                    const caixa = produtoEncontrado.cxProduto;
+                    const quantidadeUsada = mp.quantidade;
+                    result = Number(valueFormat) / Number(caixa) * Number(quantidadeUsada);
 
-                    } else if (produtoEncontrado.kgProduto) {
-                        const kg = produtoEncontrado.kgProduto;
-                        const quantidadeUsada = mp.quantidade;
-                        result = Number(valueFormat) / Number(kg) * Number(quantidadeUsada);
-                    } else {
-                        const quantidadetotal = produtoEncontrado.quantidade;
-                        const quantidadeUsada = mp.quantidade;
-                        result = Number(valueFormat) / Number(quantidadetotal) * Number(quantidadeUsada);
-                    }
-                    soma += result;
+                } else if (produtoEncontrado.kgProduto) {
+                    const kg = produtoEncontrado.kgProduto;
+                    const quantidadeUsada = mp.quantidade;
+                    result = Number(valueFormat) / Number(kg) * Number(quantidadeUsada);
+                } else {
+                    const quantidadetotal = produtoEncontrado.quantidade;
+                    const quantidadeUsada = mp.quantidade;
+                    result = Number(valueFormat) / Number(quantidadetotal) * Number(quantidadeUsada);
                 }
+                soma += result;
             }
-            const somaFormat = soma.toFixed(2)
+        }
+        return soma.toFixed(2);
+    }
+
+    useEffect(() => {
+        let somaFormat = '0.00';
+
+        if (isEdit && selected) {
+            somaFormat = calculateTotalValue(selected.mpFabricado, comprasDataTable);
             setSelected((prevSelected) => ({
                 ...prevSelected,
                 vlPagoProduto: `R$ ${somaFormat}` || '',
             } as ProdutoModel | undefined));
         } else {
-            for (const mp of values.mpFabricado) {
-                const produtoEncontrado = comprasDataTable.find(produto => produto.nmProduto === mp.nmProduto);
-
-                if (produtoEncontrado) {
-                    const valorPago = produtoEncontrado.vlUnitario;
-                    const valueFormat = valorPago.match(/\d+/g)?.join('.');
-                    let result = 0;
-
-                    if (produtoEncontrado.cxProduto) {
-                        const caixa = produtoEncontrado.cxProduto;
-                        const quantidadeUsada = mp.quantidade;
-                        result = Number(valueFormat) / Number(caixa) * Number(quantidadeUsada);
-
-                    } else if (produtoEncontrado.kgProduto) {
-                        const kg = produtoEncontrado.kgProduto;
-                        const quantidadeUsada = mp.quantidade;
-                        result = Number(valueFormat) / Number(kg) * Number(quantidadeUsada);
-                    } else {
-                        const quantidadetotal = produtoEncontrado.quantidade;
-                        const quantidadeUsada = mp.quantidade;
-                        result = Number(valueFormat) / Number(quantidadetotal) * Number(quantidadeUsada);
-                    }
-                    soma += result;
-                }
-            }
-            const somaFormat = soma.toFixed(2)
+            somaFormat = calculateTotalValue(values.mpFabricado, comprasDataTable);
             setFieldValue('vlPagoProduto', `R$ ${somaFormat}`);
         }
     }, [comprasDataTable, values.mpFabricado, isVisibleTpProuto, selected?.mpFabricado]);
@@ -295,7 +276,15 @@ export default function CadastroProduto() {
                                 <div style={{ color: 'red' }}>{errors.tpProduto}</div>
                             )}
                         </FormControl>
-                        <FormControlLabel control={<Checkbox checked={values.stEntrega} onChange={(e) => setFieldValue("stEntrega", e.target.checked)} />} label="Venda no atacado?" />
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={values.stEntrega}
+                                    onChange={(e) => setFieldValue("stEntrega", e.target.checked)}
+                                />
+                            }
+                            label="Venda no atacado?"
+                        />
 
                     </DivSituacaoProduto>
                 </DivInput>
@@ -329,7 +318,7 @@ export default function CadastroProduto() {
             {/*Adicionando Produto */}
             <IsAdding
                 addingScreen="Produto"
-                data={comprasDataTable}
+                data={useUniqueNames(comprasDataTable, dataTable, values.tpProduto, SituacaoProduto.COMPRADO)}
                 isAdding={isVisibleTpProuto}
                 products={values.mpFabricado}
                 setFieldValue={setFieldValue}

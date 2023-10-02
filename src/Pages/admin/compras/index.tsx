@@ -24,6 +24,7 @@ import {
     ContainerButton,
 } from './style'
 import { BoxTitleDefault } from "../estoque/style";
+import { useUniqueNames } from '../../../hooks/useUniqueName';
 
 
 const objClean: ComprasModel = {
@@ -48,7 +49,6 @@ export default function AtualizarEstoque() {
     const [selectAutoComplete, setSelectAutoComplete] = useState<boolean>(false);
     const [selected, setSelected] = useState<ComprasModel | undefined>();
     const [isEdit, setIsEdit] = useState<boolean>(false);
-    const [uniqueNames, setUniqueNames] = useState<any[]>([]);
     const inputsConfig = [
         { label: 'Nome Do Produto', propertyName: 'nmProduto' },
         { label: 'Código do Produto', propertyName: 'cdProduto' },
@@ -139,7 +139,6 @@ export default function AtualizarEstoque() {
                 setSubmitForm(false)
                 setTimeout(() => { setSubmitForm(undefined) }, 3000)
             });
-        setUniqueNames([])
         resetForm()
         cleanState()
         setSelectAutoComplete(false);
@@ -216,21 +215,6 @@ export default function AtualizarEstoque() {
         setSelected(undefined)
     }
 
-    function lastProduct(filterUniqueNames: ComprasModel[] | ProdutosModel[], names: string[]) {
-        const maxProductsByUniqueNames = names.map((uniqueName) => {
-            const filteredProducts = filterUniqueNames
-                .filter((prod) => prod.nmProduto === uniqueName && prod.nrOrdem !== undefined)
-                .sort((a, b) => (a.nrOrdem || 0) - (b.nrOrdem || 0));
-
-            if (filteredProducts.length > 0) {
-                return filteredProducts[filteredProducts.length - 1];
-            } else {
-                return null;
-            }
-        });
-        return maxProductsByUniqueNames;
-    }
-
     function handleAutoComplete(newValue: ComprasModel, reason: AutocompleteChangeReason) {
         if (reason === 'clear' || reason === 'removeOption') {
             setSelectAutoComplete(false);
@@ -246,21 +230,6 @@ export default function AtualizarEstoque() {
             setFieldValue('nmProduto', newValue.nmProduto);
         }
     }
-    //tornando valores unicos no array/não repete
-    useEffect(() => {
-        if (values.tpProduto === SituacaoProduto.COMPRADO) {
-            const filterUniqueNames = dataTable.filter((produtos) => produtos.tpProduto === SituacaoProduto.COMPRADO);
-            const uniqueNames = Array.from(new Set(filterUniqueNames.map((nome) => nome.nmProduto)));
-            const maxProductsByUniqueNames = lastProduct(filterUniqueNames, uniqueNames);
-            setUniqueNames(maxProductsByUniqueNames);
-        } else {
-            const filterUniqueNames = produtoDataTable.filter(produtos => produtos.tpProduto === SituacaoProduto.FABRICADO)
-            const uniqueNames = Array.from(new Set(filterUniqueNames.map(nome => nome.nmProduto)));
-            const maxProductsByUniqueNames = lastProduct(filterUniqueNames, uniqueNames);
-
-            setUniqueNames(maxProductsByUniqueNames);
-        }
-    }, [values.tpProduto])
 
     return (
         <Box>
@@ -300,7 +269,7 @@ export default function AtualizarEstoque() {
                         )}
                     </FormControl>
                     <Autocomplete
-                        options={uniqueNames}
+                        options={useUniqueNames(dataTable, produtoDataTable, values.tpProduto, values.tpProduto)}
                         getOptionLabel={(option) => option.nmProduto || ""}
                         onChange={(e, newValue, reason) => handleAutoComplete(newValue, reason)}
                         disabled={values.tpProduto === null}

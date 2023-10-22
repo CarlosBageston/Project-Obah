@@ -13,14 +13,14 @@ ${({ isVisible }) =>
     `
       margin-right: 10px;
       display: block;
-      animation: slide-right 1s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+      animation: slide-right .4s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
     `}
 @keyframes slide-right {
   0% {
-            transform: translateX(-100px);
+    transform: translateX(-100px);
   }
   100% {
-            transform: translateX(10px);
+    transform: translateX(10px);
   }
 }
 `;
@@ -40,16 +40,6 @@ const flipOut = keyframes`
     opacity: 0;
   }
 `;
-const flipEnter = keyframes`
-  0% {
-    transform: scale(0);
-    opacity: 0;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-`;
 
 export const StyledButton = styled(Button)`
   opacity: 1;
@@ -61,7 +51,7 @@ export const StyledButton = styled(Button)`
   }
 
   &.flip-out {
-    animation: ${flipOut} 1s linear forwards;
+    animation: ${flipOut} .4s linear forwards;
   }
   `;
 
@@ -73,9 +63,6 @@ export const ButtonFilter = styled(Button)`
   }
 
   &.flip-out {
-    animation: ${flipOut} 1s linear forwards;
-  }
-  &.flip-enter {
-    animation: ${flipEnter} 1s linear forwards;
+    animation: ${flipOut} .4s linear forwards;
   }
   `;

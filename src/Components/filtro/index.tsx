@@ -123,7 +123,7 @@ const FiltroGeneric = ({ data, setFilteredData, type, carregarDados }: Props) =>
                                 className={`${search ? 'flip-out' : ''}`}
                                 onClick={handleAtraso}
                                 startIcon={<CgPlayListSearch size={30} />}
-                                style={{ transition: 'transform 1s, opacity 1s' }}
+                                style={{ transition: 'transform 0.5s, opacity 1s' }}
                             >
                             </StyledButton>
                         ) : (

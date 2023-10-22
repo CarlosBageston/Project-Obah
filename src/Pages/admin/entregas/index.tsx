@@ -154,7 +154,7 @@ export default function Entregas() {
         const resultLucro = clienteCurrent.flatMap((cliente) =>
             cliente.produtos.map((produto) => {
                 const quantidade = quantidades[produto.nmProduto] ?? 0;
-                const valorPago = Number(produto.vlPagoProduto.match(/\d+/g)?.join('.'));
+                const valorPago = Number(produto.vlUnitario.match(/\d+/g)?.join('.'));
                 const valorVenda = Number(produto.vlVendaProduto.match(/\d+/g)?.join('.'));
                 const totalLucro = valorVenda - valorPago;
                 const total = totalLucro * quantidade;

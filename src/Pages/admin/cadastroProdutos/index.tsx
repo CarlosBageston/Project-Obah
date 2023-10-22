@@ -14,6 +14,7 @@ import { IsEdit } from "../../../Components/isEdit/isEdit";
 import FormAlert from "../../../Components/FormAlert/formAlert";
 import { IsAdding } from "../../../Components/isAdding/isAdding";
 import SituacaoProduto from "../../../enumeration/situacaoProduto";
+import { calculateTotalValue } from '../../../hooks/useCalculateTotalValue';
 import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { Checkbox, FormControl, FormControlLabel, InputLabel, MenuItem, Select, } from "@mui/material";
 import {
@@ -24,12 +25,13 @@ import {
     ContainerButton,
     DivSituacaoProduto,
 } from './style'
+import { useUniqueNames } from '../../../hooks/useUniqueName';
 
 
 const objClean: ProdutoModel = {
     cdProduto: '',
     nmProduto: '',
-    vlPagoProduto: '',
+    vlUnitario: '',
     vlVendaProduto: '',
     tpProduto: null,
     stEntrega: false,
@@ -48,7 +50,7 @@ export default function CadastroProduto() {
         { label: 'Nome', propertyName: 'nmProduto' },
         { label: 'Código do Produto', propertyName: 'cdProduto' },
         { label: 'Valor de Venda', propertyName: 'vlVendaProduto' },
-        { label: 'Valor Pago', propertyName: 'vlPagoProduto' },
+        { label: 'Valor Pago', propertyName: 'vlUnitario' },
     ];
     const [initialValues, setInitialValues] = useState<ProdutoModel>({ ...objClean });
 
@@ -69,7 +71,7 @@ export default function CadastroProduto() {
         validationSchema: Yup.object().shape({
             nmProduto: Yup.string().required('Campo obrigatório'),
             cdProduto: Yup.string().required('Campo obrigatório'),
-            vlPagoProduto: Yup.string().required('Campo obrigatório'),
+            vlUnitario: Yup.string().required('Campo obrigatório'),
             vlVendaProduto: Yup.string().required('Campo obrigatório'),
             tpProduto: Yup.number().transform((value) => (isNaN(value) ? undefined : value)).required('Campo obrigatório'),
             mpFabricado: Yup.array().test("array vazio", 'Campo obrigatório', function (value) {
@@ -99,7 +101,7 @@ export default function CadastroProduto() {
         setInitialValues({
             cdProduto: '',
             nmProduto: '',
-            vlPagoProduto: '',
+            vlUnitario: '',
             vlVendaProduto: '',
             tpProduto: null,
             stEntrega: false,
@@ -111,10 +113,10 @@ export default function CadastroProduto() {
 
     //enviando formulario
     async function handleSubmitForm() {
-
+        const valuesUpdate = { ...values, nrOrdem: 0 };
 
         await addDoc(collection(db, "Produtos"), {
-            ...values
+            ...valuesUpdate
         })
             .then(() => {
                 setSubmitForm(true);
@@ -165,71 +167,20 @@ export default function CadastroProduto() {
         setSelected(undefined)
     }
 
+
     useEffect(() => {
-        let soma = 0;
+        let somaFormat = 0.00;
         if (isEdit && selected) {
-            for (const mp of selected.mpFabricado) {
-                const produtoEncontrado = comprasDataTable.find(produto => produto.nmProduto === mp.nmProduto);
-
-                if (produtoEncontrado) {
-                    const valorPago = produtoEncontrado.vlUnitario;
-                    const valueFormat = valorPago.match(/\d+/g)?.join('.');
-                    let result = 0;
-
-                    if (produtoEncontrado.cxProduto) {
-                        const caixa = produtoEncontrado.cxProduto;
-                        const quantidadeUsada = mp.quantidade;
-                        console.log(values.mpFabricado)
-                        result = Number(valueFormat) / Number(caixa) * Number(quantidadeUsada);
-
-                    } else if (produtoEncontrado.kgProduto) {
-                        const kg = produtoEncontrado.kgProduto;
-                        const quantidadeUsada = mp.quantidade;
-                        result = Number(valueFormat) / Number(kg) * Number(quantidadeUsada);
-                    } else {
-                        const quantidadetotal = produtoEncontrado.quantidade;
-                        const quantidadeUsada = mp.quantidade;
-                        result = Number(valueFormat) / Number(quantidadetotal) * Number(quantidadeUsada);
-                    }
-                    soma += result;
-                }
-            }
-            const somaFormat = soma.toFixed(2)
+            somaFormat = calculateTotalValue(selected.mpFabricado, comprasDataTable);
             setSelected((prevSelected) => ({
                 ...prevSelected,
-                vlPagoProduto: `R$ ${somaFormat}` || '',
+                vlUnitario: `R$ ${somaFormat}` || '',
             } as ProdutoModel | undefined));
         } else {
-            for (const mp of values.mpFabricado) {
-                const produtoEncontrado = comprasDataTable.find(produto => produto.nmProduto === mp.nmProduto);
-
-                if (produtoEncontrado) {
-                    const valorPago = produtoEncontrado.vlUnitario;
-                    const valueFormat = valorPago.match(/\d+/g)?.join('.');
-                    let result = 0;
-
-                    if (produtoEncontrado.cxProduto) {
-                        const caixa = produtoEncontrado.cxProduto;
-                        const quantidadeUsada = mp.quantidade;
-                        result = Number(valueFormat) / Number(caixa) * Number(quantidadeUsada);
-
-                    } else if (produtoEncontrado.kgProduto) {
-                        const kg = produtoEncontrado.kgProduto;
-                        const quantidadeUsada = mp.quantidade;
-                        result = Number(valueFormat) / Number(kg) * Number(quantidadeUsada);
-                    } else {
-                        const quantidadetotal = produtoEncontrado.quantidade;
-                        const quantidadeUsada = mp.quantidade;
-                        result = Number(valueFormat) / Number(quantidadetotal) * Number(quantidadeUsada);
-                    }
-                    soma += result;
-                }
-            }
-            const somaFormat = soma.toFixed(2)
-            setFieldValue('vlPagoProduto', `R$ ${somaFormat}`);
+            somaFormat = calculateTotalValue(values.mpFabricado, comprasDataTable);
+            setFieldValue('vlUnitario', `R$ ${somaFormat.toFixed(2)}`);
         }
     }, [comprasDataTable, values.mpFabricado, isVisibleTpProuto, selected?.mpFabricado]);
-
 
     useEffect(() => {
         if (values.tpProduto === SituacaoProduto.FABRICADO) return setIsVisibleTpProduto(true)
@@ -295,7 +246,15 @@ export default function CadastroProduto() {
                                 <div style={{ color: 'red' }}>{errors.tpProduto}</div>
                             )}
                         </FormControl>
-                        <FormControlLabel control={<Checkbox checked={values.stEntrega} onChange={(e) => setFieldValue("stEntrega", e.target.checked)} />} label="Venda no atacado?" />
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={values.stEntrega}
+                                    onChange={(e) => setFieldValue("stEntrega", e.target.checked)}
+                                />
+                            }
+                            label="Venda no atacado?"
+                        />
 
                     </DivSituacaoProduto>
                 </DivInput>
@@ -312,15 +271,15 @@ export default function CadastroProduto() {
                         style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                     />
                     <Input
-                        key={`vlPagoProduto-${key}`}
+                        key={`vlUnitario-${key}`}
                         label="Valor Pago"
                         onBlur={handleBlur}
-                        name="vlPagoProduto"
+                        name="vlUnitario"
                         disabled={values.tpProduto === SituacaoProduto.FABRICADO}
                         raisedLabel={values.tpProduto === SituacaoProduto.FABRICADO}
-                        value={values.vlPagoProduto === 'R$ 0.00' ? '' : values.vlPagoProduto}
+                        value={values.vlUnitario === 'R$ 0.00' ? '' : values.vlUnitario}
                         onChange={e => setFieldValue(e.target.name, formatarValor(e.target.value))}
-                        error={touched.vlPagoProduto && errors.vlPagoProduto ? errors.vlPagoProduto : ''}
+                        error={touched.vlUnitario && errors.vlUnitario ? errors.vlUnitario : ''}
                         styleDiv={{ marginTop: 4 }}
                         style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                     />
@@ -329,7 +288,7 @@ export default function CadastroProduto() {
             {/*Adicionando Produto */}
             <IsAdding
                 addingScreen="Produto"
-                data={comprasDataTable}
+                data={useUniqueNames(comprasDataTable, dataTable, values.tpProduto, SituacaoProduto.COMPRADO)}
                 isAdding={isVisibleTpProuto}
                 products={values.mpFabricado}
                 setFieldValue={setFieldValue}
@@ -372,7 +331,7 @@ export default function CadastroProduto() {
                     { label: 'Código', name: 'cdProduto' },
                     { label: 'Nome', name: 'nmProduto' },
                     { label: 'Valor Venda', name: 'vlVendaProduto' },
-                    { label: 'Valor Pago', name: 'vlPagoProduto' },
+                    { label: 'Valor Pago', name: 'vlUnitario' },
                 ]}
                 data={dataTable}
                 isLoading={loading}

@@ -10,7 +10,6 @@ export function useUniqueNames(
     tpProduto: SituacaoProduto | null, 
     optionTpProduto: SituacaoProduto | null) {
     const [uniqueNames, setUniqueNames] = useState<any[]>([]);
-
     function lastProduct(filterUniqueNames: ComprasModel[] | ProdutosModel[], names: string[]) {
         const maxProductsByUniqueNames = names.map((uniqueName) => {
             const filteredProducts = filterUniqueNames
@@ -35,10 +34,8 @@ export function useUniqueNames(
             const filterUniqueNames = produtoDataTable.filter((produtos:ProdutosModel) => produtos.tpProduto === SituacaoProduto.FABRICADO)
             const uniqueNames = Array.from(new Set(filterUniqueNames.map((nome: ProdutosModel) => nome.nmProduto)));
             const maxProductsByUniqueNames = lastProduct(filterUniqueNames, uniqueNames);
-
             setUniqueNames(maxProductsByUniqueNames);
         }
     }, [tpProduto])
-
     return uniqueNames;
 }

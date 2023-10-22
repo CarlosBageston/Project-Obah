@@ -2,17 +2,20 @@ import * as Yup from 'yup';
 import { useFormik } from 'formik';
 import { db } from "../../../firebase";
 import ComprasModel from "./model/compras";
+import { useState, useEffect } from "react";
 import Input from "../../../Components/input";
 import Button from "../../../Components/button";
 import GetData from "../../../firebase/getData";
-import { useState, useEffect } from "react";
 import GenericTable from "../../../Components/table";
 import FiltroGeneric from "../../../Components/filtro";
 import { IsEdit } from "../../../Components/isEdit/isEdit";
-import SituacaoProduto from "../../../enumeration/situacaoProduto";
+import ClienteModel from '../cadastroClientes/model/cliente';
+import { useUniqueNames } from '../../../hooks/useUniqueName';
 import formatDate from "../../../Components/masks/formatDate";
 import ProdutosModel from "../cadastroProdutos/model/produtos";
 import FormAlert from "../../../Components/FormAlert/formAlert";
+import SituacaoProduto from "../../../enumeration/situacaoProduto";
+import { calculateTotalValue } from '../../../hooks/useCalculateTotalValue';
 import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { Autocomplete, AutocompleteChangeReason, FormControl, InputLabel, MenuItem, Select, TextField } from "@mui/material";
 
@@ -24,7 +27,6 @@ import {
     ContainerButton,
 } from './style'
 import { BoxTitleDefault } from "../estoque/style";
-import { useUniqueNames } from '../../../hooks/useUniqueName';
 
 
 const objClean: ComprasModel = {
@@ -75,6 +77,9 @@ export default function AtualizarEstoque() {
     } = GetData('Produtos', recarregue) as {
         dataTable: ProdutosModel[],
     };
+    const {
+        dataTable: dataTableCliente,
+    } = GetData('Clientes', recarregue) as { dataTable: ClienteModel[] };
 
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<ComprasModel>({
         validateOnBlur: true,
@@ -91,7 +96,7 @@ export default function AtualizarEstoque() {
             qntMinima: Yup.number().transform((value) => (isNaN(value) ? undefined : value)).required('Campo obrigatório'),
             nrOrdem: Yup.number().optional().nullable()
         }),
-        onSubmit: hundleSubmitForm,
+        onSubmit: handleSubmitForm,
     });
     //Limpa formulario
     function cleanState() {
@@ -123,17 +128,81 @@ export default function AtualizarEstoque() {
         setSelected(undefined)
     }
     //enviando formulario
-    async function hundleSubmitForm() {
+    async function handleSubmitForm() {
         const newNrOrdem = values.nrOrdem || values.nrOrdem === 0 ? values.nrOrdem + 1 : 0;
         const valuesUpdate = { ...values, nrOrdem: newNrOrdem };
+        const produtosEncontrado: ProdutosModel[] = [];
+        const clienteEncontrado: ClienteModel[] = [];
 
+        dataTableCliente.forEach(cliente => {
+            const produtosComMPEncontrada = cliente.produtos.filter(produto =>
+                produto.mpFabricado.some(mp => mp.nmProduto === valuesUpdate.nmProduto)
+            );
+
+            if (produtosComMPEncontrada.length > 0) {
+                let result = 0.0;
+                // Iterar pelos produtos do cliente que contêm a MP em questão
+                const produtosAtualizados = produtosComMPEncontrada.map(produto => {
+                    produto.mpFabricado.forEach(item => {
+                        if (item.nmProduto !== valuesUpdate.nmProduto) {
+                            const encontrado = dataTable.find(compra => compra.nmProduto === item.nmProduto);
+                            if (encontrado) {
+                                const totalAtualizado = calculateTotalValue(item, encontrado);
+                                result += totalAtualizado;
+                            }
+                        } else {
+                            const totalAtualizado = calculateTotalValue(item, valuesUpdate);
+                            result += totalAtualizado;
+                        }
+                    });
+                    // Atualizar o valor no produto do cliente
+                    const productUpdate = { ...produto, vlUnitario: `R$ ${result.toFixed(2)}` }
+                    result = 0.0
+                    return productUpdate;
+                });
+
+                // Construir um novo objeto cliente com produtos atualizados
+                const clienteAtualizado: ClienteModel = { ...cliente, produtos: produtosAtualizados };
+                clienteEncontrado.push(clienteAtualizado);
+            }
+        });
+
+        produtoDataTable.forEach(produto => {
+            if (produto.mpFabricado.some(mp => mp.nmProduto === valuesUpdate.nmProduto)) {
+                let soma = 0.0;
+
+                // Recalcule a soma dos totalPago após a atualização
+                produto.mpFabricado.forEach(item => {
+                    if (item.nmProduto !== valuesUpdate.nmProduto) {
+                        const encontrado = dataTable.find(compra => compra.nmProduto === item.nmProduto)
+                        const totalAtualizado = calculateTotalValue(item, encontrado as ComprasModel)
+                        soma += totalAtualizado
+                    } else {
+                        const totalAtualizado = calculateTotalValue(item, valuesUpdate)
+                        soma += totalAtualizado
+                    }
+                });
+                const newProduto = { ...produto, vlUnitario: `R$ ${soma.toFixed(2)}` }
+                produtosEncontrado.push(newProduto);
+            }
+        });
+        clienteEncontrado.forEach(async item => {
+            const refID: string = item.id ?? '';
+            const refTable = doc(db, "Clientes", refID);
+            await updateDoc(refTable, { ...item })
+        })
+        produtosEncontrado.forEach(async item => {
+            const refID: string = item.id ?? '';
+            const refTable = doc(db, "Produtos", refID);
+            await updateDoc(refTable, { ...item })
+        })
         await addDoc(collection(db, "Compras"), {
             ...valuesUpdate
         })
             .then(() => {
                 setSubmitForm(true)
                 setTimeout(() => { setSubmitForm(undefined) }, 3000)
-                setDataTable([...dataTable, values])
+                setDataTable([...dataTable, valuesUpdate])
             })
             .catch(() => {
                 setSubmitForm(false)
@@ -221,6 +290,8 @@ export default function AtualizarEstoque() {
             setFieldValue('cdProduto', '');
             setFieldValue('vlUnitario', '');
             setFieldValue('qntMinima', '');
+            setFieldValue('cxProduto', '');
+            setFieldValue('kgProduto', '');
         } else if (newValue) {
             setSelectAutoComplete(true);
             setFieldValue('nrOrdem', newValue.nrOrdem);
@@ -228,6 +299,12 @@ export default function AtualizarEstoque() {
             setFieldValue('vlUnitario', newValue.vlUnitario);
             setFieldValue('qntMinima', newValue.qntMinima);
             setFieldValue('nmProduto', newValue.nmProduto);
+            if (newValue.cxProduto) {
+                setFieldValue('cxProduto', newValue.cxProduto);
+            }
+            if (newValue.kgProduto) {
+                setFieldValue('kgProduto', newValue.kgProduto);
+            }
         }
     }
 
@@ -287,6 +364,10 @@ export default function AtualizarEstoque() {
                                         paddingLeft: 6,
                                     }
                                 }}
+                                onBlur={handleBlur}
+                                onChange={(e) => {
+                                    setFieldValue('nmProduto', e.target.value);
+                                }}
                             />
                         )}
                         style={{
@@ -344,6 +425,7 @@ export default function AtualizarEstoque() {
                             style={{ paddingBottom: 0 }}
                             styleDiv={{ paddingRight: 8 }}
                             styleLabel={{ fontSize: '0.8rem' }}
+                            raisedLabel={values.cxProduto ? true : false}
                         />
                         <Input
                             key={`kgProduto-${key}`}
@@ -355,6 +437,7 @@ export default function AtualizarEstoque() {
                             error={touched.kgProduto && errors.kgProduto ? errors.kgProduto : ''}
                             style={{ paddingBottom: 0 }}
                             styleLabel={{ fontSize: '0.8rem' }}
+                            raisedLabel={values.kgProduto ? true : false}
                         />
                     </div>
                     <Input

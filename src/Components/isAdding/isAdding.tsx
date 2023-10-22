@@ -40,7 +40,6 @@ interface IsAddingProps {
  */
 
 export function IsAdding({ data, isAdding, setFieldValue, setIsVisibleTpProduto, products, addingScreen, errors, touched }: IsAddingProps) {
-    // console.log(data)
     const [filterTpProdutoFabricado, setFilterTpProdutoFabricado] = useState<any>()
     const [filterTpProdutoComprado, setFilterTpProdutoComprado] = useState<any>()
 
@@ -50,7 +49,6 @@ export function IsAdding({ data, isAdding, setFieldValue, setIsVisibleTpProduto,
             const filterFabricado = data.filter((item: ProdutosModel) => item.tpProduto === SituacaoProduto.FABRICADO || item.stEntrega)
             setFilterTpProdutoFabricado(filterFabricado)
         } else {
-            console.log('aqui')
             const filterComprado = data.filter((item: any) => item.tpProduto === SituacaoProduto.COMPRADO)
             setFilterTpProdutoComprado(filterComprado)
         }

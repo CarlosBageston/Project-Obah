@@ -1,4 +1,3 @@
-import ProdutosModel from "../../cadastroProdutos/model/produtos"
 import SituacaoProduto from "../../../../enumeration/situacaoProduto"
 import ComprasModel from "../../compras/model/compras"
 

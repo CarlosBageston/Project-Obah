@@ -419,8 +419,8 @@ export default function AtualizarEstoque() {
                             name="cxProduto"
                             onBlur={handleBlur}
                             label="Quantidade na Caixa ?"
-                            value={values.cxProduto ? values.cxProduto! : ''}
-                            onChange={e => setFieldValue(e.target.name, e.target.value)}
+                            value={values.cxProduto ? values.cxProduto.toString().replace('.', ',') : ''}
+                            onChange={e => setFieldValue(e.target.name, e.target.value.replace(',', '.'))}
                             error={touched.cxProduto && errors.cxProduto ? errors.cxProduto : ''}
                             style={{ paddingBottom: 0 }}
                             styleDiv={{ paddingRight: 8 }}
@@ -432,8 +432,8 @@ export default function AtualizarEstoque() {
                             name="kgProduto"
                             onBlur={handleBlur}
                             label="Quantidade KG ?"
-                            value={values.kgProduto ? values.kgProduto! : ''}
-                            onChange={e => setFieldValue(e.target.name, e.target.value)}
+                            value={values.kgProduto ? values.kgProduto.toString().replace('.', ',') : ''}
+                            onChange={e => setFieldValue(e.target.name, e.target.value.replace(',', '.'))}
                             error={touched.kgProduto && errors.kgProduto ? errors.kgProduto : ''}
                             style={{ paddingBottom: 0 }}
                             styleLabel={{ fontSize: '0.8rem' }}

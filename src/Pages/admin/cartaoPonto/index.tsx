@@ -6,20 +6,13 @@ import { useState, useEffect } from "react";
 import { BiSearchAlt } from "react-icons/bi";
 import GetData from "../../../firebase/getData";
 import CartaoPontoModel from "./model/cartaoponto";
-import { Box, DivTable, TotalValue, BoxDate, DivFull } from "./style";
+import { Box, DivTable, TotalValue, BoxDate, DivFull, DivTableBody, DivTableTitle, DivTableRow } from "./style";
 import { ButtonFilter } from "../../../Components/filtro/style";
 import DatePicker from '../../../Components/datePicker/datePicker';
 import ColaboradorModel from "../cadastroColaborador/model/colaborador";
 import {
-    Paper,
-    Table,
-    TableRow,
-    TableBody,
-    TableCell,
     TextField,
-    TableHead,
     Autocomplete,
-    TableContainer,
     AutocompleteChangeReason,
 } from "@mui/material";
 import { realtimeDb } from '../../../firebase';
@@ -46,6 +39,7 @@ export default function CartaoPonto() {
     const [sumTotalPago, setSumTotalPago] = useState<number>();
     const [sumHoraTrabalhada, setHoraTrabalhada] = useState<number>();
     const [dataRealTime, setDataRealTime] = useState<CartaoPontoModel[]>([])
+
     //realizando busca no banco de dados
     const {
         dataTable: dataTableColabroador,
@@ -150,6 +144,7 @@ export default function CartaoPonto() {
             setSumTotalPago(valorPago)
             setCurrentCartaoPonto(filteredData)
             setHoraTrabalhada(horasTrabalhadas)
+            mergeEntriesAndExits(filteredData)
         }
     }
 
@@ -168,7 +163,31 @@ export default function CartaoPonto() {
         });
     }, []);
 
+    function mergeEntriesAndExits(data: CartaoPontoModel[]) {
+        const mergedData: CartaoPontoModel[] = [];
+        let currentEntry: CartaoPontoModel | null = null;
 
+        data.forEach(item => {
+            if (item.action === ActionCartaoPontoEnum.ENTRADA) {
+                // Se for uma entrada, cria um novo objeto de entrada.
+                currentEntry = {
+                    action: 0,
+                    entrada: item.datetime,
+                    uid: item.uid,
+                    vlHora: item.vlHora
+                };
+            } else if (item.action === ActionCartaoPontoEnum.SAIDA && currentEntry) {
+                // Se for uma saída e houver um objeto de entrada correspondente,
+                // adicione a saída ao objeto de entrada e adicione o objeto de entrada unificado à lista.
+                currentEntry.saida = item.datetime;
+                mergedData.push(currentEntry);
+                currentEntry = null;
+            }
+        });
+        setCurrentCartaoPonto(mergedData)
+    }
+
+    console.log(currentCartaoPonto)
     return (
         <Box>
             <TitleDefault>Histórico Cartão Ponto</TitleDefault>
@@ -232,37 +251,29 @@ export default function CartaoPonto() {
             </DivFull>
 
             {currentCartaoPonto.length > 0 &&
-                <>
+                <div>
                     <DivTable>
-                        <TableContainer component={Paper} style={{ width: '72rem' }}>
-                            <Table sx={{ minWidth: 650 }} size="small" aria-label="a dense table">
-                                <TableHead>
-                                    <TableRow>
-                                        <TableCell>Data Trabalhada</TableCell>
-                                        <TableCell>Hora de inicio</TableCell>
-                                        <TableCell>Hora de saida</TableCell>
-                                        <TableCell>Valor a Receber</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {currentCartaoPonto.map((row) => (
-                                        <TableRow
-                                            key={row.id}
-                                            sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                                        >
-                                            <TableCell>{moment(row.datetime).format("DD/MM/YYYY")}</TableCell>
-                                            <TableCell>{row.action === ActionCartaoPontoEnum.ENTRADA ? moment(row.datetime).format("HH:MM:SS") : ""}</TableCell>
-                                            <TableCell>{row.action === ActionCartaoPontoEnum.SAIDA ? moment(row.datetime).format("HH:MM:SS") : ""}</TableCell>
-                                            <TableCell>{row.vlHora && row.vlHora % 1 === 0 && typeof row.vlHora === 'number' ?
-                                                ` ${row.vlHora.toFixed(0)},00`
-                                                :
-                                                `${row.vlHora?.toString() + ',00'}`
-                                            }</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
+                        <DivTableTitle>
+                            <h3>Data Trabalhada</h3>
+                            <h3>Hora de entrada</h3>
+                            <h3>Hora de saída</h3>
+                            <h3>Valor a Receber</h3>
+                        </DivTableTitle>
+                        <DivTableBody>
+                            {currentCartaoPonto.map(row => (
+                                <DivTableRow key={row.id}>
+                                    <p>{moment(row.entrada).format("DD/MM/YYYY")}</p>
+                                    <p>{moment(row.entrada).format("HH:mm:ss")}</p>
+                                    <p>{moment(row.saida).format("HH:mm:ss")}</p>
+                                    <p>
+                                        {row.vlHora && row.vlHora % 1 === 0 && typeof row.vlHora === 'number'
+                                            ? ` ${row.vlHora.toFixed(0)},00`
+                                            : `${row.vlHora?.toString() + ',00'}`
+                                        }
+                                    </p>
+                                </DivTableRow>
+                            ))}
+                        </DivTableBody>
                     </DivTable>
                     <div>
                         <TotalValue>Total de Horas Trabalhadas:
@@ -279,7 +290,7 @@ export default function CartaoPonto() {
                         </TotalValue>
                     </div>
 
-                </>
+                </div>
             }
         </Box>
     )

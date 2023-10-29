@@ -14,7 +14,9 @@ interface CartaoPontoModel {
     datetime?: Date
     uid?: number
     action?: ActionCartaoPontoEnum
-    dtInicio: string | Date,
-    dtTermino: string | Date,
+    dtInicio?: string | Date,
+    dtTermino?: string | Date,
+    entrada?: Date
+    saida?: Date
 }
 export default CartaoPontoModel

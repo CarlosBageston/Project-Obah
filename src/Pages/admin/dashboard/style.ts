@@ -1,6 +1,5 @@
 import styled from "styled-components";
-import { TitleDefault } from "../cadastroClientes/style";
-
+import { GiPadlock } from 'react-icons/gi';
 
 export const Box = styled.div`
 height: 100%;
@@ -93,4 +92,108 @@ color: #fff;
 font-size: small;
 text-align: center;
 padding-bottom: 1rem;
+`;
+
+export const BlockedInformation = styled.div<{isVisible: boolean}>`
+position: absolute;
+backdrop-filter: blur(8px) saturate(147%);
+background-color: rgb(35 37 41 / 62%);
+border-radius: 12px;
+border: 1px solid rgba(255, 255, 255, 0.125);
+height: 87%;
+width: 90%;
+display: ${props => props.isVisible ? 'none' : 'flex'};
+align-items: center;
+justify-content: center;
+`;
+
+export const StyledGiPadlock = styled(GiPadlock)`
+width: 150px;
+height: 150px;
+color: #fff;
+transition: transform 0.3s;
+
+&:hover{
+  transform: rotate(-10deg);
+  cursor: pointer;
+}
+`;
+
+
+export const Input = styled.input`
+border: none;
+border-radius: 24px;
+background: rgb(255 255 255 / 82%);
+height: 44px;
+width: 80%;
+padding: 16px;
+outline: none;
+z-index: 9999;
+@media screen and (max-width: 1024px) {
+ width: 100%;
+}
+`;
+
+export const ContainerPassword = styled.div`
+width: 400px;
+height: 400px;
+display: flex;
+align-items: center;
+flex-direction: column;
+z-index: 9999;
+justify-content: center;
+background: rgb(51 51 51 / 84%);
+border-radius: 16px;
+box-shadow: 0 4px 30px rgb(0 0 0 / 30%);
+position: relative;
+animation: slide-Box .8s linear normal 1 forwards;
+transition: animation .4s;
+
+@keyframes slide-Box {
+  from {
+    transform: scale(0.2);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+`;
+
+export const TitlePassword = styled.p`
+font-size: 2rem;
+text-align: center;
+color: #fff;
+z-index: 9999;
+padding: 3rem 2rem;
+text-shadow: 2px 2px 4px rgb(38 19 156);
+margin-top: -4rem;
+`;
+
+export const Error = styled.p`
+font-size: 22px;
+font-weight: bold;
+text-align: center;
+padding: 8px;
+color: red;
+width: 12rem;
+height: 3rem;
+text-shadow: 1px 1px 1px #080808;
+`;
+
+export const DivPadLock = styled.div`
+position: relative;
+width: 98%;
+display: flex;
+justify-content: flex-end;
+margin-top: 2rem;
+`;
+
+export const StyledGiPadlockInternal = styled(StyledGiPadlock)`
+width: 50px;
+height: 50px;
+position: absolute;
+z-index: 0;
+color: #000;
 `;

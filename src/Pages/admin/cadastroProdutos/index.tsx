@@ -11,6 +11,7 @@ import ComprasModel from "../compras/model/compras";
 import GenericTable from "../../../Components/table";
 import FiltroGeneric from "../../../Components/filtro";
 import { IsEdit } from "../../../Components/isEdit/isEdit";
+import { useUniqueNames } from '../../../hooks/useUniqueName';
 import FormAlert from "../../../Components/FormAlert/formAlert";
 import { IsAdding } from "../../../Components/isAdding/isAdding";
 import SituacaoProduto from "../../../enumeration/situacaoProduto";
@@ -24,8 +25,7 @@ import {
     ContainerInputs,
     ContainerButton,
     DivSituacaoProduto,
-} from './style'
-import { useUniqueNames } from '../../../hooks/useUniqueName';
+} from './style';
 
 
 const objClean: ProdutoModel = {
@@ -40,11 +40,12 @@ const objClean: ProdutoModel = {
 
 export default function CadastroProduto() {
     const [key, setKey] = useState<number>(0);
-    const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
     const [isEdit, setIsEdit] = useState<boolean>(false);
     const [recarregue, setRecarregue] = useState<boolean>(true);
     const [selected, setSelected] = useState<ProdutoModel | undefined>();
     const [isVisibleTpProuto, setIsVisibleTpProduto] = useState<boolean>(false);
+    const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
+    const [initialValues, setInitialValues] = useState<ProdutoModel>({ ...objClean });
 
     const inputsConfig = [
         { label: 'Nome', propertyName: 'nmProduto' },
@@ -52,7 +53,6 @@ export default function CadastroProduto() {
         { label: 'Valor de Venda', propertyName: 'vlVendaProduto' },
         { label: 'Valor Pago', propertyName: 'vlUnitario' },
     ];
-    const [initialValues, setInitialValues] = useState<ProdutoModel>({ ...objClean });
 
     //realizando busca no banco de dados
     const {
@@ -85,6 +85,7 @@ export default function CadastroProduto() {
         }),
         onSubmit: handleSubmitForm,
     });
+
     //Formata valor do input
     function formatarValor(valor: string) {
         const inputText = valor.replace(/\D/g, "");
@@ -97,6 +98,7 @@ export default function CadastroProduto() {
         }
         return inputText ? "R$ " + formattedText : "";
     }
+
     function cleanState() {
         setInitialValues({
             cdProduto: '',
@@ -109,7 +111,6 @@ export default function CadastroProduto() {
         })
         setKey(Math.random());
     }
-
 
     //enviando formulario
     async function handleSubmitForm() {

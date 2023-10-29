@@ -24,9 +24,9 @@ export function calcularValorParaProduto(mp: ComprasModel, produtoEncontrado: Co
     let result = 0;
 
     if (produtoEncontrado.cxProduto) {
-        result = Number(valueFormat) / Number(produtoEncontrado.cxProduto) * Number(mp.quantidade);
+        result = Number(valueFormat) / produtoEncontrado.cxProduto * Number(mp.quantidade);
     } else if (produtoEncontrado.kgProduto) {
-        result = Number(valueFormat) / Number(produtoEncontrado.kgProduto) * Number(mp.quantidade);
+        result = Number(valueFormat) / produtoEncontrado.kgProduto * Number(mp.quantidade);
     } else {
         result = Number(valueFormat) / Number(produtoEncontrado.quantidade) * Number(mp.quantidade);
     }

@@ -1,28 +1,49 @@
+import { SHA256 } from 'crypto-js';
+import { Button } from "../../login/style";
 import { Bar, Line } from "react-chartjs-2";
+import GetData from "../../../firebase/getData";
 import ChartLine from "../../../Components/graficos/Line";
 import ChartBarVertical from "../../../Components/graficos/BarVertical";
 import ChartBarHorizontal from "../../../Components/graficos/BarHorizontal";
+import { useState } from 'react'
 import {
     Box,
     Title,
+    Input,
+    Error,
     DivResult,
     Paragraph,
     SumResult,
     Container,
     TextResult,
+    TitlePassword,
     DivGraficLine,
     ContainerResult,
     ContainerGrafic,
+    StyledGiPadlock,
     DivGraficVertical,
+    ContainerPassword,
     ContainerTwoGrafic,
+    BlockedInformation,
     DivGraficHortizontal,
+    DivPadLock,
+    StyledGiPadlockInternal,
 } from './style'
+
 
 export default function Dashboard() {
 
     const { dataVertical, optionsVertical, dadosPorMesVertical } = ChartBarVertical();
     const { dataLine, optionsLine, ref, dadosPorMes } = ChartLine();
     const { dataHorizontal, optionsHotizontal } = ChartBarHorizontal()
+    const [isLocked, setIsLocked] = useState<boolean>(true);
+    const [freeScreen, setFreeScreen] = useState<boolean>(false);
+    const [error, setError] = useState<string>('');
+    const [password, setPassword] = useState<string>('');
+
+    const {
+        dataTable
+    } = GetData('Dashboard', true);
 
 
     //soma do valor total de todas as entregas do ano
@@ -45,12 +66,63 @@ export default function Dashboard() {
 
     //somando todas as vendas e entregas do ano
     const somaAnual = somaTotalVendas + somaTotalEntregas
+
+    const togglePadlock = () => {
+        setIsLocked(false);
+    };
+
+    function authenticateDashboard() {
+        let rightPassword = null;
+
+        for (const data of dataTable) {
+            rightPassword = data.acesso.password;
+        }
+
+        if (rightPassword) {
+            const hash = SHA256(password).toString();
+            if (hash === rightPassword) { setFreeScreen(true); setPassword('') }
+            else setError('Acesso Negado')
+        }
+    }
+
     return (
         <Box>
             <div>
                 <Title>Dashboard Sorveteria Obah!</Title>
             </div>
+            <DivPadLock>
+                <StyledGiPadlockInternal onClick={() => { setFreeScreen(false); setIsLocked(true) }} />
+            </DivPadLock>
             <Container>
+                <BlockedInformation isVisible={freeScreen} onClick={togglePadlock}>
+                    {isLocked ? (
+                        <StyledGiPadlock />
+                    ) : (
+                        <>
+                            <ContainerPassword>
+                                <TitlePassword>Digite a senha para desbloquear as informações</TitlePassword>
+                                <Input
+                                    type="password"
+                                    id="password"
+                                    name="password"
+                                    placeholder='Senha'
+                                    value={password}
+                                    onChange={e => { setPassword(e.target.value) }}
+                                />
+                                <Error>{error}</Error>
+                                <Button
+                                    onClick={authenticateDashboard}
+                                >
+                                    Acessar
+                                    <div className="arrow-wrapper">
+                                        <div className="arrow"></div>
+                                    </div>
+                                </Button>
+
+                            </ContainerPassword>
+                        </>
+                    )}
+                </BlockedInformation>
                 <ContainerGrafic>
                     <DivGraficHortizontal>
                         <Bar data={dataHorizontal} options={optionsHotizontal} style={{ width: '100%', height: '100%' }} />

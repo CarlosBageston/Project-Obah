@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import Box from '@mui/material/Box';
 import List from '@mui/material/List';
 import Divider from '@mui/material/Divider';
 import MuiDrawer from '@mui/material/Drawer';
@@ -30,6 +29,7 @@ import {
     StyledListItemButton,
     StyledListItemButtonSubOpcao,
     Icon,
+    Box
 } from './style';
 
 
@@ -132,7 +132,6 @@ export default function MenuLateral() {
         <Box
             sx={{ width: 240 }}
             role="presentation"
-            style={{ overflow: 'hidden', paddingBottom: 10 }}
         >
             <List>
                 <Link to="/dashboard" style={{ textDecoration: 'none', color: 'white' }}>
@@ -146,7 +145,7 @@ export default function MenuLateral() {
                 <Link to="/atualizar-estoque" style={{ textDecoration: 'none', color: 'white' }}>
                     <StyledListItemButton>
                         <ListItemIcon>
-                            <Image src={compra} alt="Atualizar Estoque" width={32} />
+                            <Image src={compra} alt="Atualizar Estoque" width={30} />
                         </ListItemIcon>
                         <StyledListItemText primary="Atualizar Estoque" />
                     </StyledListItemButton>
@@ -154,7 +153,7 @@ export default function MenuLateral() {
                 <Link to="/cadastro-produto" style={{ textDecoration: 'none', color: 'white' }}>
                     <StyledListItemButton>
                         <ListItemIcon>
-                            <Image src={produto} alt="Cadastro Produto" width={32} />
+                            <Image src={produto} alt="Cadastro Produto" width={30} />
                         </ListItemIcon>
                         <StyledListItemText primary="Cadastro Produto" />
                     </StyledListItemButton>
@@ -162,7 +161,7 @@ export default function MenuLateral() {
                 <Link to="/cadastro-cliente" style={{ textDecoration: 'none', color: 'white' }}>
                     <StyledListItemButton>
                         <ListItemIcon>
-                            <Image src={cliente} alt="cadastro cliente" width={32} />
+                            <Image src={cliente} alt="cadastro cliente" width={30} />
                         </ListItemIcon>
                         <StyledListItemText primary="Cadastro Cliente" />
                     </StyledListItemButton>
@@ -170,7 +169,7 @@ export default function MenuLateral() {
                 <Link to="/vendas" style={{ textDecoration: 'none', color: 'white' }}>
                     <StyledListItemButton>
                         <ListItemIcon>
-                            <Image src={vendas} alt="Painel de venda" width={32} />
+                            <Image src={vendas} alt="Painel de venda" width={30} />
                         </ListItemIcon>
                         <StyledListItemText primary="Painel de venda" />
                     </StyledListItemButton>
@@ -178,7 +177,7 @@ export default function MenuLateral() {
                 <Link to="/entregas" style={{ textDecoration: 'none', color: 'white' }}>
                     <StyledListItemButton>
                         <ListItemIcon>
-                            <Image src={entrega} alt="Entregas" width={32} />
+                            <Image src={entrega} alt="Entregas" width={30} />
                         </ListItemIcon>
                         <StyledListItemText primary="Entregas" />
                     </StyledListItemButton>
@@ -186,14 +185,14 @@ export default function MenuLateral() {
                 <Link to="/estoque" style={{ textDecoration: 'none', color: 'white' }}>
                     <StyledListItemButton>
                         <ListItemIcon>
-                            <Image src={estoque} alt="Estoque" width={32} />
+                            <Image src={estoque} alt="Estoque" width={30} />
                         </ListItemIcon>
                         <StyledListItemText primary="Estoque" />
                     </StyledListItemButton>
                 </Link>
                 <StyledListItemButton onClick={handleClick}>
                     <ListItemIcon>
-                        <Image src={gestao} alt="Gestão" width={32} />
+                        <Image src={gestao} alt="Gestão" width={30} />
                     </ListItemIcon>
                     <StyledListItemText primary="Gestão" />
                     <Icon openSubOpcao={openSubOpcao} />
@@ -203,7 +202,7 @@ export default function MenuLateral() {
                         <Link to="/colaborador" style={{ textDecoration: 'none', color: 'white' }} onClick={handleClick}>
                             <StyledListItemButtonSubOpcao>
                                 <ListItemIcon>
-                                    <Image src={colaborador} alt="Colaborador" width={32} />
+                                    <Image src={colaborador} alt="Colaborador" width={30} />
                                 </ListItemIcon>
                                 <StyledListItemText primary="Colaborador" />
                             </StyledListItemButtonSubOpcao>
@@ -211,7 +210,7 @@ export default function MenuLateral() {
                         <Link to="/cartao-ponto" style={{ textDecoration: 'none', color: 'white' }} onClick={handleClick}>
                             <StyledListItemButtonSubOpcao>
                                 <ListItemIcon>
-                                    <Image src={cartaoPonto} alt="Cartão Ponto" width={32} />
+                                    <Image src={cartaoPonto} alt="Cartão Ponto" width={30} />
                                 </ListItemIcon>
                                 <StyledListItemText primary="Cartão Ponto" />
                             </StyledListItemButtonSubOpcao>
@@ -242,7 +241,7 @@ export default function MenuLateral() {
                 <div onClick={handleDrawerClose}>
                     {open ? (
                         <BoxTitle>
-                            <img src={logo} alt="Logo da empresa" width={100} />
+                            <img src={logo} alt="Logo da empresa" width={80} />
                             <Title>Sorveteria Obah!</Title>
                         </BoxTitle>
                     ) : (

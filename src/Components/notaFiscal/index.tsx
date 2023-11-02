@@ -1,7 +1,6 @@
 import Button from "../button";
 import { format } from "date-fns";
 import ReactToPrint from "react-to-print";
-import { AiTwotonePrinter } from "react-icons/ai";
 import { useEffect, useRef, useState } from "react";
 import { EntregaModel } from "../../Pages/admin/entregas/model/entrega";
 import ClienteModel from "../../Pages/admin/cadastroClientes/model/cliente";
@@ -112,9 +111,8 @@ export function NotaFiscal({ values, clienteCurrent, setShouldShow }: Props) {
                             type='button'
                             disabled={values.dtEntrega === ""}
                             style={{ display: 'flex', alignItems: 'center', marginBottom: 24 }}
-                        >
-                            Confirmar <AiTwotonePrinter size={30} />
-                        </Button>
+                            label={"Confirmar"}
+                        />
                     }
                     content={() => ref.current}
                 />

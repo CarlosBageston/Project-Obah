@@ -2,8 +2,27 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import { IoIosArrowUp } from "react-icons/io";
 import styled from "styled-components";
+import BoxMui from '@mui/material/Box';
 
 
+export const Box = styled(BoxMui)`
+ overflow-x: hidden;
+ overflow-y: auto;
+ padding-bottom: 0.5rem;
+ /* Estilo para a barra de rolagem vertical */
+ &::-webkit-scrollbar {
+  width: 6px; /* Largura da barra de rolagem */
+}
+
+&::-webkit-scrollbar-thumb {
+  background-color: #fff; /* Cor do polegar da barra de rolagem */
+  border-radius: 6px; /* Raio da borda do polegar da barra de rolagem */
+}
+
+&::-webkit-scrollbar-track {
+  background: transparent; /* Cor do fundo da barra de rolagem */
+}
+`;
 
 export const BoxTitle = styled.div`
   display: flex;
@@ -12,7 +31,7 @@ export const BoxTitle = styled.div`
 `;
 
 export const Title = styled.p`
-  font-size: 1.5rem;
+  font-size: 1rem;
   font-weight: bold;
   margin-bottom: 12px;
   color: #FFF;
@@ -78,7 +97,7 @@ export const Image = styled.img `
 
 export const StyledListItemText = styled(ListItemText)`
   .MuiTypography-root {
-    font-size: 1rem;
+    font-size: 0.8rem;
     font-weight: bold;
     color: #fff;
     transition: color 0.2s ease-in-out;

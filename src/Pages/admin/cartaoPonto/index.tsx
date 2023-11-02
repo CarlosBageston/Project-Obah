@@ -187,7 +187,6 @@ export default function CartaoPonto() {
         setCurrentCartaoPonto(mergedData)
     }
 
-    console.log(currentCartaoPonto)
     return (
         <Box>
             <TitleDefault>Histórico Cartão Ponto</TitleDefault>

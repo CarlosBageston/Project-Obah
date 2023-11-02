@@ -10,8 +10,8 @@ export function useUniqueNames(
     tpProduto: SituacaoProduto | null, 
     optionTpProduto: SituacaoProduto | null) {
     const [uniqueNames, setUniqueNames] = useState<any[]>([]);
-    function lastProduct(filterUniqueNames: ComprasModel[] | ProdutosModel[], names: string[]) {
-        const maxProductsByUniqueNames = names.map((uniqueName) => {
+    function lastProduct(filterUniqueNames: (ComprasModel | ProdutosModel)[], names: string[]) {
+        const maxProductsByUniqueNames = names.map((uniqueName: string) => {
             const filteredProducts = filterUniqueNames
                 .filter((prod) => prod.nmProduto === uniqueName && prod.nrOrdem !== undefined)
                 .sort((a, b) => (a.nrOrdem || 0) - (b.nrOrdem || 0));

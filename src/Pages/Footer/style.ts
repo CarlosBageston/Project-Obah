@@ -10,17 +10,12 @@ justify-content: space-around;
 position: relative;
 margin-top: 3rem;
 
-&::before {
-    position: absolute;
-    display: block;
-    content: '';
-    background-image: url('../../../src/assets/Image/derreter.png');
-    background-repeat: no-repeat;
-    width: 100%;
-    height: 10rem;
-    background-size: 100%;
-    top: 0;
-}
+`;
+export const ImageDetail = styled.img`
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
 `;
 
 export const Text = styled.p`

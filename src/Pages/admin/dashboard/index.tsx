@@ -80,7 +80,7 @@ export default function Dashboard() {
 
         if (rightPassword) {
             const hash = SHA256(password).toString();
-            if (hash === rightPassword) { setFreeScreen(true); setPassword('') }
+            if (hash === rightPassword) { setFreeScreen(true); setPassword(''); setError('') }
             else setError('Acesso Negado')
         }
     }

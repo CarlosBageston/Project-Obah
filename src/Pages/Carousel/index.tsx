@@ -1,7 +1,8 @@
 import Slider from "react-slick";
 import Menu from '../../Components/Menu/Menu';
 import sorvete from '../../assets/Image/sorvete.png';
-import { BoxDefault, ContainerCarousel, Title, ContainerTitle, SubTitle } from './style';
+import { BoxDefault, ContainerCarousel, Title, ContainerTitle, SubTitle, ImageDetail } from './style';
+import derreter from '../../assets/Image/derreter.png';
 
 
 export default function Carousel() {
@@ -16,6 +17,9 @@ export default function Carousel() {
         <>
             <Menu />
             <BoxDefault id='slide'>
+                <div>
+                    <ImageDetail src={derreter} alt='derreter' />
+                </div>
                 <Slider {...settings}>
                     <div>
                         <ContainerCarousel>

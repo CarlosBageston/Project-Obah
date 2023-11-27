@@ -6,17 +6,6 @@ export const BoxDefault = styled.div`
 height: calc(100vh - 5rem);
 background-image: linear-gradient(to bottom, #e5077b, #ea1e7b, #ef2d7b, #f4397b, #f9437b);
 width: 100%;
-&::before {
-    position: relative;
-    display: block;
-    content: '';
-    background-image: url('../../../src/assets/Image/derreter.png');
-    background-repeat: no-repeat;
-    width: 100%;
-    height: 10rem;
-    background-size: 100%;
-    top: 0;
-}
 `
 
 export const ContainerCarousel = styled.div`
@@ -46,4 +35,10 @@ z-index: 1;
 margin-top: 4rem;
 transform: rotate(5deg);
 `
+
+export const ImageDetail = styled.img`
+position: absolute;
+top: 78px;
+width: 100%;
+`;
 

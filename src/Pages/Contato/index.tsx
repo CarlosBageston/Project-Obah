@@ -12,13 +12,14 @@ import detalhe from '../../assets/Image/detalhe.png';
 import iconFacebook from '../../assets/Icon/facebook-icon.png';
 import iconwhatsapp from '../../assets/Icon/whatsapp-icon.png';
 import iconinstagram from '../../assets/Icon/instagram-icon.png';
+import fundo from '../../../src/assets/Image/fundo.jpg';
+import derreter from '../../../src/assets/Image/derreter.png';
 
 //import do styled components
 import {
     Box,
     Title,
     Ancora,
-    Imagem,
     TitleBox,
     SubTitleBox,
     ContainerBox,
@@ -27,6 +28,8 @@ import {
     ContainerTitle,
     ContainerContato,
     SubTitleWhatsapp,
+    ImageDetail,
+    ImageBackground,
 } from './style';
 import { addDoc, collection } from 'firebase/firestore';
 import { db } from '../../firebase';
@@ -88,8 +91,10 @@ export default function Contato() {
             <Box>
                 {/*toolTip */}
                 <ToolTip tooltipRef={targetRef} />
-
-                <Imagem id='contato' />
+                <div>
+                    <ImageDetail src={derreter} alt='derreter' />
+                    <ImageBackground src={fundo} alt='fundo' />
+                </div>
                 <ContainerAll>
 
                     <ContainerTitle >

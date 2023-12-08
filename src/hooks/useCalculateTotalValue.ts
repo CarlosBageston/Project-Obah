@@ -22,13 +22,18 @@ export function calcularValorParaProduto(mp: ComprasModel, produtoEncontrado: Co
     const valorPago = produtoEncontrado.vlUnitario;
     const valueFormat = valorPago.match(/\d+/g)?.join('.');
     let result = 0;
-
     if (produtoEncontrado.cxProduto) {
+        // console.log('entro cx', valueFormat, produtoEncontrado.cxProduto, mp.quantidade, produtoEncontrado.nmProduto)
         result = Number(valueFormat) / produtoEncontrado.cxProduto * Number(mp.quantidade);
+        // console.log(result)
     } else if (produtoEncontrado.kgProduto) {
+        // console.log('entro kg', valueFormat, produtoEncontrado.kgProduto, mp.quantidade, produtoEncontrado.nmProduto)
         result = Number(valueFormat) / produtoEncontrado.kgProduto * Number(mp.quantidade);
+        // console.log(result)
     } else {
+        // console.log('entro ultimo', valueFormat, produtoEncontrado.quantidade, mp.quantidade, produtoEncontrado.nmProduto)
         result = Number(valueFormat) / Number(produtoEncontrado.quantidade) * Number(mp.quantidade);
+        // console.log(result)
     }
     return result;
 }

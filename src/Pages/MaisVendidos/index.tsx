@@ -1,6 +1,6 @@
-import { Box, ContainerAllImage, ContainerImgName, NameIceCream, Title } from './style'
+import { Box, ContainerAllImage, ContainerImgName, ImageDetailBottom, ImageDetailTop, NameIceCream, Title } from './style'
 import { RotatingImage } from '../../Components/RotatingImage';
-
+import derreter from '../../assets/Svg/transition.svg';
 //import das Imagens
 import image1 from '../../assets/imageteste/image1.png'
 import image2 from '../../assets/imageteste/image2.png'
@@ -18,7 +18,10 @@ export default function MaisVendidos() {
         <>
             <Box id='maisVendidos'>
                 <div>
-                    <Title>Mais vendidos</Title>
+                    <ImageDetailTop src={derreter} alt='derreter' />
+                </div>
+                <div>
+                    <Title>Queridinhos </Title>
                 </div>
                 <ContainerAllImage>
                     <ContainerImgName>
@@ -46,6 +49,9 @@ export default function MaisVendidos() {
                         </div>
                     </ContainerImgName>
                 </ContainerAllImage>
+                <div>
+                    <ImageDetailBottom src={derreter} alt='derreter' />
+                </div>
             </Box>
         </>
     )

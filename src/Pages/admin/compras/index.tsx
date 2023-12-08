@@ -127,14 +127,11 @@ export default function AtualizarEstoque() {
         }
         setSelected(undefined)
     }
-    //enviando formulario
-    async function handleSubmitForm() {
-        const newNrOrdem = values.nrOrdem || values.nrOrdem === 0 ? values.nrOrdem + 1 : 0;
-        const valuesUpdate = { ...values, nrOrdem: newNrOrdem };
-        const produtosEncontrado: ProdutosModel[] = [];
-        const clienteEncontrado: ClienteModel[] = [];
 
+    // Este método recalcula os preços dos produtos para um cliente específico, com base nos valores fornecidos e nas compras registradas.
+    function recalculateProductPricesClient(valuesUpdate: ComprasModel, clienteEncontrado: ClienteModel[]) {
         dataTableCliente.forEach(cliente => {
+            // Filtrar produtos do cliente que contêm a matéria-prima (MP) em questão
             const produtosComMPEncontrada = cliente.produtos.filter(produto =>
                 produto.mpFabricado.some(mp => mp.nmProduto === valuesUpdate.nmProduto)
             );
@@ -144,6 +141,7 @@ export default function AtualizarEstoque() {
                 // Iterar pelos produtos do cliente que contêm a MP em questão
                 const produtosAtualizados = produtosComMPEncontrada.map(produto => {
                     produto.mpFabricado.forEach(item => {
+                        // Verificar se é a MP em questão
                         if (item.nmProduto !== valuesUpdate.nmProduto) {
                             const encontrado = dataTable.find(compra => compra.nmProduto === item.nmProduto);
                             if (encontrado) {
@@ -166,7 +164,9 @@ export default function AtualizarEstoque() {
                 clienteEncontrado.push(clienteAtualizado);
             }
         });
-
+    }
+    // Este método recalcula os preços dos produtos com base nos valores fornecidos e nos registros de compras.
+    function recalculateProduct(valuesUpdate: ComprasModel, produtosEncontrado: ProdutosModel[]) {
         produtoDataTable.forEach(produto => {
             if (produto.mpFabricado.some(mp => mp.nmProduto === valuesUpdate.nmProduto)) {
                 let soma = 0.0;
@@ -186,6 +186,48 @@ export default function AtualizarEstoque() {
                 produtosEncontrado.push(newProduto);
             }
         });
+    }
+    // Este método recalcula os preços dos produtos encontrados com base nos registros de compras.
+    function recalculateProductFound(produtosEncontrado: ProdutosModel[]) {
+        produtosEncontrado.forEach(items => {
+            const foundProduct = dataTable.find(produto => produto.nmProduto === items.nmProduto)
+            const updateValueProduct = { ...foundProduct, vlUnitario: items.vlUnitario }
+            produtoDataTable.forEach(produto => {
+                if (produto.mpFabricado.some(mp => mp.nmProduto.includes(items.nmProduto))) {
+                    let soma = 0.0;
+                    // Recalcule a soma dos totalPago após a atualização
+                    produto.mpFabricado.forEach(item => {
+                        console.log('agora é aqui')
+                        if (item.nmProduto.includes(items.nmProduto)) {
+
+                            const totalAtualizado = calculateTotalValue(item, updateValueProduct as ComprasModel)
+                            soma += totalAtualizado
+                        } else {
+                            const encontrado = dataTable.find(compra => compra.nmProduto === item.nmProduto)
+                            const totalAtualizado = calculateTotalValue(item, encontrado as ComprasModel)
+                            soma += totalAtualizado
+                        }
+                    });
+                    const newProduto = { ...produto, vlUnitario: `R$ ${soma.toFixed(2)}` }
+                    produtosEncontrado.push(newProduto);
+                }
+            });
+        })
+    }
+
+    //enviando formulario
+    async function handleSubmitForm() {
+        const newNrOrdem = values.nrOrdem || values.nrOrdem === 0 ? values.nrOrdem + 1 : 0;
+        const valuesUpdate: ComprasModel = { ...values, nrOrdem: newNrOrdem };
+        const produtosEncontrado: ProdutosModel[] = [];
+        const clienteEncontrado: ClienteModel[] = [];
+
+        recalculateProductPricesClient(valuesUpdate, clienteEncontrado);
+
+        recalculateProduct(valuesUpdate, produtosEncontrado);
+
+        recalculateProductFound(produtosEncontrado);
+
         clienteEncontrado.forEach(async item => {
             const refID: string = item.id ?? '';
             const refTable = doc(db, "Clientes", refID);
@@ -212,6 +254,7 @@ export default function AtualizarEstoque() {
         cleanState()
         setSelectAutoComplete(false);
     }
+
     //Formata valor do input
     useEffect(() => {
         function formatarValor(valor: string) {
@@ -237,7 +280,9 @@ export default function AtualizarEstoque() {
 
     }, [values.vlUnitario]);
 
-    //multiplicando
+    // Este useEffect é responsável por calcular e atualizar o campo 'totalPago' com base nas quantidades e valores unitários,
+    // considerando a formatação monetária, tanto para o modo de edição (isEdit e selected) quanto para o modo de criação (values).
+    // O cálculo é realizado multiplicando a quantidade pelo valor unitário, formatando o resultado e atualizando o estado correspondente.
     useEffect(() => {
         if (isEdit && selected) {
             const valueFormat = selected.vlUnitario?.match(/\d+/g)?.join('.')

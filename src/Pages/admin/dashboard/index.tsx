@@ -29,6 +29,9 @@ import {
     DivPadLock,
     StyledGiPadlockInternal,
 } from './style'
+import { generateReport } from '../../../hooks/report-excel';
+import { useFormik } from 'formik';
+import DashboardModel from './model/dashboard';
 
 
 export default function Dashboard() {
@@ -38,34 +41,55 @@ export default function Dashboard() {
     const { dataHorizontal, optionsHotizontal } = ChartBarHorizontal()
     const [isLocked, setIsLocked] = useState<boolean>(true);
     const [freeScreen, setFreeScreen] = useState<boolean>(false);
-    const [error, setError] = useState<string>('');
-    const [password, setPassword] = useState<string>('');
-
+    const initialValues: DashboardModel = {
+        error: '',
+        password: '',
+        somaAnual: null,
+        somaLucroAnual: null,
+        somaTotalEntregas: null,
+        somaTotalVendas: null
+    }
     const {
         dataTable
     } = GetData('Dashboard', true);
 
+    const { values, setFieldValue } = useFormik<DashboardModel>({
+        initialValues,
+        onSubmit: () => { },
+    });
 
-    //soma do valor total de todas as entregas do ano
-    const totalEntregas = dadosPorMes.map(entregas => entregas.valorTotal)
-    const somaTotalEntregas = totalEntregas.reduce((total, item) => total + item)
+    function formattedMoeda(data: number): string {
+        return data.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
 
-    //soma do valor total de todas as vendas do ano
-    const totalVendas = dadosPorMesVertical.map(vendas => vendas.valorTotal)
-    const somaTotalVendas = totalVendas.reduce((total, item) => total + item)
-    //soma do valor Lucro de todas as entregas do ano
-    const lucroEntregas = dadosPorMes.map(entregas => entregas.valorLucro)
-    const somaLucroEntregas = lucroEntregas.reduce((lucro, item) => lucro + item)
+    function sumValue() {
+        //soma do valor total de todas as entregas do ano
+        const totalEntregas = dadosPorMes.map(entregas => entregas.valorTotal).reduce((total, item) => total + item);
+        const totalVendas = dadosPorMesVertical.map(vendas => vendas.valorTotal).reduce((total, item) => total + item);
 
-    //soma do valor Lucro de todas as vendas do ano
-    const lucroVendas = dadosPorMesVertical.map(vendas => vendas.valorLucro)
-    const somaLucroVendas = lucroVendas.reduce((lucro, item) => lucro + item)
+        //soma do valor Lucro de todas as entregas do ano
+        const lucroEntregas = dadosPorMes.map(entregas => entregas.valorLucro).reduce((lucro, item) => lucro + item)
 
-    //somando todas as vendas e entregas do ano
-    const somaLucroAnual = somaLucroVendas + somaLucroEntregas
+        //soma do valor Lucro de todas as vendas do ano
+        const lucroVendas = dadosPorMesVertical.map(vendas => vendas.valorLucro).reduce((lucro, item) => lucro + item)
 
-    //somando todas as vendas e entregas do ano
-    const somaAnual = somaTotalVendas + somaTotalEntregas
+        //somando todas as vendas e entregas do ano
+        const somaLucroAnual = lucroEntregas + lucroVendas
+
+        //somando todas as vendas e entregas do ano
+        const somaAnual = totalVendas + totalEntregas
+
+        setFieldValue('somaTotalEntregas', formattedMoeda(totalEntregas));
+        setFieldValue('somaTotalVendas', formattedMoeda(totalVendas));
+        setFieldValue('somaLucroAnual', formattedMoeda(somaLucroAnual));
+        setFieldValue('somaAnual', formattedMoeda(somaAnual));
+    }
+
+    function getDataReport() {
+        if (values.somaTotalEntregas && values.somaTotalVendas)
+            generateReport(values.somaTotalEntregas, values.somaTotalVendas);
+    }
+
 
     const togglePadlock = () => {
         setIsLocked(false);
@@ -79,9 +103,21 @@ export default function Dashboard() {
         }
 
         if (rightPassword) {
-            const hash = SHA256(password).toString();
-            if (hash === rightPassword) { setFreeScreen(true); setPassword('') }
-            else setError('Acesso Negado')
+            const hash = SHA256(values.password).toString();
+            if (hash === rightPassword) {
+                setFreeScreen(true);
+                setFieldValue('password', '');
+                setFieldValue('error', '');
+                sumValue()
+            } else {
+                setFieldValue('error', 'Acesso Negado')
+            }
+        }
+    }
+
+    function onKeyPress(e: React.KeyboardEvent<HTMLInputElement>) {
+        if (e.code === "Enter" || e.code === "NumpadEnter") {
+            authenticateDashboard()
         }
     }
 
@@ -102,14 +138,15 @@ export default function Dashboard() {
                             <ContainerPassword>
                                 <TitlePassword>Digite a senha para desbloquear as informações</TitlePassword>
                                 <Input
+                                    onKeyDown={onKeyPress}
                                     type="password"
                                     id="password"
                                     name="password"
                                     placeholder='Senha'
-                                    value={password}
-                                    onChange={e => { setPassword(e.target.value) }}
+                                    value={values.password}
+                                    onChange={e => { setFieldValue('password', e.target.value) }}
                                 />
-                                <Error>{error}</Error>
+                                <Error>{values.error}</Error>
                                 <Button
                                     onClick={authenticateDashboard}
                                 >
@@ -125,26 +162,29 @@ export default function Dashboard() {
                 </BlockedInformation>
                 <ContainerGrafic>
                     <DivGraficHortizontal>
-                        <Bar data={dataHorizontal} options={optionsHotizontal} style={{ width: '100%', height: '100%' }} />
+                        <Bar data={freeScreen ? dataHorizontal : { labels: [''], datasets: [] }} options={optionsHotizontal} style={{ width: '100%', height: '100%' }} />
                     </DivGraficHortizontal>
                     <ContainerTwoGrafic>
                         <DivGraficLine>
-                            <Line data={dataLine} options={optionsLine} ref={ref} style={{ width: '100%', height: '100%' }} />
+                            <Line data={freeScreen ? dataLine : { labels: [''], datasets: [] }} options={optionsLine} ref={ref} style={{ width: '100%', height: '100%' }} />
                         </DivGraficLine>
                         <DivGraficVertical >
-                            <Bar data={dataVertical} options={optionsVertical} style={{ width: '100%', height: '100%' }} />
+                            <Bar data={freeScreen ? dataVertical : { labels: [''], datasets: [] }} options={optionsVertical} style={{ width: '100%', height: '100%' }} />
                         </DivGraficVertical>
                     </ContainerTwoGrafic>
                 </ContainerGrafic>
                 <ContainerResult>
+                    <Button onClick={() => getDataReport()}>
+                        Gerar Relatório Mensal
+                    </Button>
                     <DivResult>
                         <TextResult>Ganho anual</TextResult>
-                        <SumResult>R$ {somaAnual.toFixed(2)}</SumResult>
+                        <SumResult>{freeScreen && values.somaAnual ? `${values.somaAnual}` : 'R$ 0,00'}</SumResult>
                         <Paragraph>Soma de todas as vendas no decorrer do ano</Paragraph>
                     </DivResult>
                     <DivResult>
                         <TextResult>Lucro anual</TextResult>
-                        <SumResult>R$ {somaLucroAnual.toFixed(2)}</SumResult>
+                        <SumResult>{freeScreen && values.somaLucroAnual ? `${values.somaLucroAnual}` : 'R$ 0,00'}</SumResult>
                         <Paragraph>Soma de todas as vendas no decorrer do ano</Paragraph>
                     </DivResult>
                 </ContainerResult>

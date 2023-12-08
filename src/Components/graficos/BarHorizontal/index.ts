@@ -1,9 +1,7 @@
 import 'chart.js/auto'
 import moment from "moment";
-import { db } from "../../../firebase";
-import { useState, useEffect } from "react";
 import ComprasModel from "../../../Pages/admin/compras/model/compras";
-import { collection, CollectionReference, getDocs } from "firebase/firestore";
+import GetData from '../../../firebase/getData';
 
 /**
  * ChartBarHorizontal Component
@@ -16,18 +14,12 @@ import { collection, CollectionReference, getDocs } from "firebase/firestore";
  * @returns Retorna um objeto contendo os dados do gráfico (dataHorizontal) e as opções de configuração (optionsHotizontal).
  */
 export default function ChartBarHorizontal() {
-    const [compras, setCompras] = useState<ComprasModel[]>([])
-    const _collectioncompras = collection(db, 'Compras') as CollectionReference<ComprasModel>;
-
-    //buscar dados no banco 
-    useEffect(() => {
-        const getcompras = async () => {
-            const data = await getDocs<ComprasModel>(_collectioncompras);
-            setCompras(data.docs.map(doc => ({ ...doc.data(), id: doc.id })));
-        };
-        getcompras();
-    }, []);
-
+    
+    //realizando busca no banco de dados
+    const {
+        dataTable: dataTableVendas,
+    } = GetData('Compras', true) as { dataTable: ComprasModel[] };
+    console.log('renderizo')
     //filtrando dados por data
     const mesesDesejados = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
     const filtrarDadosPorMes = (dados: ComprasModel[], mes: number) => {
@@ -48,7 +40,7 @@ export default function ChartBarHorizontal() {
             valorTotal
         }
     };
-    const dadosPorMes = mesesDesejados.map(mes => filtrarDadosPorMes(compras, mes));
+    const dadosPorMes = mesesDesejados.map(mes => filtrarDadosPorMes(dataTableVendas, mes));
 
     const optionsHotizontal = {
         indexAxis: 'y' as const,

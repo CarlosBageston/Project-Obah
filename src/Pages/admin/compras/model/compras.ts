@@ -1,10 +1,10 @@
+import SituacaoProduto from "../../../../enumeration/situacaoProduto"
 /**
  * Modelo de Entrega
 *
 * @author Carlos Bageston
 */
 
-import SituacaoProduto from "../../../../enumeration/situacaoProduto"
 
 
 interface ComprasModel {

@@ -1,5 +1,5 @@
 import Input from "../input";
-import { ChangeEvent, SetStateAction } from "react";
+import { ChangeEvent, SetStateAction, useEffect, useState } from "react";
 import { TitleDefault } from "../../Pages/admin/cadastroClientes/style";
 import ClienteModel from "../../Pages/admin/cadastroClientes/model/cliente";
 import ProdutosModel from "../../Pages/admin/cadastroProdutos/model/produtos";
@@ -13,9 +13,13 @@ import {
     ContianerMP,
     ButtonStyled,
     ContainerFlutuante,
-    StyledAiOutlineClose
+    StyledAiOutlineClose,
+    StyledIoMdAdd,
+    DivIsAdding,
+    StyledMdDone
 } from "./style";
-
+import { Autocomplete, Stack, TextField } from "@mui/material";
+import SituacaoProduto from "../../enumeration/situacaoProduto";
 export interface InputConfig {
     label: string;
     propertyName: string;
@@ -30,6 +34,7 @@ interface IsEditProps {
     setSelected: React.Dispatch<React.SetStateAction<any | undefined>>;
     editingScreen: 'Cliente' | 'Produto' | 'Estoque' | 'Colaborador';
     setIsEdit: React.Dispatch<SetStateAction<boolean>>
+    newData?: any
 }
 
 /**
@@ -54,7 +59,24 @@ interface IsEditProps {
  * @returns Retorna o formulário flutuante de edição de clientes, produtos ou estoque.
  */
 
-export function IsEdit({ data, handleEditRow, inputsConfig, isEdit, products, setSelected, editingScreen, setIsEdit }: IsEditProps) {
+export function IsEdit({ data, handleEditRow, inputsConfig, isEdit, products, setSelected, editingScreen, setIsEdit, newData: dataSelected }: IsEditProps) {
+    const [isAdding, setIsAdding] = useState<boolean>(false)
+    const [filterTpProdutoFabricado, setFilterTpProdutoFabricado] = useState<any>()
+    const [filterTpProdutoComprado, setFilterTpProdutoComprado] = useState<any>()
+    const [newProduct, setNewProduct] = useState<any>()
+
+    useEffect(() => {
+        if (dataSelected) {
+            if (editingScreen === 'Cliente') {
+                const filterFabricado = dataSelected.filter((item: ProdutosModel) => item.tpProduto === SituacaoProduto.FABRICADO || item.stEntrega)
+                setFilterTpProdutoFabricado(filterFabricado)
+            } else {
+                const filterComprado = dataSelected.filter((item: any) => item.tpProduto === SituacaoProduto.COMPRADO)
+                setFilterTpProdutoComprado(filterComprado)
+            }
+        }
+    }, [dataSelected])
+
     const handleChange = (e: ChangeEvent<HTMLInputElement>, propertyName: string) => {
         const { value } = e.target;
         const newData = { ...data };
@@ -98,6 +120,19 @@ export function IsEdit({ data, handleEditRow, inputsConfig, isEdit, products, se
             mpFabricado: newMps,
         } as ProdutosModel | undefined));
     }
+
+    //essa e a logica para adicionar novo produto na tela de Cliente usando o isEdit.
+    const handleChangeProdutoAdding = (e: React.SyntheticEvent<Element, Event>, value: any) => {
+        const newValue = { nmProduto: value.nmProduto, quantidade: undefined }
+        setNewProduct(newValue)
+    }
+    function addingNewProduct() {
+        setSelected((prevSelected: ProdutosModel | undefined) => ({
+            ...prevSelected,
+            mpFabricado: [...(prevSelected?.mpFabricado || []), newProduct],
+        } as ProdutosModel | undefined));
+    }
+
     return (
         <>
             {isEdit && (
@@ -143,9 +178,44 @@ export function IsEdit({ data, handleEditRow, inputsConfig, isEdit, products, se
                                 </div>
                             ))}
                         </BoxTop>
+                        <DivIsAdding>
+                            {isAdding ? (
+                                <div>
+                                    <div style={{ width: '16rem' }}>
+                                        <Stack spacing={3} sx={{ width: 250 }}>
+                                            <Autocomplete
+                                                id="tags-standard"
+                                                options={editingScreen === 'Cliente' ? filterTpProdutoFabricado : filterTpProdutoComprado}
+                                                getOptionLabel={(item: any) => item.nmProduto}
+                                                onChange={(e, value) => { handleChangeProdutoAdding(e, value) }}
+                                                renderInput={(params) => (
+                                                    <TextField
+                                                        {...params}
+                                                        variant="standard"
+                                                        label="Selecione MP necessaria para fabricar"
+                                                        placeholder="matéria-prima"
+                                                    />
+                                                )}
+                                            />
+                                        </Stack>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div>
+                                    <p>adicionar uma nova matéria-prima</p>
+                                </div>
+                            )}
+                            {!isAdding &&
+                                <div onClick={() => setIsAdding(!isAdding)}>
+                                    <StyledIoMdAdd />
+                                </div>
+                            }
+                            <div onClick={addingNewProduct}>
+                                {isAdding && (<StyledMdDone />)}
+                            </div>
+                        </DivIsAdding>
                         <ContianerMP>
                             {products.map((produto, index) => (
-
                                 <>
                                     <ul>
                                         <DivLineMP>

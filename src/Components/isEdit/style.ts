@@ -1,4 +1,6 @@
 import { AiOutlineClose } from "react-icons/ai";
+import { MdDone } from "react-icons/md";
+import { IoMdAdd } from "react-icons/io";
 import styled from "styled-components";
 
 export const BoxTop = styled.div`
@@ -38,7 +40,7 @@ export const ContainerFlutuante = styled.div`
 position: absolute;
 display: flex;
 width: 600px;
-height: 650px;
+height: 735px;
 top: 12%;
 left: 32%;
 background-color: #ffffff;
@@ -70,13 +72,36 @@ text-align: center;
 export const ContianerMP = styled.div`
 height: 16rem;
 overflow-y: auto;
+width: 30rem;
+margin-left: 2rem;
+::-webkit-scrollbar {
+      width: 8px; /* largura da barra de rolagem */
+      background-color: #f0f0f0; /* cor do fundo da barra de rolagem */
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background-color: #9999; /* cor da barra de rolagem */
+      border-radius: 4px; /* borda arredondada da barra de rolagem */
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background-color: #999; /* cor da barra de rolagem ao passar o mouse */
+    }
+
+    ::-webkit-scrollbar-track {
+      background-color: #f0f0f0; /* cor do fundo da trilha da barra de rolagem */
+    }
+
+    ::-webkit-scrollbar-track:hover {
+      background-color: #d3d3d3; /* cor do fundo da trilha ao passar o mouse */
+    }
 `;
 
 export const DivLineMP = styled.div`
 display: flex;
 align-items: center;
 justify-content: flex-start;
-width: 30rem;
+width: 28rem;
 margin-top: 2rem;
 height: 45px;
 `;
@@ -169,4 +194,36 @@ padding: 10px;
   background-color: #00000006;
   border-radius: 4px;
 }
+`;
+
+export const StyledIoMdAdd = styled(IoMdAdd)`
+cursor: pointer;
+width: 50px;
+height: 50px;
+padding: 10px;
+
+&:hover{
+  background-color: #00000006;
+  border-radius: 4px;
+}
+`;
+export const StyledMdDone = styled(MdDone)`
+cursor: pointer;
+width: 40px;
+height: 40px;
+padding: 6px;
+margin-top: 20px;
+
+&:hover{
+  background-color: #00000006;
+  border-radius: 4px;
+}
+`;
+
+export const DivIsAdding = styled.div`
+height: 4rem;
+display: flex;
+align-items: center;
+width: 600px;
+justify-content: center;
 `;

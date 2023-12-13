@@ -8,9 +8,9 @@ export function useUniqueNames(
     dataTable: ComprasModel[], 
     produtoDataTable: ProdutosModel[], 
     tpProduto: SituacaoProduto | null, 
-    optionTpProduto: SituacaoProduto | null
+    optionTpProduto: SituacaoProduto | null,
+    isEdit?: boolean
     ) {
-    
     const [uniqueNames, setUniqueNames] = useState<any[]>([]);
     function lastProduct(filterUniqueNames: (ComprasModel | ProdutosModel)[], names: string[]) {
         const maxProductsByUniqueNames = names.map((uniqueName: string) => {
@@ -27,11 +27,11 @@ export function useUniqueNames(
         return maxProductsByUniqueNames;
     }
     useEffect(() => {
-        const filter = produtoDataTable.filter(data => data.nmProduto.includes('Balde 10 Litros'))
+        const filter = dataTable.filter(data => data.nmProduto.includes('Balde 10 Litros'))
         if (filter.length > 0) {
             const objetoEncontrado = filter[0];
             objetoEncontrado.tpProduto = SituacaoProduto.COMPRADO;
-            dataTable.push(objetoEncontrado as unknown as ComprasModel)
+            dataTable.push(objetoEncontrado)
         }
         if (optionTpProduto === SituacaoProduto.COMPRADO) {
             const filterUniqueNames = dataTable.filter((produtos: ComprasModel) => produtos.tpProduto === SituacaoProduto.COMPRADO);
@@ -44,6 +44,6 @@ export function useUniqueNames(
             const maxProductsByUniqueNames = lastProduct(filterUniqueNames, uniqueNames);
             setUniqueNames(maxProductsByUniqueNames);
         }
-    }, [tpProduto])
+    }, [tpProduto, isEdit])
     return uniqueNames;
 }

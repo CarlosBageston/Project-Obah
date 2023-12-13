@@ -187,6 +187,7 @@ export default function CadastroProduto() {
         if (values.tpProduto === SituacaoProduto.FABRICADO) return setIsVisibleTpProduto(true)
         return setIsVisibleTpProduto(false)
     }, [values.tpProduto])
+
     return (
         <Box>
             <Title>Cadastro de Novos Produtos</Title>
@@ -308,6 +309,7 @@ export default function CadastroProduto() {
                 isEdit={isEdit}
                 products={selected ? selected.mpFabricado : []}
                 setIsEdit={setIsEdit}
+                newData={useUniqueNames(comprasDataTable, dataTable, values.tpProduto, SituacaoProduto.COMPRADO, isEdit)}
             />
             <ContainerButton>
                 <Button

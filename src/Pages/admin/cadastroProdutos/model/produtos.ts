@@ -13,7 +13,7 @@ interface ProdutosModel {
     id?: string,
     nmProduto: string,
     cdProduto: string,
-    vlUnitario: string,
+    vlUnitario: number,
     vlVendaProduto: string,
     tpProduto: SituacaoProduto | null,
     stEntrega?: boolean,

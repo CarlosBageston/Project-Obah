@@ -20,7 +20,8 @@ interface InputProps {
     raisedLabel?: boolean;
     onKeyUp?: React.KeyboardEventHandler<HTMLInputElement> | undefined;
     onKeyDown?: React.KeyboardEventHandler<HTMLInputElement> | undefined;
-    onKeyPress?: React.KeyboardEventHandler<HTMLInputElement> | undefined
+    onKeyPress?: React.KeyboardEventHandler<HTMLInputElement> | undefined;
+    type?: React.HTMLInputTypeAttribute | undefined;
 }
 
 /**
@@ -74,6 +75,7 @@ function Input({
     onKeyUp,
     onKeyDown,
     onKeyPress,
+    type
 }: InputProps) {
     const [isFilled, setIsFilled] = useState(false);
 
@@ -96,7 +98,7 @@ function Input({
         >
             <InputField
                 key={key}
-                type="text"
+                type={type ? type : 'text'}
                 value={value instanceof Date ? value.toLocaleDateString() : value}
                 onChange={handleInputChange}
                 name={name}

@@ -37,107 +37,107 @@ export default function Estoque() {
         loading,
     } = GetData('Entregas', recarregue) as { dataTable: EntregaModel[], loading: boolean, setDataTable: (data: EntregaModel[]) => void }
 
-    useEffect(() => {
-        let quantidadeVendas: { [key: string]: EstoqueModel } = {};
-        const quantidadeCompras: { [key: string]: EstoqueModel } = {};
-        if (vendasDataTable.length) {
-            vendasDataTable.forEach(venda => {
-                if (venda.produtoEscaniado) {
-                    const produtosEscaniados = venda.produtoEscaniado;
-                    produtosEscaniados.forEach(produto => {
-                        const { cdProduto, nmProduto, quantidadeVenda, tpProduto, mpFabricado } = produto;
-                        if (!quantidadeVendas[nmProduto]) {
-                            quantidadeVendas[nmProduto] = { cdProduto, nmProduto, quantidadeTotal: 0, tpProduto, mpFabricado };
-                        }
-                        quantidadeVendas[nmProduto].quantidadeTotal += quantidadeVenda;
-                    });
-                }
+    // useEffect(() => {
+    //     let quantidadeVendas: { [key: string]: EstoqueModel } = {};
+    //     const quantidadeCompras: { [key: string]: EstoqueModel } = {};
+    //     if (vendasDataTable.length) {
+    //         vendasDataTable.forEach(venda => {
+    //             if (venda.produtoEscaniado) {
+    //                 const produtosEscaniados = venda.produtoEscaniado;
+    //                 produtosEscaniados.forEach(produto => {
+    //                     const { cdProduto, nmProduto, quantidadeVenda, tpProduto, mpFabricado } = produto;
+    //                     if (!quantidadeVendas[nmProduto]) {
+    //                         quantidadeVendas[nmProduto] = { cdProduto, nmProduto, quantidadeTotal: 0, tpProduto, mpFabricado };
+    //                     }
+    //                     quantidadeVendas[nmProduto].quantidadeTotal += quantidadeVenda;
+    //                 });
+    //             }
 
-            });
-        }
-        if (entregasDataTable.length) {
-            entregasDataTable.forEach(entrega => {
-                const { quantidades } = entrega;
-                Object.entries(quantidades).forEach(([produto, quantidade]) => {
-                    if (!quantidadeVendas[produto]) {
-                        quantidadeVendas[produto] = { cdProduto: '', tpProduto: null, nmProduto: produto, quantidadeTotal: 0 };
-                    }
-                    if (quantidade) {
-                        quantidadeVendas[produto].quantidadeTotal += Number(quantidade);
-                    }
-                });
-            });
-            quantidadeVendas = Object.entries(quantidadeVendas)
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                .filter(([produto, info]) => info.quantidadeTotal)
-                .reduce((acc, [produto, info]) => {
-                    acc[produto] = info;
-                    return acc;
-                }, {} as { [produto: string]: typeof quantidadeVendas[keyof typeof quantidadeVendas] });
-        }
-        if (comprasDataTable.length) {
-            comprasDataTable.forEach(venda => {
-                const { cdProduto, nmProduto, quantidade, tpProduto, cxProduto, kgProduto, qntMinima } = venda;
-                if (!quantidadeCompras[nmProduto]) {
-                    quantidadeCompras[nmProduto] = { cdProduto, tpProduto, nmProduto, quantidadeTotal: 0, cxProduto, kgProduto, qntMinima };
-                }
-                if (cxProduto) {
-                    const qntCaixa = cxProduto * Number(quantidade)
-                    quantidadeCompras[nmProduto].quantidadeTotal += qntCaixa;
-                } else if (kgProduto) {
-                    const qntKG = kgProduto * Number(quantidade)
-                    quantidadeCompras[nmProduto].quantidadeTotal += qntKG;
-                } else {
-                    quantidadeCompras[nmProduto].quantidadeTotal += Number(quantidade);
-                }
-            });
-        }
-        const resultado = [...Object.values(quantidadeCompras), ...Object.values(quantidadeVendas)].reduce((estoque: EstoqueModel[], vendido) => {
-            const existingItemIndex = estoque.findIndex((item) => item.nmProduto === vendido.nmProduto);
+    //         });
+    //     }
+    //     if (entregasDataTable.length) {
+    //         entregasDataTable.forEach(entrega => {
+    //             const { quantidades } = entrega;
+    //             Object.entries(quantidades).forEach(([produto, quantidade]) => {
+    //                 if (!quantidadeVendas[produto]) {
+    //                     quantidadeVendas[produto] = { cdProduto: '', tpProduto: null, nmProduto: produto, quantidadeTotal: 0 };
+    //                 }
+    //                 if (quantidade) {
+    //                     quantidadeVendas[produto].quantidadeTotal += Number(quantidade);
+    //                 }
+    //             });
+    //         });
+    //         quantidadeVendas = Object.entries(quantidadeVendas)
+    //             // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    //             .filter(([produto, info]) => info.quantidadeTotal)
+    //             .reduce((acc, [produto, info]) => {
+    //                 acc[produto] = info;
+    //                 return acc;
+    //             }, {} as { [produto: string]: typeof quantidadeVendas[keyof typeof quantidadeVendas] });
+    //     }
+    //     if (comprasDataTable.length) {
+    //         comprasDataTable.forEach(venda => {
+    //             const { cdProduto, nmProduto, quantidade, tpProduto, cxProduto, kgProduto, qntMinima } = venda;
+    //             if (!quantidadeCompras[nmProduto]) {
+    //                 quantidadeCompras[nmProduto] = { cdProduto, tpProduto, nmProduto, quantidadeTotal: 0, cxProduto, kgProduto, qntMinima };
+    //             }
+    //             if (cxProduto) {
+    //                 const qntCaixa = cxProduto * Number(quantidade)
+    //                 quantidadeCompras[nmProduto].quantidadeTotal += qntCaixa;
+    //             } else if (kgProduto) {
+    //                 const qntKG = kgProduto * Number(quantidade)
+    //                 quantidadeCompras[nmProduto].quantidadeTotal += qntKG;
+    //             } else {
+    //                 quantidadeCompras[nmProduto].quantidadeTotal += Number(quantidade);
+    //             }
+    //         });
+    //     }
+    //     const resultado = [...Object.values(quantidadeCompras), ...Object.values(quantidadeVendas)].reduce((estoque: EstoqueModel[], vendido) => {
+    //         const existingItemIndex = estoque.findIndex((item) => item.nmProduto === vendido.nmProduto);
 
-            if (existingItemIndex > -1) {
-                if (vendido.quantidadeTotal < 0 && Math.abs(vendido.quantidadeTotal) > estoque[existingItemIndex].quantidadeTotal) {
-                    estoque[existingItemIndex].quantidadeTotal = estoque[existingItemIndex].quantidadeTotal - (-1 * vendido.quantidadeTotal);
-                } else {
-                    estoque[existingItemIndex].quantidadeTotal -= vendido.quantidadeTotal;
-                }
-                if (vendido.mpFabricado && vendido.mpFabricado.length > 0) {
+    //         if (existingItemIndex > -1) {
+    //             if (vendido.quantidadeTotal < 0 && Math.abs(vendido.quantidadeTotal) > estoque[existingItemIndex].quantidadeTotal) {
+    //                 estoque[existingItemIndex].quantidadeTotal = estoque[existingItemIndex].quantidadeTotal - (-1 * vendido.quantidadeTotal);
+    //             } else {
+    //                 estoque[existingItemIndex].quantidadeTotal -= vendido.quantidadeTotal;
+    //             }
+    //             if (vendido.mpFabricado && vendido.mpFabricado.length > 0) {
 
-                    vendido.mpFabricado.forEach((mp) => {
-                        const existingMpIndex = estoque.findIndex((item) => item.nmProduto === mp.nmProduto);
+    //                 vendido.mpFabricado.forEach((mp) => {
+    //                     const existingMpIndex = estoque.findIndex((item) => item.nmProduto === mp.nmProduto);
 
-                        if (existingMpIndex > -1) {
-                            const total = Number(mp.quantidade) * vendido.quantidadeTotal
-                            estoque[existingMpIndex].quantidadeTotal -= total;
-                        }
-                    });
-                }
-            } else {
-                if (vendido.quantidadeTotal < 0) {
-                    vendido.quantidadeTotal = -1 * vendido.quantidadeTotal;
-                }
-                estoque.push(vendido);
-            }
-            return estoque;
-        }, []);
-        const tipoFabricado = resultado.filter(tipo => tipo.tpProduto === SituacaoProduto.FABRICADO)
-        const tipoComprado = resultado.filter(tipo => tipo.tpProduto === SituacaoProduto.COMPRADO)
-        tipoFabricado.map(item => {
-            if (item.qntMinima) {
-                if (item.qntMinima > item.quantidadeTotal) return item.stEstoque = 'Fabricar'
-                return item.stEstoque = 'Ok'
-            }
-        })
-        tipoComprado.map(item => {
-            if (item.qntMinima) {
-                if (item.qntMinima > item.quantidadeTotal) return item.stEstoque = 'Comprar'
-                return item.stEstoque = 'Ok'
-            }
-        })
-        setDataTableFabricado(tipoFabricado)
-        setDataTableComprado(tipoComprado)
+    //                     if (existingMpIndex > -1) {
+    //                         const total = Number(mp.quantidade) * vendido.quantidadeTotal
+    //                         estoque[existingMpIndex].quantidadeTotal -= total;
+    //                     }
+    //                 });
+    //             }
+    //         } else {
+    //             if (vendido.quantidadeTotal < 0) {
+    //                 vendido.quantidadeTotal = -1 * vendido.quantidadeTotal;
+    //             }
+    //             estoque.push(vendido);
+    //         }
+    //         return estoque;
+    //     }, []);
+    //     const tipoFabricado = resultado.filter(tipo => tipo.tpProduto === SituacaoProduto.FABRICADO)
+    //     const tipoComprado = resultado.filter(tipo => tipo.tpProduto === SituacaoProduto.COMPRADO)
+    //     tipoFabricado.map(item => {
+    //         if (item.qntMinima) {
+    //             if (item.qntMinima > item.quantidadeTotal) return item.stEstoque = 'Fabricar'
+    //             return item.stEstoque = 'Ok'
+    //         }
+    //     })
+    //     tipoComprado.map(item => {
+    //         if (item.qntMinima) {
+    //             if (item.qntMinima > item.quantidadeTotal) return item.stEstoque = 'Comprar'
+    //             return item.stEstoque = 'Ok'
+    //         }
+    //     })
+    //     setDataTableFabricado(tipoFabricado)
+    //     setDataTableComprado(tipoComprado)
 
-    }, [vendasDataTable, comprasDataTable, entregasDataTable]);
+    // }, [vendasDataTable, comprasDataTable, entregasDataTable]);
 
     return (
         <Box>

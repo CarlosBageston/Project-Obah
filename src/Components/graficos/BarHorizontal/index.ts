@@ -1,7 +1,7 @@
 import 'chart.js/auto'
-import moment from "moment";
-import ComprasModel from "../../../Pages/admin/compras/model/compras";
 import GetData from '../../../firebase/getData';
+import DashboardCompras from '../../../Pages/admin/dashboard/model/dashboardCompra';
+import { useEffect, useState } from 'react';
 
 /**
  * ChartBarHorizontal Component
@@ -14,34 +14,33 @@ import GetData from '../../../firebase/getData';
  * @returns Retorna um objeto contendo os dados do gráfico (dataHorizontal) e as opções de configuração (optionsHotizontal).
  */
 export default function ChartBarHorizontal() {
-    
+    const [dadosPorMes, setDadosPorMes] = useState<any[]>([])
+
+
     //realizando busca no banco de dados
     const {
         dataTable: dataTableVendas,
-    } = GetData('Compras', true) as { dataTable: ComprasModel[] };
-    console.log('renderizo')
+    } = GetData('Dados Dashboard', true) as { dataTable: DashboardCompras[] };
+
+
     //filtrando dados por data
     const mesesDesejados = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-    const filtrarDadosPorMes = (dados: ComprasModel[], mes: number) => {
-        const dadosFiltrado = dados.filter(item => {
-            if (item.dtCompra === null) return false;
-            const momentObj = moment(item.dtCompra, "DD/MM/YYYY HH:mm");
-            const mesItem = momentObj.month() + 1;
-            return mesItem === mes;
-        });
-        const quantidade = dadosFiltrado.length
-         const valorTotal = dadosFiltrado.reduce((total, item) => {
-            const valorEntrega = item.vlUnitario ? Number(item.vlUnitario.match(/\d+/g)?.join('.')) : 0;
-            return total + valorEntrega;
-        }, 0);
-        return {
-            mes,
-            quantidade,
-            valorTotal
+    const filtrarDadosPorMes = (dados: DashboardCompras[], mes: number) => {
+        const dadosDoMes = dados.find(item => item.mes === mes);
+        if (dadosDoMes) {
+            const month = dadosDoMes.mes;
+            const quantidade = dadosDoMes.totalCompras;
+            const valorTotal = dadosDoMes.qntdComprada;
+    
+            return { month, quantidade, valorTotal };
+        } else {
+            return { month: mes, quantidade: 0, qntdReais: 0 };
         }
     };
-    const dadosPorMes = mesesDesejados.map(mes => filtrarDadosPorMes(dataTableVendas, mes));
-
+    useEffect(() => {
+        const dadosPorMes = mesesDesejados.map(mes => filtrarDadosPorMes(dataTableVendas, mes));
+        setDadosPorMes(dadosPorMes)
+    },[dataTableVendas])
     const optionsHotizontal = {
         indexAxis: 'y' as const,
         responsive: true,
@@ -61,7 +60,7 @@ export default function ChartBarHorizontal() {
                 callbacks: {
                     label: (context: any) => {
                         const venda = dadosPorMes[context.dataIndex];
-                        return [`Quantidade: ${venda.quantidade}`, `Valor Total: R$ ${venda.valorTotal.toFixed(2)}`];
+                        return [`Quantidade: ${venda.quantidade}`, `Valor Total: R$ ${venda.valorTotal}`];
                     },
                 },
             },

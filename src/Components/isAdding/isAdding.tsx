@@ -6,6 +6,7 @@ import { TitleDefault } from "../../Pages/admin/cadastroClientes/style";
 import SituacaoProduto from "../../enumeration/situacaoProduto";
 import { BoxClose, ButtonStyled, ContainerFlutuante, ContianerMP, DivClose, DivLineMP, Paragrafo, StyledAiOutlineClose } from "../isEdit/style";
 import ProdutosModel from "../../Pages/admin/cadastroProdutos/model/produtos";
+import GetData from "../../firebase/getData";
 
 interface IsAddingProps {
     isAdding: boolean;
@@ -42,6 +43,9 @@ interface IsAddingProps {
 export function IsAdding({ data, isAdding, setFieldValue, setIsVisibleTpProduto, products, addingScreen, errors, touched }: IsAddingProps) {
     const [filterTpProdutoFabricado, setFilterTpProdutoFabricado] = useState<any>()
     const [filterTpProdutoComprado, setFilterTpProdutoComprado] = useState<any>()
+    const {
+        dataTable,
+    } = GetData('Produtos', true) as { dataTable: ProdutosModel[] };
 
 
     useEffect(() => {
@@ -49,10 +53,19 @@ export function IsAdding({ data, isAdding, setFieldValue, setIsVisibleTpProduto,
             const filterFabricado = data.filter((item: ProdutosModel) => item.tpProduto === SituacaoProduto.FABRICADO || item.stEntrega)
             setFilterTpProdutoFabricado(filterFabricado)
         } else {
+            const filter = dataTable.filter(data => data.nmProduto.includes('Balde 10 Litros'))
             const filterComprado = data.filter((item: any) => item.tpProduto === SituacaoProduto.COMPRADO)
-            setFilterTpProdutoComprado(filterComprado)
+            if (filter.length > 0) {
+                const objetoEncontrado = filter[0];
+                objetoEncontrado.tpProduto = SituacaoProduto.COMPRADO;
+
+                const newFilterComprado = [...filterComprado, objetoEncontrado]
+                setFilterTpProdutoComprado(newFilterComprado)
+            } else {
+                setFilterTpProdutoComprado([...filterComprado])
+            }
         }
-    }, [data])
+    }, [data, dataTable])
 
 
     //essa e a logica da tela de Cliente
@@ -78,7 +91,6 @@ export function IsAdding({ data, isAdding, setFieldValue, setIsVisibleTpProduto,
     }
     //essa e a logica da tela de Cliente
     const handleChangeProdutoCliente = (e: React.ChangeEvent<HTMLInputElement>, produto: any) => {
-        console.log(produto)
         const newMpFabricado = [...products];
         const index = newMpFabricado.findIndex((item) => item.nmProduto === produto.nmProduto);
         newMpFabricado[index].vlVendaProduto = e.target.value;

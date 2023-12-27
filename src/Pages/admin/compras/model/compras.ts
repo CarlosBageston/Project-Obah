@@ -12,14 +12,14 @@ interface ComprasModel {
     dtCompra: Date | null,
     nmProduto: string,
     cdProduto: string,
-    vlUnitario: string,
-    quantidade: string,
+    vlUnitario: number,
+    quantidade: number,
     totalPago: number | null,
     tpProduto: SituacaoProduto | null,
     cxProduto: number | null,
     kgProduto: number | null,
     qntMinima: number | null,
     nrOrdem?: number
-
+    mpFabricado?: ComprasModel[]
 }
 export default ComprasModel

@@ -154,7 +154,7 @@ export default function Entregas() {
         const resultLucro = clienteCurrent.flatMap((cliente) =>
             cliente.produtos.map((produto) => {
                 const quantidade = quantidades[produto.nmProduto] ?? 0;
-                const valorPago = Number(produto.vlUnitario.match(/\d+/g)?.join('.'));
+                const valorPago = produto.vlUnitario
                 const valorVenda = Number(produto.vlVendaProduto.match(/\d+/g)?.join('.'));
                 const totalLucro = valorVenda - valorPago;
                 const total = totalLucro * quantidade;
@@ -295,7 +295,7 @@ export default function Entregas() {
                                             />
                                         </QntProduto>
                                         <ResultProduto>
-                                            <TextTable>R$ {produto.valorItem?.toString().replace('.', ',')}</TextTable>
+                                            <TextTable>R$ {produto.valorItem?.toFixed(2).replace('.', ',')}</TextTable>
                                         </ResultProduto>
                                     </DivProduto>
                                 ))}

@@ -23,6 +23,7 @@ import SituacaoProduto from "../../enumeration/situacaoProduto";
 export interface InputConfig {
     label: string;
     propertyName: string;
+    type?: 'number' | 'string'
 }
 
 interface IsEditProps {
@@ -77,11 +78,18 @@ export function IsEdit({ data, handleEditRow, inputsConfig, isEdit, products, se
         }
     }, [dataSelected])
 
-    const handleChange = (e: ChangeEvent<HTMLInputElement>, propertyName: string) => {
+    const handleChange = (e: ChangeEvent<HTMLInputElement>, propertyName: string, type: 'string' | 'number') => {
         const { value } = e.target;
-        const newData = { ...data };
-        newData[propertyName] = value;
-        setSelected(newData);
+        if (type && type === 'number') {
+            const newData = { ...data };
+            const numericValue = parseFloat(value.replace(/[^\d.-]/g, ''));
+            newData[propertyName] = isNaN(numericValue) ? null : numericValue;
+            setSelected(newData);
+        } else {
+            const newData = { ...data };
+            newData[propertyName] = value;
+            setSelected(newData);
+        }
     };
     function formatarValor(valor: string) {
         const inputText = valor.replace(/\D/g, "");
@@ -168,7 +176,7 @@ export function IsEdit({ data, handleEditRow, inputsConfig, isEdit, products, se
                                         error=""
                                         label={inputConfig.label}
                                         name={inputConfig.propertyName}
-                                        onChange={(e) => handleChange(e, inputConfig.propertyName)}
+                                        onChange={(e) => handleChange(e, inputConfig.propertyName, inputConfig.type ? inputConfig.type : 'string')}
                                         value={data[inputConfig.propertyName]}
                                         raisedLabel
                                         style={{ fontSize: '16px' }}
@@ -274,7 +282,7 @@ export function IsEdit({ data, handleEditRow, inputsConfig, isEdit, products, se
                                         error=""
                                         label={inputConfig.label}
                                         name={inputConfig.propertyName}
-                                        onChange={(e) => handleChange(e, inputConfig.propertyName)}
+                                        onChange={(e) => handleChange(e, inputConfig.propertyName, inputConfig.type ? inputConfig.type : 'string')}
                                         value={data[inputConfig.propertyName]}
                                         raisedLabel
                                         style={{ fontSize: '16px' }}

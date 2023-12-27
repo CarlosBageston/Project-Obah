@@ -27,12 +27,6 @@ export function useUniqueNames(
         return maxProductsByUniqueNames;
     }
     useEffect(() => {
-        const filter = dataTable.filter(data => data.nmProduto.includes('Balde 10 Litros'))
-        if (filter.length > 0) {
-            const objetoEncontrado = filter[0];
-            objetoEncontrado.tpProduto = SituacaoProduto.COMPRADO;
-            dataTable.push(objetoEncontrado)
-        }
         if (optionTpProduto === SituacaoProduto.COMPRADO) {
             const filterUniqueNames = dataTable.filter((produtos: ComprasModel) => produtos.tpProduto === SituacaoProduto.COMPRADO);
             const uniqueNames: string[] = Array.from(new Set(filterUniqueNames.map((nome: ComprasModel) => nome.nmProduto)));

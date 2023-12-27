@@ -31,7 +31,7 @@ import {
 const objClean: ProdutoModel = {
     cdProduto: '',
     nmProduto: '',
-    vlUnitario: '',
+    vlUnitario: 0,
     vlVendaProduto: '',
     tpProduto: null,
     stEntrega: false,
@@ -103,7 +103,7 @@ export default function CadastroProduto() {
         setInitialValues({
             cdProduto: '',
             nmProduto: '',
-            vlUnitario: '',
+            vlUnitario: 0,
             vlVendaProduto: '',
             tpProduto: null,
             stEntrega: false,
@@ -175,11 +175,11 @@ export default function CadastroProduto() {
             somaFormat = calculateTotalValue(selected.mpFabricado, comprasDataTable);
             setSelected((prevSelected) => ({
                 ...prevSelected,
-                vlUnitario: `R$ ${somaFormat}` || '',
+                vlUnitario: parseFloat(somaFormat.toFixed(2)),
             } as ProdutoModel | undefined));
         } else {
             somaFormat = calculateTotalValue(values.mpFabricado, comprasDataTable);
-            setFieldValue('vlUnitario', `R$ ${somaFormat.toFixed(2)}`);
+            setFieldValue('vlUnitario', parseFloat(somaFormat.toFixed(2)));
         }
     }, [comprasDataTable, values.mpFabricado, isVisibleTpProuto, selected?.mpFabricado]);
 
@@ -279,7 +279,7 @@ export default function CadastroProduto() {
                         name="vlUnitario"
                         disabled={values.tpProduto === SituacaoProduto.FABRICADO}
                         raisedLabel={values.tpProduto === SituacaoProduto.FABRICADO}
-                        value={values.vlUnitario === 'R$ 0.00' ? '' : values.vlUnitario}
+                        value={values.vlUnitario ? values.vlUnitario : ''}
                         onChange={e => setFieldValue(e.target.name, formatarValor(e.target.value))}
                         error={touched.vlUnitario && errors.vlUnitario ? errors.vlUnitario : ''}
                         styleDiv={{ marginTop: 4 }}

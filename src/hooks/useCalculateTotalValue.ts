@@ -19,15 +19,13 @@ export function calculateTotalValue(mpList: ComprasModel[] | ComprasModel, compr
     return soma;
 }
 export function calcularValorParaProduto(mp: ComprasModel, produtoEncontrado: ComprasModel): number {
-    const valorPago = produtoEncontrado.vlUnitario;
-    const valueFormat = valorPago.match(/\d+/g)?.join('.');
     let result = 0;
     if (produtoEncontrado.cxProduto) {
-        result = Number(valueFormat) / produtoEncontrado.cxProduto * Number(mp.quantidade);
+        result = produtoEncontrado.vlUnitario / produtoEncontrado.cxProduto * mp.quantidade;
     } else if (produtoEncontrado.kgProduto) {
-        result = Number(valueFormat) / produtoEncontrado.kgProduto * Number(mp.quantidade);
+        result = produtoEncontrado.vlUnitario / produtoEncontrado.kgProduto * mp.quantidade;
     } else {
-        result = Number(valueFormat) / Number(produtoEncontrado.quantidade) * Number(mp.quantidade);
+        result = produtoEncontrado.vlUnitario / produtoEncontrado.quantidade * mp.quantidade;
     }
     return parseFloat(result.toFixed(2));
 }

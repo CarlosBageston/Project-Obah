@@ -97,7 +97,7 @@ export default function Vendas() {
 
                 //calculando total de lucro
                 const valorVenda = Number(produtoEncontrado.vlVendaProduto.match(/\d+/g)?.join('.'));
-                const valorPago = Number(produtoEncontrado.vlUnitario.match(/\d+/g)?.join('.'));
+                const valorPago = produtoEncontrado.vlUnitario
                 const total = valorVenda - valorPago;
                 const totalLucro = total * multiplica
 
@@ -112,7 +112,7 @@ export default function Vendas() {
             if (produtoEncontrado) {
                 //calculando total de lucro
                 const valorVenda = Number(produtoEncontrado.vlVendaProduto.match(/\d+/g)?.join('.'));
-                const valorPago = Number(produtoEncontrado.vlUnitario.match(/\d+/g)?.join('.'));
+                const valorPago = produtoEncontrado.vlUnitario
                 const totalLucro = valorVenda - valorPago;
 
                 const novoProduto = { ...produtoEncontrado, quantidadeVenda: 1, vlLucro: totalLucro.toString(), vlTotalMult: `R$ ${valorVenda},00` }
@@ -139,7 +139,7 @@ export default function Vendas() {
 
                     //calculando total de lucro
                     const valorVenda = Number(produtoEncontrado.vlVendaProduto.match(/\d+/g)?.join('.'));
-                    const valorPago = Number(produtoEncontrado.vlUnitario.match(/\d+/g)?.join('.'));
+                    const valorPago = produtoEncontrado.vlUnitario
                     const total = valorVenda - valorPago;
                     const totalLucro = total * multiplica
 
@@ -157,7 +157,7 @@ export default function Vendas() {
                 if (produtoEncontrado) {
                     //calculando total de lucro
                     const valorVenda = Number(produtoEncontrado.vlVendaProduto.match(/\d+/g)?.join('.'));
-                    const valorPago = Number(produtoEncontrado.vlUnitario.match(/\d+/g)?.join('.'));
+                    const valorPago = produtoEncontrado.vlUnitario
                     const totalLucro = valorVenda - valorPago;
 
                     const novoProduto = { ...produtoEncontrado, quantidadeVenda: 1, vlLucro: totalLucro.toString(), vlTotalMult: `R$ ${valorVenda},00` }
@@ -236,7 +236,7 @@ export default function Vendas() {
         if (produtoEncontrado) {
 
             const valorVenda = Number(produtoEncontrado.vlVendaProduto.match(/\d+/g)?.join('.'));
-            const valorPago = Number(produtoEncontrado.vlUnitario.match(/\d+/g)?.join('.'));
+            const valorPago = produtoEncontrado.vlUnitario
             const totalLucro = valorVenda - valorPago;
 
             const novoProduto = { ...produtoEncontrado, quantidadeVenda: 1, vlLucro: totalLucro.toString(), vlTotalMult: `R$ ${valorVenda},00` }
@@ -249,7 +249,7 @@ export default function Vendas() {
         const produtoEncontrado = dataTableProduto.find((p) => p.cdProduto === '9788534508476');
         if (produtoEncontrado) {
             const valorVenda = Number(produtoEncontrado.vlVendaProduto.match(/\d+/g)?.join('.'));
-            const valorPago = Number(produtoEncontrado.vlUnitario.match(/\d+/g)?.join('.'));
+            const valorPago = produtoEncontrado.vlUnitario
             const totalLucro = valorVenda - valorPago;
 
             const novoProduto = { ...produtoEncontrado, quantidadeVenda: 1, vlLucro: totalLucro.toString(), vlTotalMult: `R$ ${valorVenda},00` }

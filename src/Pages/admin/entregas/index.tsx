@@ -37,6 +37,8 @@ import {
     ContainerTableCliente,
 } from './style'
 import { BoxTitleDefault } from "../estoque/style";
+import ProdutosModel from '../cadastroProdutos/model/produtos';
+import EstoqueModel from '../estoque/model/estoque';
 
 
 const objClean: EntregaModel = {
@@ -68,6 +70,10 @@ export default function Entregas() {
         setDataTable: setDataTableEntregas,
         loading
     } = GetData('Entregas', recarregue) as { dataTable: EntregaModel[], setDataTable: (data: EntregaModel[]) => void, loading: boolean };
+
+    const {
+        dataTable: dataTableEstoque,
+    } = GetData('Estoque', recarregue) as { dataTable: EstoqueModel[] };
 
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<EntregaModel>({
         validateOnBlur: true,
@@ -104,9 +110,74 @@ export default function Entregas() {
         setQuantidades({})
         setKey(Math.random());
     }
+    // async function updateRemovedStock(estoque: EstoqueModel) {
+    //     const estoqueExistente = dataTableEstoque.find(
+    //         estoques => estoques.nmProduto === estoque.nmProduto
+    //     );
+    //     if (estoqueExistente) {
+    //         const refID: string = estoqueExistente.id ?? '';
+    //         const refTable = doc(db, "Estoque", refID);
+    //         for (const versao of estoqueExistente.versaos) {
+    //             if (versao.vrQntd <= 0) {
+    //                 const compraCorrespondente = dataTable.find(compra =>
+    //                     compra.nmProduto === estoqueExistente.nmProduto && compra.nrOrdem === versao.versao
+    //                 );
+    //                 if (compraCorrespondente && compraCorrespondente.id) {
+    //                     await deleteDoc(doc(db, "Compras", compraCorrespondente.id));
+    //                 }
+
+    //             }
+    //         }
+    //         const versoesValidas = estoque.versaos.filter(versao => versao.vrQntd > 0);
+    //         await updateDoc(refTable, {
+    //             nmProduto: estoque.nmProduto,
+    //             cdProduto: estoque.cdProduto,
+    //             quantidade: estoque.quantidade,
+    //             tpProduto: estoque.tpProduto,
+    //             qntMinima: estoque.qntMinima,
+    //             versaos: versoesValidas
+    //         })
+    //     }
+    // }
+
+    // async function removedStock(values: EntregaModel) {
+    //     values.cliente?.produtos.forEach(produto => {
+    //         const estoqueMP = dataTableEstoque.find(estoque => estoque.nmProduto === produto.nmProduto);
+    //         if (estoqueMP) {
+    //             const listVersaoComQntd: Versao[] = [...estoqueMP.versaos];
+    //             const versoesOrdenadas = estoqueMP.versaos.sort((a, b) => a.versao - b.versao);
+
+    //             versoesOrdenadas.forEach(versao => {
+    //                 if (values.quantidades > 0) {
+    //                     const qntdMinima = Math.min(values.quantidades, versao.vrQntd)
+    //                     const novaQuantidade = estoqueMP.quantidade - qntdMinima;
+    //                     const novaQntdPorVersao = versao.vrQntd - qntdMinima
+    //                     if (novaQuantidade > 0) {
+    //                         versao.vrQntd = novaQntdPorVersao;
+    //                     } else {
+    //                         versao.vrQntd = 0
+    //                     }
+
+    //                     estoqueMP.quantidade = novaQuantidade
+    //                     values.quantidades -= qntdMinima;
+    //                 }
+    //             })
+    //             await updateRemovedStock({
+    //                 nmProduto: estoqueMP.nmProduto,
+    //                 cdProduto: estoqueMP.cdProduto,
+    //                 quantidade: estoqueMP.quantidade,
+    //                 tpProduto: estoqueMP.tpProduto,
+    //                 qntMinima: estoqueMP.qntMinima,
+    //                 versaos: listVersaoComQntd,
+    //             });
+    //         }
+
+    //     })
+    // }
 
     //enviando formulario
     async function hundleSubmitForm() {
+        // removedStock(values)
         await addDoc(collection(db, "Entregas"), {
             ...values,
             quantidades: quantidades

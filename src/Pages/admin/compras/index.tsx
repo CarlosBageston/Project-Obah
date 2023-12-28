@@ -253,6 +253,8 @@ export default function AtualizarEstoque() {
             await updateDoc(refTable, {
                 nmProduto: valuesUpdate.nmProduto,
                 cdProduto: valuesUpdate.cdProduto,
+                tpProduto: valuesUpdate.tpProduto,
+                qntMinima: valuesUpdate.qntMinima,
                 quantidade: novaQuantidade,
                 versaos: [
                     ...estoqueExistente.versaos,
@@ -264,6 +266,8 @@ export default function AtualizarEstoque() {
             await addDoc(collection(db, "Estoque"), {
                 nmProduto: valuesUpdate.nmProduto,
                 cdProduto: valuesUpdate.cdProduto,
+                tpProduto: valuesUpdate.tpProduto,
+                qntMinima: valuesUpdate.qntMinima,
                 quantidade: quantidadeTotal,
                 versaos: [
                     { versao: valuesUpdate.nrOrdem, vrQntd: quantidadeTotal }
@@ -295,6 +299,8 @@ export default function AtualizarEstoque() {
                 nmProduto: estoque.nmProduto,
                 cdProduto: estoque.cdProduto,
                 quantidade: estoque.quantidade,
+                tpProduto: estoque.tpProduto,
+                qntMinima: estoque.qntMinima,
                 versaos: versoesValidas
             })
         }
@@ -327,6 +333,8 @@ export default function AtualizarEstoque() {
                     nmProduto: estoqueMP.nmProduto,
                     cdProduto: estoqueMP.cdProduto,
                     quantidade: estoqueMP.quantidade,
+                    tpProduto: estoqueMP.tpProduto,
+                    qntMinima: estoqueMP.qntMinima,
                     versaos: listVersaoComQntd,
                 });
             }

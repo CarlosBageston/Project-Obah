@@ -1,3 +1,4 @@
+import SituacaoProduto from "../../../../enumeration/situacaoProduto"
 
 /**
  * Modelo de Estoque
@@ -6,11 +7,15 @@
 */
 
 
+
 interface EstoqueModel {
     id?: string,
     nmProduto: string,
     cdProduto: string,
     quantidade: number,
+    tpProduto: SituacaoProduto,
+    stEstoque?: 'Bom' | 'Comprar',
+    qntMinima: number,
     versaos: Versao[]
 
 }

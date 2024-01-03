@@ -284,7 +284,7 @@ export default function CadastroColaborador() {
                         }
                     }}
                     onDelete={handleDeleteRow}
-                    isDisabled={selected ? false : true}
+                    isdisabled={selected ? false : true}
                 />
             </Box>
         </>

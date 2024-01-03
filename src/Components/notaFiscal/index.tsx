@@ -12,7 +12,7 @@ import { Box, DivSubHeader, Title, TotalValue, DivClosePrint, ContainerFlutuante
 
 interface Props {
     values: EntregaModel,
-    clienteCurrent: ClienteModel[],
+    clienteCurrent: ClienteModel,
     setShouldShow: React.Dispatch<React.SetStateAction<boolean>>
 }
 
@@ -76,24 +76,21 @@ export function NotaFiscal({ values, clienteCurrent, setShouldShow }: Props) {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {clienteCurrent.map((cliente) => (
-                                        <>
-                                            {cliente.produtos
-                                                .filter(produto => produto.valorItem !== 0)
-                                                .map((produto, index) => (
-                                                    <TableRow key={produto.cdProduto}>
-                                                        <TableCell>{formatIndex(index + 1)}</TableCell>
-                                                        {/* <TableCell>{produto.cdProduto.substring(0, 3)}</TableCell> */}
-                                                        <TableCell component="th" scope="row">{produto.nmProduto}</TableCell>
-                                                        <TableCell align="right"> {
-                                                            Number(produto.valorItem) % 1 === 0
-                                                                ? `R$ ${produto.valorItem?.toFixed(0)},00`
-                                                                : ` R$ ${produto.valorItem?.toFixed(2).replace('.', ',')}`}
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                        </>
-                                    ))}
+                                    {clienteCurrent.produtos
+                                        .filter(produto => produto.valorItem !== 0)
+                                        .map((produto, index) => (
+                                            <>
+                                                <TableRow key={produto.cdProduto}>
+                                                    <TableCell>{formatIndex(index + 1)}</TableCell>
+                                                    <TableCell component="th" scope="row">{produto.nmProduto}</TableCell>
+                                                    <TableCell align="right"> {
+                                                        Number(produto.valorItem) % 1 === 0
+                                                            ? `R$ ${produto.valorItem?.toFixed(0)},00`
+                                                            : ` R$ ${produto.valorItem?.toFixed(2).replace('.', ',')}`}
+                                                    </TableCell>
+                                                </TableRow>
+                                            </>
+                                        ))}
                                 </TableBody>
                             </Table>
                         </TableContainer>

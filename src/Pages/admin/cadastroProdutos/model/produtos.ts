@@ -14,11 +14,10 @@ interface ProdutosModel {
     nmProduto: string,
     cdProduto: string,
     vlUnitario: number,
-    vlVendaProduto: string,
+    vlVendaProduto: number,
     tpProduto: SituacaoProduto | null,
     stEntrega?: boolean,
     mpFabricado: ComprasModel[]
     valorItem?: number
-    nrOrdem?: number
 }
 export default ProdutosModel

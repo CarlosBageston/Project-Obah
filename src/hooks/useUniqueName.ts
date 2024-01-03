@@ -1,18 +1,34 @@
 import { useEffect, useState } from 'react';
 import ComprasModel from '../Pages/admin/compras/model/compras';
-import ProdutosModel from '../Pages/admin/cadastroProdutos/model/produtos';
 import SituacaoProduto from '../enumeration/situacaoProduto';
 
-
+/**
+ * Hook personalizado para obter nomes únicos com base em determinados critérios.
+ *
+ * Este hook processa uma lista de compras e retorna os nomes únicos dos produtos
+ * de acordo com o tipo de produto especificado (COMPRADO ou FABRICADO). Além disso,
+ * pode considerar a edição de dados para atualizar dinamicamente a lista de nomes únicos.
+ *
+ * @param {ComprasModel[]} dataTable - Lista de compras a ser processada.
+ * @param {SituacaoProduto | null} tpProduto - Tipo de produto atual selecionado.
+ * @param {SituacaoProduto | null} optionTpProduto - Tipo de produto para filtrar (COMPRADO ou FABRICADO).
+ * @param {boolean} [isEdit] - Indica se os dados estão sendo editados.
+ * 
+ * @returns {any[]} - Lista de nomes únicos de produtos com base nos parâmetros fornecidos.
+ */
 export function useUniqueNames(
     dataTable: ComprasModel[], 
-    produtoDataTable: ProdutosModel[], 
     tpProduto: SituacaoProduto | null, 
     optionTpProduto: SituacaoProduto | null,
     isEdit?: boolean
     ) {
     const [uniqueNames, setUniqueNames] = useState<any[]>([]);
-    function lastProduct(filterUniqueNames: (ComprasModel | ProdutosModel)[], names: string[]) {
+
+    function filterDataByType(type: SituacaoProduto) {
+        return dataTable.filter((produto: ComprasModel) => produto.tpProduto === type);
+      }
+
+    function lastProduct(filterUniqueNames: (ComprasModel )[], names: string[]) {
         const maxProductsByUniqueNames = names.map((uniqueName: string) => {
             const filteredProducts = filterUniqueNames
                 .filter((prod) => prod.nmProduto === uniqueName && prod.nrOrdem !== undefined)
@@ -27,17 +43,17 @@ export function useUniqueNames(
         return maxProductsByUniqueNames;
     }
     useEffect(() => {
+        let filterUniqueNames: ComprasModel[] = [];
+    
         if (optionTpProduto === SituacaoProduto.COMPRADO) {
-            const filterUniqueNames = dataTable.filter((produtos: ComprasModel) => produtos.tpProduto === SituacaoProduto.COMPRADO);
-            const uniqueNames: string[] = Array.from(new Set(filterUniqueNames.map((nome: ComprasModel) => nome.nmProduto)));
-            const maxProductsByUniqueNames = lastProduct(filterUniqueNames, uniqueNames);
-            setUniqueNames(maxProductsByUniqueNames);
+          filterUniqueNames = filterDataByType(SituacaoProduto.COMPRADO);
         } else {
-            const filterUniqueNames = produtoDataTable.filter((produtos:ProdutosModel) => produtos.tpProduto === SituacaoProduto.FABRICADO)
-            const uniqueNames = Array.from(new Set(filterUniqueNames.map((nome: ProdutosModel) => nome.nmProduto)));
-            const maxProductsByUniqueNames = lastProduct(filterUniqueNames, uniqueNames);
-            setUniqueNames(maxProductsByUniqueNames);
+          filterUniqueNames = filterDataByType(SituacaoProduto.FABRICADO);
         }
-    }, [tpProduto, isEdit])
+    
+        const uniqueNames: string[] = Array.from(new Set(filterUniqueNames.map((produto: ComprasModel) => produto.nmProduto)));
+        const maxProductsByUniqueNames = lastProduct(filterUniqueNames, uniqueNames);
+        setUniqueNames(maxProductsByUniqueNames);
+      }, [tpProduto, isEdit, optionTpProduto]);
     return uniqueNames;
 }

@@ -116,7 +116,7 @@ const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' 
 
 export default function MenuLateral() {
     const [open, setOpen] = useState(false);
-    const [openSubOpcao, setOpenSubOpcao] = useState(false);
+    const [openSubOpcao, setOpenSubOpcao] = useState<boolean>(false);
 
     const handleClick = () => {
         setOpenSubOpcao(!openSubOpcao);
@@ -195,7 +195,7 @@ export default function MenuLateral() {
                         <Image src={gestao} alt="Gestão" width={30} />
                     </ListItemIcon>
                     <StyledListItemText primary="Gestão" />
-                    <Icon openSubOpcao={openSubOpcao} />
+                    <Icon opensubopcao={openSubOpcao.toString()} />
                 </StyledListItemButton>
                 {openSubOpcao &&
                     <div style={{ backgroundColor: '#3b2e87' }}>

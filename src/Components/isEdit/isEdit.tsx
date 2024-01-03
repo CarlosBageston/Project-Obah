@@ -173,6 +173,7 @@ export function IsEdit({ data, handleEditRow, inputsConfig, isEdit, products, se
                             {inputsConfig.map((inputConfig) => (
                                 <div key={inputConfig.propertyName}>
                                     <Input
+                                        key={inputConfig.propertyName}
                                         error=""
                                         label={inputConfig.label}
                                         name={inputConfig.propertyName}
@@ -232,6 +233,7 @@ export function IsEdit({ data, handleEditRow, inputsConfig, isEdit, products, se
                                             </div>
                                             <div>
                                                 <Input
+                                                    key={produto.id}
                                                     error=""
                                                     label={editingScreen === 'Cliente' ? "Valor do Produto" : "Quantidade"}
                                                     name={produto.nmProduto}
@@ -279,6 +281,7 @@ export function IsEdit({ data, handleEditRow, inputsConfig, isEdit, products, se
                             {inputsConfig.map((inputConfig) => (
                                 <div key={inputConfig.propertyName}>
                                     <Input
+                                        key={inputConfig.propertyName}
                                         error=""
                                         label={inputConfig.label}
                                         name={inputConfig.propertyName}

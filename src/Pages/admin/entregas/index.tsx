@@ -13,7 +13,7 @@ import React, { useState, useEffect, useRef } from "react";
 import ClienteModel from "../cadastroClientes/model/cliente";
 import formatDate from "../../../Components/masks/formatDate";
 import FormAlert from "../../../Components/FormAlert/formAlert";
-import { addDoc, collection, deleteDoc, doc } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { Autocomplete, AutocompleteChangeReason, TextField } from "@mui/material";
 
 import {
@@ -37,8 +37,9 @@ import {
     ContainerTableCliente,
 } from './style'
 import { BoxTitleDefault } from "../estoque/style";
-import ProdutosModel from '../cadastroProdutos/model/produtos';
-import EstoqueModel from '../estoque/model/estoque';
+import EstoqueModel, { Versao } from '../estoque/model/estoque';
+import ComprasModel from '../compras/model/compras';
+import useFormatCurrency from '../../../hooks/formatCurrency';
 
 
 const objClean: EntregaModel = {
@@ -53,10 +54,12 @@ export default function Entregas() {
     const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
     const [selected, setSelected] = useState<EntregaModel>();
     const [recarregue, setRecarregue] = useState<boolean>(true);
-    const [clienteCurrent, setClienteCurrent] = useState<ClienteModel[]>([]);
+    const [clienteCurrent, setClienteCurrent] = useState<ClienteModel>();
     const [quantidades, setQuantidades] = useState<{ [key: string]: number }>({});
     const [scrollActive, setScrollActive] = useState<boolean>(false)
     const [shouldShow, setShouldShow] = useState<boolean>(false);
+
+    const { formatBrazilianCurrencyTable } = useFormatCurrency();
 
     const initialValues: EntregaModel = ({ ...objClean });
     const ref = useRef<HTMLDivElement>(null);
@@ -74,6 +77,9 @@ export default function Entregas() {
     const {
         dataTable: dataTableEstoque,
     } = GetData('Estoque', recarregue) as { dataTable: EstoqueModel[] };
+    const {
+        dataTable: dataTableCompras,
+    } = GetData('Compras', recarregue) as { dataTable: ComprasModel[] };
 
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<EntregaModel>({
         validateOnBlur: true,
@@ -110,74 +116,74 @@ export default function Entregas() {
         setQuantidades({})
         setKey(Math.random());
     }
-    // async function updateRemovedStock(estoque: EstoqueModel) {
-    //     const estoqueExistente = dataTableEstoque.find(
-    //         estoques => estoques.nmProduto === estoque.nmProduto
-    //     );
-    //     if (estoqueExistente) {
-    //         const refID: string = estoqueExistente.id ?? '';
-    //         const refTable = doc(db, "Estoque", refID);
-    //         for (const versao of estoqueExistente.versaos) {
-    //             if (versao.vrQntd <= 0) {
-    //                 const compraCorrespondente = dataTable.find(compra =>
-    //                     compra.nmProduto === estoqueExistente.nmProduto && compra.nrOrdem === versao.versao
-    //                 );
-    //                 if (compraCorrespondente && compraCorrespondente.id) {
-    //                     await deleteDoc(doc(db, "Compras", compraCorrespondente.id));
-    //                 }
+    async function updateRemovedStock(estoque: EstoqueModel) {
+        const estoqueExistente = dataTableEstoque.find(
+            estoques => estoques.nmProduto === estoque.nmProduto
+        );
+        if (estoqueExistente) {
+            const refID: string = estoqueExistente.id ?? '';
+            const refTable = doc(db, "Estoque", refID);
+            for (const versao of estoqueExistente.versaos) {
+                if (versao.vrQntd <= 0) {
+                    const compraCorrespondente = dataTableCompras.find(compra =>
+                        compra.nmProduto === estoqueExistente.nmProduto && compra.nrOrdem === versao.versao
+                    );
+                    if (compraCorrespondente && compraCorrespondente.id) {
+                        await deleteDoc(doc(db, "Compras", compraCorrespondente.id));
+                    }
 
-    //             }
-    //         }
-    //         const versoesValidas = estoque.versaos.filter(versao => versao.vrQntd > 0);
-    //         await updateDoc(refTable, {
-    //             nmProduto: estoque.nmProduto,
-    //             cdProduto: estoque.cdProduto,
-    //             quantidade: estoque.quantidade,
-    //             tpProduto: estoque.tpProduto,
-    //             qntMinima: estoque.qntMinima,
-    //             versaos: versoesValidas
-    //         })
-    //     }
-    // }
+                }
+            }
+            const versoesValidas = estoque.versaos.filter(versao => versao.vrQntd > 0);
+            await updateDoc(refTable, {
+                nmProduto: estoque.nmProduto,
+                cdProduto: estoque.cdProduto,
+                quantidade: estoque.quantidade,
+                tpProduto: estoque.tpProduto,
+                qntMinima: estoque.qntMinima,
+                versaos: versoesValidas
+            })
+        }
+    }
+    async function removedStock() {
+        if (!clienteCurrent) return;
+        clienteCurrent.produtos.forEach(async produto => {
+            const estoqueMP = dataTableEstoque.find(estoque => estoque.nmProduto === produto.nmProduto);
+            if (estoqueMP) {
+                const listVersaoComQntd: Versao[] = [...estoqueMP.versaos];
+                const versoesOrdenadas = estoqueMP.versaos.sort((a, b) => a.versao - b.versao);
+                versoesOrdenadas.forEach(versao => {
+                    if (quantidades[produto.nmProduto] > 0) {
+                        const qntdMinima = Math.min(quantidades[produto.nmProduto], versao.vrQntd)
+                        const novaQuantidade = estoqueMP.quantidade - qntdMinima;
+                        const novaQntdPorVersao = versao.vrQntd - qntdMinima
+                        if (novaQuantidade > 0) {
+                            versao.vrQntd = novaQntdPorVersao;
+                        } else {
+                            versao.vrQntd = 0
+                        }
 
-    // async function removedStock(values: EntregaModel) {
-    //     values.cliente?.produtos.forEach(produto => {
-    //         const estoqueMP = dataTableEstoque.find(estoque => estoque.nmProduto === produto.nmProduto);
-    //         if (estoqueMP) {
-    //             const listVersaoComQntd: Versao[] = [...estoqueMP.versaos];
-    //             const versoesOrdenadas = estoqueMP.versaos.sort((a, b) => a.versao - b.versao);
+                        estoqueMP.quantidade = novaQuantidade
+                        quantidades[produto.nmProduto] -= qntdMinima;
+                    }
+                })
+                await updateRemovedStock({
+                    nmProduto: estoqueMP.nmProduto,
+                    cdProduto: estoqueMP.cdProduto,
+                    quantidade: estoqueMP.quantidade,
+                    tpProduto: estoqueMP.tpProduto,
+                    qntMinima: estoqueMP.qntMinima,
+                    versaos: listVersaoComQntd,
+                });
+            }
 
-    //             versoesOrdenadas.forEach(versao => {
-    //                 if (values.quantidades > 0) {
-    //                     const qntdMinima = Math.min(values.quantidades, versao.vrQntd)
-    //                     const novaQuantidade = estoqueMP.quantidade - qntdMinima;
-    //                     const novaQntdPorVersao = versao.vrQntd - qntdMinima
-    //                     if (novaQuantidade > 0) {
-    //                         versao.vrQntd = novaQntdPorVersao;
-    //                     } else {
-    //                         versao.vrQntd = 0
-    //                     }
+        })
 
-    //                     estoqueMP.quantidade = novaQuantidade
-    //                     values.quantidades -= qntdMinima;
-    //                 }
-    //             })
-    //             await updateRemovedStock({
-    //                 nmProduto: estoqueMP.nmProduto,
-    //                 cdProduto: estoqueMP.cdProduto,
-    //                 quantidade: estoqueMP.quantidade,
-    //                 tpProduto: estoqueMP.tpProduto,
-    //                 qntMinima: estoqueMP.qntMinima,
-    //                 versaos: listVersaoComQntd,
-    //             });
-    //         }
-
-    //     })
-    // }
+    }
 
     //enviando formulario
     async function hundleSubmitForm() {
-        // removedStock(values)
+        removedStock()
         await addDoc(collection(db, "Entregas"), {
             ...values,
             quantidades: quantidades
@@ -202,36 +208,34 @@ export default function Entregas() {
         } else {
             cleanState()
             const clienteSelecionado = value;
-            const clienteEncontrado = dataTableCliente.filter(cliente => cliente.nmCliente === clienteSelecionado.nmCliente)
-            setClienteCurrent(clienteEncontrado)
-            setFieldValue('cliente.nmCliente', clienteSelecionado.nmCliente)
-
+            const clienteEncontrado = dataTableCliente.find(cliente => cliente.nmCliente === clienteSelecionado.nmCliente)
+            if (clienteEncontrado) {
+                setClienteCurrent(clienteEncontrado)
+                setFieldValue('cliente.nmCliente', clienteSelecionado.nmCliente)
+            }
         }
     }
 
     //fazendo a soma dos lucros e do valor total
     useEffect(() => {
+        if (!clienteCurrent) return;
         //calculando o Total da entrega
-        const result = clienteCurrent.flatMap((cliente) =>
-            cliente.produtos.map((produto) => {
-                const quantidade = quantidades[produto.nmProduto] ?? 0;
-                const valor = Number(produto.vlVendaProduto.match(/\d+/g)?.join('.'));
-                const total = quantidade * valor;
-                produto.valorItem = total;
-                return total;
-            })
-        );
+        const result = clienteCurrent.produtos.map((produto) => {
+            const quantidade = quantidades[produto.nmProduto] ?? 0;
+            const valor = produto.vlVendaProduto;
+            const total = quantidade * valor;
+            produto.valorItem = total;
+            return total;
+        })
         //calculando o lucro
-        const resultLucro = clienteCurrent.flatMap((cliente) =>
-            cliente.produtos.map((produto) => {
-                const quantidade = quantidades[produto.nmProduto] ?? 0;
-                const valorPago = produto.vlUnitario
-                const valorVenda = Number(produto.vlVendaProduto.match(/\d+/g)?.join('.'));
-                const totalLucro = valorVenda - valorPago;
-                const total = totalLucro * quantidade;
-                return total;
-            })
-        );
+        const resultLucro = clienteCurrent.produtos.map((produto) => {
+            const quantidade = quantidades[produto.nmProduto] ?? 0;
+            const valorPago = produto.vlUnitario;
+            const valorVenda = produto.vlVendaProduto;
+            const totalLucro = valorVenda - valorPago;
+            const total = totalLucro * quantidade;
+            return total;
+        })
 
         //somando todos os valores de total da entrega
         const sum = result.reduce((total, number) => total + number, 0);
@@ -336,47 +340,45 @@ export default function Entregas() {
                         </DivColumnQntTotal>
                     </BoxLabels>
                     <ContainerTableCliente isVisible={values.cliente?.nmCliente ? false : true} ref={ref}>
-                        {clienteCurrent.map(cliente => (
+                        {clienteCurrent && clienteCurrent.produtos.map((produto) => (
                             <>
-                                {cliente.produtos.map((produto) => (
-                                    <DivProduto key={produto.nmProduto}>
-                                        <NameProduto>
-                                            <TextTable>{produto.nmProduto}</TextTable>
-                                        </NameProduto>
-                                        <ValueProduto>
-                                            <TextTable>{produto.vlVendaProduto}</TextTable>
-                                        </ValueProduto>
-                                        <QntProduto>
-                                            <Input
-                                                key={`qnt-${key}`}
-                                                error=""
-                                                label="Quantidade"
-                                                name={`quantidades.${produto.nmProduto}`}
-                                                onChange={(e) => {
-                                                    const value = Number(e.target.value);
-                                                    setQuantidades((prevQuantidades) => ({
-                                                        ...prevQuantidades,
-                                                        [produto.nmProduto]: value,
-                                                    }));
-                                                }}
-                                                value={quantidades[produto.nmProduto] ?? ''}
-                                                style={{ paddingBottom: 0 }}
-                                                styleLabel={{ fontSize: '0.9rem' }}
-                                                styleDiv={{ paddingTop: 8, marginTop: '2px' }}
-                                            />
-                                        </QntProduto>
-                                        <ResultProduto>
-                                            <TextTable>R$ {produto.valorItem?.toFixed(2).replace('.', ',')}</TextTable>
-                                        </ResultProduto>
-                                    </DivProduto>
-                                ))}
+                                <DivProduto key={produto.nmProduto}>
+                                    <NameProduto>
+                                        <TextTable>{produto.nmProduto}</TextTable>
+                                    </NameProduto>
+                                    <ValueProduto>
+                                        <TextTable>{formatBrazilianCurrencyTable(produto.vlVendaProduto)}</TextTable>
+                                    </ValueProduto>
+                                    <QntProduto>
+                                        <Input
+                                            key={`qnt-${key}`}
+                                            error=""
+                                            label="Quantidade"
+                                            name={`quantidades.${produto.nmProduto}`}
+                                            onChange={(e) => {
+                                                const value = Number(e.target.value);
+                                                setQuantidades((prevQuantidades) => ({
+                                                    ...prevQuantidades,
+                                                    [produto.nmProduto]: value,
+                                                }));
+                                            }}
+                                            value={quantidades[produto.nmProduto] ?? ''}
+                                            style={{ paddingBottom: 0 }}
+                                            styleLabel={{ fontSize: '0.9rem' }}
+                                            styleDiv={{ paddingTop: 8, marginTop: '2px' }}
+                                        />
+                                    </QntProduto>
+                                    <ResultProduto>
+                                        <TextTable>R$ {produto.valorItem?.toFixed(2).replace('.', ',')}</TextTable>
+                                    </ResultProduto>
+                                </DivProduto>
                             </>
                         ))}
                     </ContainerTableCliente>
                     {shouldShow &&
                         <NotaFiscal
                             values={values}
-                            clienteCurrent={clienteCurrent}
+                            clienteCurrent={clienteCurrent as ClienteModel}
                             setShouldShow={setShouldShow}
                         />}
                     <DivButtons>
@@ -407,15 +409,15 @@ export default function Entregas() {
                 columns={[
                     { label: 'Nome', name: 'cliente.nmCliente' },
                     { label: 'Data Entrega', name: 'dtEntrega' },
-                    { label: 'Valor Total', name: 'vlEntrega' },
-                    { label: 'Lucro', name: 'vlLucro' },
+                    { label: 'Valor Total', name: 'vlEntrega', isCurrency: true },
+                    { label: 'Lucro', name: 'vlLucro', isCurrency: true },
                 ]}
                 data={dataTableEntregas}
                 isLoading={loading}
                 onSelectedRow={setSelected}
                 isVisibleEdit
                 onDelete={handleDeleteRow}
-                isDisabled={selected ? false : true}
+                isdisabled={selected ? false : true}
             />
         </Box>
     );

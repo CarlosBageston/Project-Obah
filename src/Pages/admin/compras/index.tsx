@@ -30,6 +30,7 @@ import {
     ContainerButton,
 } from './style'
 import { BoxTitleDefault } from "../estoque/style";
+import useFormatCurrency from '../../../hooks/formatCurrency';
 
 
 const objClean: ComprasModel = {
@@ -55,6 +56,9 @@ export default function AtualizarEstoque() {
     const [selectAutoComplete, setSelectAutoComplete] = useState<boolean>(false);
     const [selected, setSelected] = useState<ComprasModel | undefined>();
     const [isEdit, setIsEdit] = useState<boolean>(false);
+
+    const { convertToNumber, formatBrazilianCurrency } = useFormatCurrency()
+
     const inputsConfig: InputConfig[] = [
         { label: 'Nome Do Produto', propertyName: 'nmProduto' },
         { label: 'Código do Produto', propertyName: 'cdProduto' },
@@ -381,7 +385,13 @@ export default function AtualizarEstoque() {
     //enviando formulario
     async function handleSubmitForm() {
         const newNrOrdem = values.nrOrdem || values.nrOrdem === 0 ? values.nrOrdem + 1 : 0;
-        const valuesUpdate: ComprasModel = { ...values, nrOrdem: newNrOrdem, vlUnitario: parseFloat(values.vlUnitario.toString().replace(',', '.')) };
+        const valuesUpdate: ComprasModel = {
+            ...values,
+            nrOrdem: newNrOrdem,
+            vlUnitario: convertToNumber(values.vlUnitario.toString()),
+            totalPago: values.totalPago && convertToNumber(values.totalPago?.toString())
+        };
+
         try {
             if (valuesUpdate.tpProduto === SituacaoProduto.COMPRADO) {
                 const produtosEncontrado: ProdutosModel[] = [];
@@ -442,9 +452,9 @@ export default function AtualizarEstoque() {
                 } as ComprasModel | undefined));
             }
         } else {
-            const multiplication = values.quantidade * parseFloat(values.vlUnitario.toString().replace(',', '.'))
+            const multiplication = values.quantidade * convertToNumber(values.vlUnitario.toString())
             if (!isNaN(multiplication)) {
-                setFieldValue('totalPago', parseFloat(multiplication.toFixed(2)))
+                setFieldValue('totalPago', formatBrazilianCurrency(multiplication.toString()))
             } else {
                 setFieldValue('totalPago', 0)
             }
@@ -486,7 +496,7 @@ export default function AtualizarEstoque() {
             setSelectAutoComplete(true);
             setFieldValue('nrOrdem', newValue.nrOrdem);
             setFieldValue('cdProduto', newValue.cdProduto);
-            setFieldValue('vlUnitario', newValue.vlUnitario);
+            setFieldValue('vlUnitario', formatBrazilianCurrency(newValue.vlUnitario.toString()));
             setFieldValue('qntMinima', newValue.qntMinima);
             setFieldValue('nmProduto', newValue.nmProduto);
             if (newValue.cxProduto) {
@@ -539,7 +549,7 @@ export default function AtualizarEstoque() {
                         )}
                     </FormControl>
                     <Autocomplete
-                        options={useUniqueNames(dataTable, produtoDataTable, values.tpProduto, values.tpProduto)}
+                        options={useUniqueNames(dataTable, values.tpProduto, values.tpProduto)}
                         getOptionLabel={(option) => option.nmProduto || ""}
                         onChange={(e, newValue, reason) => handleAutoComplete(newValue, reason)}
                         disabled={values.tpProduto === null}
@@ -597,13 +607,10 @@ export default function AtualizarEstoque() {
                         label="Valor Unitário"
                         onBlur={handleBlur}
                         name="vlUnitario"
-                        value={values.vlUnitario ? `R$ ${values.vlUnitario.toString().replace('.', ',')}` : ''}
+                        value={values.vlUnitario ? values.vlUnitario : ''}
                         disabled={values.tpProduto === SituacaoProduto.FABRICADO}
                         maxLength={9}
-                        onChange={e => {
-                            const inputValue = e.target.value.replace(/[^\d.,-]/g, '');
-                            setFieldValue(e.target.name, inputValue.replace(',', '.'));
-                        }}
+                        onChange={e => setFieldValue(e.target.name, formatBrazilianCurrency(e.target.value))}
                         error={touched.vlUnitario && errors.vlUnitario ? errors.vlUnitario : ''}
                         raisedLabel={selectAutoComplete || values.vlUnitario ? true : false}
                     />
@@ -652,11 +659,11 @@ export default function AtualizarEstoque() {
                         onBlur={handleBlur}
                         disabled
                         name="totalPago"
-                        value={values.totalPago ? `R$ ${values.totalPago.toFixed(2).replace('.', ',')}` : ''}
+                        value={values.totalPago && values.totalPago.toString() !== 'R$ 0,00' ? values.totalPago : ''}
                         onChange={() => { }}
                         maxLength={9}
                         error={''}
-                        raisedLabel={values.totalPago ? true : false}
+                        raisedLabel={values.totalPago && values.totalPago.toString() !== 'R$ 0,00' ? true : false}
                     />
                 </DivInput>
             </ContainerInputs>
@@ -707,15 +714,15 @@ export default function AtualizarEstoque() {
                     { label: 'Código', name: 'cdProduto' },
                     { label: 'Nome', name: 'nmProduto' },
                     { label: 'Data', name: 'dtCompra' },
-                    { label: 'Valor', name: 'vlUnitario' },
+                    { label: 'Valor', name: 'vlUnitario', isCurrency: true },
                     { label: 'Quantidade', name: 'quantidade' },
                     { label: 'Quantidade na Caixa', name: 'cxProduto' },
                     { label: 'Quantidade KG', name: 'kgProduto' },
-                    { label: 'Valor Total', name: 'totalPago' }
+                    { label: 'Valor Total', name: 'totalPago', isCurrency: true }
                 ]}
                 data={dataTable}
                 isLoading={loading}
-                isDisabled={selected ? false : true}
+                isdisabled={selected ? false : true}
                 onSelectedRow={setSelected}
                 onEdit={() => {
                     if (selected) {

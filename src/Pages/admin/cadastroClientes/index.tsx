@@ -25,6 +25,7 @@ import {
     TitleDefault,
 } from './style';
 import { BoxTitleDefault } from '../estoque/style';
+import useFormatCurrency from '../../../hooks/formatCurrency';
 
 
 const objClean: ClienteModel = {
@@ -44,6 +45,8 @@ export default function CadastroCliente() {
     const [isVisibleTpProuto, setIsVisibleTpProduto] = useState<boolean>(false)
     const [isEdit, setIsEdit] = useState<boolean>(false);
     const [selected, setSelected] = useState<ClienteModel>();
+
+    const { convertToNumber } = useFormatCurrency();
 
     const [initialValues, setInitialValues] = useState<ClienteModel>({ ...objClean });
     const inputsConfig = [
@@ -137,6 +140,9 @@ export default function CadastroCliente() {
 
     //envia informações para o banco
     async function hundleSubmitForm() {
+        values.produtos.forEach((produto) => {
+            produto.vlVendaProduto = convertToNumber(produto.vlVendaProduto.toString())
+        })
         await addDoc(collection(db, "Clientes"), {
             ...values
         }).then(() => {
@@ -297,7 +303,7 @@ export default function CadastroCliente() {
                         }
                     }}
                     onDelete={handleDeleteRow}
-                    isDisabled={selected ? false : true}
+                    isdisabled={selected ? false : true}
                 />
             </Box>
         </>

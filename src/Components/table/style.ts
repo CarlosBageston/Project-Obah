@@ -50,35 +50,35 @@ position: relative;
 margin-left: 91%;
 margin-top: 20px;
 `;
-export const Button = styled.button<{isDisabled?: boolean; isVisibledDelete?: boolean}>`
+export const Button = styled.button<{isdisabled?: boolean; isVisibledDelete?: boolean}>`
 display: ${props => props.isVisibledDelete ? 'none' : 'flex'};
 width: 2.8rem;
 height: 2.8rem;
 justify-content: center;
 align-items: center;
 position: absolute;
-background-color: ${props => props.isDisabled ? '#e0e0e0' : '#f06a61'};
+background-color: ${props => props.isdisabled ? '#e0e0e0' : '#f06a61'};
 border-radius: 6px;
 margin-top: -24px;
-border: ${props => props.isDisabled ? '1px solid #b5b5b5' : '1px solid red' } ;
+border: ${props => props.isdisabled ? '1px solid #b5b5b5' : '1px solid red' } ;
 box-shadow:2px 2px 2px 2px #00000222;
-cursor: ${props => props.isDisabled ? 'default' : 'pointer'};
+cursor: ${props => props.isdisabled ? 'default' : 'pointer'};
 &:hover {
-  transform: ${props => props.isDisabled ?' scale(1)' : 'scale(0.9)'}
+  transform: ${props => props.isdisabled ?' scale(1)' : 'scale(0.9)'}
 }
 `;
-export const ButtonEdit = styled(Button)<{isDisabled?: boolean; isVisibleEdit?: boolean}>`
+export const ButtonEdit = styled(Button)<{isdisabled?: boolean; isVisibleEdit?: boolean}>`
 display: ${props => props.isVisibleEdit ? 'none' : 'block'};
 margin-left: -60px;
-background-color: ${props => props.isDisabled ? '#e0e0e0' : '#8585ff'};
-border: ${props => props.isDisabled ? '1px solid #b5b5b5' : '1px solid blue' } ;
+background-color: ${props => props.isdisabled ? '#e0e0e0' : '#8585ff'};
+border: ${props => props.isdisabled ? '1px solid #b5b5b5' : '1px solid blue' } ;
 `;
 
-export const BsTrashStyled = styled(BsTrash)<{isDisabled?: boolean}>`
-color: ${props => props.isDisabled ? "#8f8d8d" : 'black'};
+export const BsTrashStyled = styled(BsTrash)<{isdisabled?: boolean}>`
+color: ${props => props.isdisabled ? "#8f8d8d" : 'black'};
 font-size: 22px;
 `;
-export const FiEditStyled = styled(FiEdit)<{isDisabled?: boolean}>`
-color: ${props => props.isDisabled ? "#8f8d8d" : 'black'};
+export const FiEditStyled = styled(FiEdit)<{isdisabled?: boolean}>`
+color: ${props => props.isdisabled ? "#8f8d8d" : 'black'};
 font-size: 22px;
 `;

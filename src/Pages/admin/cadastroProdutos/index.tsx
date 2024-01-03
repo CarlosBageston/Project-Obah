@@ -26,13 +26,14 @@ import {
     ContainerButton,
     DivSituacaoProduto,
 } from './style';
+import useFormatCurrency from '../../../hooks/formatCurrency';
 
 
 const objClean: ProdutoModel = {
     cdProduto: '',
     nmProduto: '',
     vlUnitario: 0,
-    vlVendaProduto: '',
+    vlVendaProduto: 0,
     tpProduto: null,
     stEntrega: false,
     mpFabricado: []
@@ -46,6 +47,8 @@ export default function CadastroProduto() {
     const [isVisibleTpProuto, setIsVisibleTpProduto] = useState<boolean>(false);
     const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
     const [initialValues, setInitialValues] = useState<ProdutoModel>({ ...objClean });
+
+    const { convertToNumber, formatBrazilianCurrency } = useFormatCurrency();
 
     const inputsConfig = [
         { label: 'Nome', propertyName: 'nmProduto' },
@@ -86,25 +89,12 @@ export default function CadastroProduto() {
         onSubmit: handleSubmitForm,
     });
 
-    //Formata valor do input
-    function formatarValor(valor: string) {
-        const inputText = valor.replace(/\D/g, "");
-        let formattedText = "";
-        if (inputText.length <= 2) {
-            formattedText = inputText;
-        } else {
-            const regex = /^(\d*)(\d{2})$/;
-            formattedText = inputText.replace(regex, '$1,$2');
-        }
-        return inputText ? "R$ " + formattedText : "";
-    }
-
     function cleanState() {
         setInitialValues({
             cdProduto: '',
             nmProduto: '',
             vlUnitario: 0,
-            vlVendaProduto: '',
+            vlVendaProduto: 0,
             tpProduto: null,
             stEntrega: false,
             mpFabricado: []
@@ -115,6 +105,8 @@ export default function CadastroProduto() {
     //enviando formulario
     async function handleSubmitForm() {
         const valuesUpdate = { ...values, nrOrdem: 0 };
+        valuesUpdate.vlVendaProduto = convertToNumber(valuesUpdate.vlVendaProduto.toString())
+        valuesUpdate.vlUnitario = convertToNumber(valuesUpdate.vlUnitario.toString())
 
         await addDoc(collection(db, "Produtos"), {
             ...valuesUpdate
@@ -179,7 +171,7 @@ export default function CadastroProduto() {
             } as ProdutoModel | undefined));
         } else {
             somaFormat = calculateTotalValue(values.mpFabricado, comprasDataTable);
-            setFieldValue('vlUnitario', parseFloat(somaFormat.toFixed(2)));
+            setFieldValue('vlUnitario', formatBrazilianCurrency(somaFormat.toString()));
         }
     }, [comprasDataTable, values.mpFabricado, isVisibleTpProuto, selected?.mpFabricado]);
 
@@ -266,8 +258,8 @@ export default function CadastroProduto() {
                         label="Valor Venda"
                         onBlur={handleBlur}
                         name="vlVendaProduto"
-                        value={values.vlVendaProduto}
-                        onChange={e => setFieldValue(e.target.name, formatarValor(e.target.value))}
+                        value={values.vlVendaProduto ? values.vlVendaProduto : ''}
+                        onChange={e => setFieldValue(e.target.name, formatBrazilianCurrency(e.target.value))}
                         error={touched.vlVendaProduto && errors.vlVendaProduto ? errors.vlVendaProduto : ''}
                         styleDiv={{ marginTop: 4 }}
                         style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
@@ -279,8 +271,8 @@ export default function CadastroProduto() {
                         name="vlUnitario"
                         disabled={values.tpProduto === SituacaoProduto.FABRICADO}
                         raisedLabel={values.tpProduto === SituacaoProduto.FABRICADO}
-                        value={values.vlUnitario ? values.vlUnitario : ''}
-                        onChange={e => setFieldValue(e.target.name, formatarValor(e.target.value))}
+                        value={values.vlUnitario && values.vlUnitario.toString() !== "R$ 0,00" ? values.vlUnitario : ''}
+                        onChange={e => setFieldValue(e.target.name, formatBrazilianCurrency(e.target.value))}
                         error={touched.vlUnitario && errors.vlUnitario ? errors.vlUnitario : ''}
                         styleDiv={{ marginTop: 4 }}
                         style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
@@ -290,7 +282,7 @@ export default function CadastroProduto() {
             {/*Adicionando Produto */}
             <IsAdding
                 addingScreen="Produto"
-                data={useUniqueNames(comprasDataTable, dataTable, values.tpProduto, SituacaoProduto.COMPRADO)}
+                data={useUniqueNames(comprasDataTable, values.tpProduto, SituacaoProduto.COMPRADO)}
                 isAdding={isVisibleTpProuto}
                 products={values.mpFabricado}
                 setFieldValue={setFieldValue}
@@ -309,7 +301,7 @@ export default function CadastroProduto() {
                 isEdit={isEdit}
                 products={selected ? selected.mpFabricado : []}
                 setIsEdit={setIsEdit}
-                newData={useUniqueNames(comprasDataTable, dataTable, values.tpProduto, SituacaoProduto.COMPRADO, isEdit)}
+                newData={useUniqueNames(comprasDataTable, values.tpProduto, SituacaoProduto.COMPRADO, isEdit)}
             />
             <ContainerButton>
                 <Button
@@ -333,12 +325,12 @@ export default function CadastroProduto() {
                 columns={[
                     { label: 'Código', name: 'cdProduto' },
                     { label: 'Nome', name: 'nmProduto' },
-                    { label: 'Valor Venda', name: 'vlVendaProduto' },
-                    { label: 'Valor Pago', name: 'vlUnitario' },
+                    { label: 'Valor Venda', name: 'vlVendaProduto', isCurrency: true },
+                    { label: 'Valor Pago', name: 'vlUnitario', isCurrency: true },
                 ]}
                 data={dataTable}
                 isLoading={loading}
-                isDisabled={selected ? false : true}
+                isdisabled={selected ? false : true}
                 onSelectedRow={setSelected}
                 onEdit={() => {
                     if (selected) {

@@ -7,6 +7,7 @@ import SituacaoProduto from "../../enumeration/situacaoProduto";
 import { BoxClose, ButtonStyled, ContainerFlutuante, ContianerMP, DivClose, DivLineMP, Paragrafo, StyledAiOutlineClose } from "../isEdit/style";
 import ProdutosModel from "../../Pages/admin/cadastroProdutos/model/produtos";
 import GetData from "../../firebase/getData";
+import useFormatCurrency from "../../hooks/formatCurrency";
 
 interface IsAddingProps {
     isAdding: boolean;
@@ -47,6 +48,7 @@ export function IsAdding({ data, isAdding, setFieldValue, setIsVisibleTpProduto,
         dataTable,
     } = GetData('Produtos', true) as { dataTable: ProdutosModel[] };
 
+    const { formatBrazilianCurrency } = useFormatCurrency();
 
     useEffect(() => {
         if (addingScreen === 'Cliente') {
@@ -69,7 +71,10 @@ export function IsAdding({ data, isAdding, setFieldValue, setIsVisibleTpProduto,
 
 
     //essa e a logica da tela de Cliente
-    const handleChangeCliente = (e: React.SyntheticEvent<Element, Event>, value: any[]) => {
+    const handleChangeCliente = (e: React.SyntheticEvent<Element, Event>, value: ProdutosModel[]) => {
+        value.forEach(produto => {
+            produto.vlVendaProduto = 0
+        })
         setFieldValue('produtos', value);
     }
 
@@ -93,7 +98,7 @@ export function IsAdding({ data, isAdding, setFieldValue, setIsVisibleTpProduto,
     const handleChangeProdutoCliente = (e: React.ChangeEvent<HTMLInputElement>, produto: any) => {
         const newMpFabricado = [...products];
         const index = newMpFabricado.findIndex((item) => item.nmProduto === produto.nmProduto);
-        newMpFabricado[index].vlVendaProduto = e.target.value;
+        newMpFabricado[index].vlVendaProduto = formatBrazilianCurrency(e.target.value)
         setFieldValue("produtos", newMpFabricado);
     }
 
@@ -164,28 +169,27 @@ export function IsAdding({ data, isAdding, setFieldValue, setIsVisibleTpProduto,
                     <ContianerMP>
                         {products &&
                             products.map((produto: any) => (
-                                <>
-                                    <ul>
-                                        <DivLineMP>
-                                            <div style={{ width: '18rem' }}>
-                                                <li>{produto.nmProduto}</li>
-                                            </div>
-                                            <div>
-                                                <Input
-                                                    error=""
-                                                    label={addingScreen === 'Cliente' ? "Valor do produto" : "Quantidade"}
-                                                    name={produto.nmProduto}
-                                                    onChange={(e) => { addingScreen === 'Cliente' ? handleChangeProdutoCliente(e, produto) : handleChangeMpProduto(e, produto) }}
-                                                    value={addingScreen === 'Cliente' ? produto.vlVendaProduto : produto.quantidade}
-                                                    raisedLabel
-                                                    style={{ fontSize: '1rem' }}
-                                                    styleLabel={{ marginTop: '-20px' }}
-                                                    styleDiv={{ margin: '0', padding: 0 }}
-                                                />
-                                            </div>
-                                        </DivLineMP>
-                                    </ul>
-                                </>
+                                <ul key={produto.id}>
+                                    <DivLineMP>
+                                        <div style={{ width: '18rem' }}>
+                                            <li>{produto.nmProduto}</li>
+                                        </div>
+                                        <div>
+                                            <Input
+                                                key={produto.id}
+                                                error=""
+                                                label={addingScreen === 'Cliente' ? "Valor do produto" : "Quantidade"}
+                                                name={produto.nmProduto}
+                                                onChange={(e) => { addingScreen === 'Cliente' ? handleChangeProdutoCliente(e, produto) : handleChangeMpProduto(e, produto) }}
+                                                value={addingScreen === 'Cliente' ? (produto.vlVendaProduto !== 0 ? produto.vlVendaProduto : '') : produto.quantidade}
+                                                raisedLabel
+                                                style={{ fontSize: '1rem' }}
+                                                styleLabel={{ marginTop: '-20px' }}
+                                                styleDiv={{ margin: '0', padding: 0 }}
+                                            />
+                                        </div>
+                                    </DivLineMP>
+                                </ul>
                             ))}
                     </ContianerMP>
                     <div>

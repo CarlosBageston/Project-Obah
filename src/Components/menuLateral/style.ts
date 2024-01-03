@@ -160,10 +160,10 @@ cursor: pointer;
 }
 `;
 
-export const Icon = styled(IoIosArrowUp)<{openSubOpcao: boolean}>`
+export const Icon = styled(IoIosArrowUp)<{ opensubopcao: string }>`
   font-size: 25px;
   color: #ffff;
-  transform: ${({ openSubOpcao }) => (openSubOpcao ? 'rotate(180deg)' : 'none')};
+  transform: ${({ opensubopcao }) => (opensubopcao === 'true' ? 'rotate(180deg)' : 'none')};
   transition: transform 0.3s linear;
 
   ${StyledListItemButton}:hover & {

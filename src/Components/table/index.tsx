@@ -10,10 +10,12 @@ import {
     BsTrashStyled,
     FiEditStyled
 } from './style';
+import useFormatCurrency from '../../hooks/formatCurrency';
 
 type TableColumn = {
     name: string;
     label: string;
+    isCurrency?: boolean
 };
 
 type TableProps = {
@@ -25,7 +27,7 @@ type TableProps = {
     onSelectedRow?: (row: any) => void;
     onEdit?: (row: any) => void;
     onDelete?: (row: any) => void;
-    isDisabled?: boolean;
+    isdisabled?: boolean;
     isVisibleEdit?: boolean;
     isVisibledDelete?: boolean;
 };
@@ -41,15 +43,17 @@ type TableProps = {
  * @param onSelectedRow - Função chamada ao selecionar uma linha da tabela.
  * @param onDelete - Função chamada ao excluir uma linha da tabela.
  * @param onEdit - Função chamada ao editar uma linha da tabela.
- * @param isDisabled - Indica se os botões de excluir e editar estão desabilitados.
+ * @param isdisabled - Indica se os botões de excluir e editar estão desabilitados.
  * @param isVisibleEdit - Indica se o botão de editar está visível.
  * @param isVisibledDelete - Indica se o botão de excluir está visível.
  * 
  * @returns O componente da tabela genérica.
  */
 
-const GenericTable = ({ columns, data, isLoading, error, styleDiv, onSelectedRow, onDelete, onEdit, isDisabled, isVisibleEdit, isVisibledDelete }: TableProps) => {
+const GenericTable = ({ columns, data, isLoading, error, styleDiv, onSelectedRow, onDelete, onEdit, isdisabled: isdisabled, isVisibleEdit, isVisibledDelete }: TableProps) => {
     const [selectedRowId, setSelectedRowId] = useState<string | undefined>(undefined);
+
+    const { formatBrazilianCurrencyTable } = useFormatCurrency();
 
     const handleRowClick = (rowId: string, row: any) => {
         if (typeof onSelectedRow === 'function') {
@@ -69,11 +73,11 @@ const GenericTable = ({ columns, data, isLoading, error, styleDiv, onSelectedRow
     return (
         <>
             <ContainerButtons>
-                <Button onClick={() => onDelete?.(onSelectedRow)} isDisabled={isDisabled} isVisibledDelete={isVisibledDelete} >
-                    <BsTrashStyled isDisabled={isDisabled} />
+                <Button onClick={() => onDelete?.(onSelectedRow)} isdisabled={isdisabled} isVisibledDelete={isVisibledDelete} >
+                    <BsTrashStyled isdisabled={isdisabled} />
                 </Button>
-                <ButtonEdit onClick={() => onEdit?.(onSelectedRow)} isDisabled={isDisabled} isVisibleEdit={isVisibleEdit} >
-                    <FiEditStyled isDisabled={isDisabled} />
+                <ButtonEdit onClick={() => onEdit?.(onSelectedRow)} isdisabled={isdisabled} isVisibleEdit={isVisibleEdit} >
+                    <FiEditStyled isdisabled={isdisabled} />
                 </ButtonEdit>
             </ContainerButtons>
             <ContainerTable style={styleDiv}>
@@ -100,7 +104,10 @@ const GenericTable = ({ columns, data, isLoading, error, styleDiv, onSelectedRow
                                     >
                                         {columns.map((column) => (
                                             <StyledTableCell key={column.name}>
-                                                {column.name.split('.').reduce((obj, key) => obj?.[key], row)}
+                                                {column.isCurrency // ta errado isso aqui, ta formatando errado.
+                                                    ? formatBrazilianCurrencyTable(column.name.split('.').reduce((obj, key) => obj?.[key], row))
+                                                    : column.name.split('.').reduce((obj, key) => obj?.[key], row)
+                                                }
                                             </StyledTableCell>
                                         ))}
                                     </StyledTableRow>

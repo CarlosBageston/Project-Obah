@@ -7,7 +7,14 @@ import ClienteModel from "../Pages/admin/cadastroClientes/model/cliente";
 import { ProdutoEscaniado } from "../Pages/admin/vendas/model/vendas";
 import { Dispatch, SetStateAction } from "react";
 
-
+/**
+ * Hook personalizado para manipulação de estoque.
+ *
+ * Este hook fornece métodos para atualizar o estoque com base em diversas operações,
+ * como remoção de produtos por entrega, venda, ou compras.
+ *
+ * @returns {Object} - Métodos relacionados à manipulação de estoque.
+ */
 export default function useEstoque(){
     const {
         dataTable: dataTableEstoque,
@@ -17,6 +24,11 @@ export default function useEstoque(){
         dataTable: dataTableCompras,
     } = GetData('Compras', true) as { dataTable: ComprasModel[] };
 
+    /**
+     * Atualiza o estoque removendo a quantidade especificada.
+     *
+     * @param {EstoqueModel} estoque - Objeto representando o estoque a ser atualizado.
+     */
     async function updateRemovedStock(estoque: EstoqueModel) {
         const estoqueExistente = dataTableEstoque.find(
             estoques => estoques.nmProduto === estoque.nmProduto
@@ -46,6 +58,13 @@ export default function useEstoque(){
             })
         }
     }
+
+    /**
+     * Atualiza o estoque removendo a quantidade especificada após uma entrega.
+     *
+     * @param {ClienteModel | undefined} clienteCurrent - Cliente atual.
+     * @param {Object} quantidades - Quantidades a serem removidas do estoque.
+     */
     async function removedStockEntrega(clienteCurrent: ClienteModel | undefined, quantidades:{ [key: string]: number }) {
         if (!clienteCurrent) return;
         clienteCurrent.produtos.forEach(async produto => {
@@ -81,6 +100,12 @@ export default function useEstoque(){
         })
 
     }
+
+    /**
+     * Atualiza o estoque removendo a quantidade especificada após uma venda.
+     *
+     * @param {ProdutoEscaniado[]} produtoEscaniado - Produtos escaneados na venda.
+     */
     async function removedStockVenda(produtoEscaniado: ProdutoEscaniado[]) {
         if (!produtoEscaniado) return;
         produtoEscaniado.forEach(async produto => {
@@ -115,6 +140,15 @@ export default function useEstoque(){
 
         })
     }
+
+     /**
+     * Atualiza o estoque removendo a quantidade utilizada em uma compra.
+     *
+     * @param {ComprasModel} values - Dados da compra.
+     * @param {Dispatch<SetStateAction<boolean>>} setOpenDialog - Função para abrir o diálogo.
+     * @param {Dispatch<SetStateAction<boolean>>} setEstoqueVazio - Função para sinalizar estoque vazio.
+     * @param {Dispatch<SetStateAction<string>>} setNmProduto - Função para definir o nome do produto.
+     */
     async function removedStockCompras(
         values: ComprasModel, 
         setOpenDialog: Dispatch<SetStateAction<boolean>>, 

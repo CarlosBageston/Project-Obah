@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import ComprasModel from '../Pages/admin/compras/model/compras';
 import SituacaoProduto from '../enumeration/situacaoProduto';
+import ProdutosModel from '../Pages/admin/cadastroProdutos/model/produtos';
+import EstoqueModel from '../Pages/admin/estoque/model/estoque';
 
 /**
  * Hook personalizado para obter nomes únicos com base em determinados critérios.
@@ -20,15 +22,13 @@ export function useUniqueNames(
     dataTable: ComprasModel[], 
     tpProduto: SituacaoProduto | null, 
     optionTpProduto: SituacaoProduto | null,
+    dataTableProduto?: ProdutosModel[],
+    dataTableEstoque?: EstoqueModel[],
     isEdit?: boolean
     ) {
     const [uniqueNames, setUniqueNames] = useState<any[]>([]);
 
-    function filterDataByType(type: SituacaoProduto) {
-        return dataTable.filter((produto: ComprasModel) => produto.tpProduto === type);
-      }
-
-    function lastProduct(filterUniqueNames: (ComprasModel )[], names: string[]) {
+    function lastProduct(filterUniqueNames: (ComprasModel)[], names: string[]) {
         const maxProductsByUniqueNames = names.map((uniqueName: string) => {
             const filteredProducts = filterUniqueNames
                 .filter((prod) => prod.nmProduto === uniqueName && prod.nrOrdem !== undefined)
@@ -42,18 +42,81 @@ export function useUniqueNames(
         });
         return maxProductsByUniqueNames;
     }
-    useEffect(() => {
-        let filterUniqueNames: ComprasModel[] = [];
-    
-        if (optionTpProduto === SituacaoProduto.COMPRADO) {
-          filterUniqueNames = filterDataByType(SituacaoProduto.COMPRADO);
-        } else {
-          filterUniqueNames = filterDataByType(SituacaoProduto.FABRICADO);
+
+    function databaseSearch() {
+        const databaseCompras = dataTable.filter((produtos: ComprasModel) => produtos.tpProduto === SituacaoProduto.COMPRADO)
+        if(dataTableEstoque && optionTpProduto === SituacaoProduto.COMPRADO){
+            dataTableEstoque.forEach(stock => {
+                if(stock.quantidade === 0){
+                    const newCompra: ComprasModel ={
+                        cdProduto: stock.cdProduto,
+                        cxProduto: null,
+                        dtCompra: null,
+                        kgProduto: null,
+                        nmProduto: stock.nmProduto,
+                        qntMinima: stock.qntMinima,
+                        nrOrdem: 0,
+                        quantidade: 0,
+                        totalPago: null,
+                        tpProduto: stock.tpProduto,
+                        vlUnitario: 0
+                    } 
+                    databaseCompras.push(newCompra)
+                }
+            })
+            return databaseCompras;
         }
-    
-        const uniqueNames: string[] = Array.from(new Set(filterUniqueNames.map((produto: ComprasModel) => produto.nmProduto)));
-        const maxProductsByUniqueNames = lastProduct(filterUniqueNames, uniqueNames);
-        setUniqueNames(maxProductsByUniqueNames);
-      }, [tpProduto, isEdit, optionTpProduto]);
+        if (dataTableProduto && optionTpProduto === SituacaoProduto.FABRICADO) {
+            const arrayCompras: ComprasModel[] = [];
+        
+            dataTableProduto.forEach(produto => {
+                const matchingCompra = dataTable.find(compra => compra.nmProduto === produto.nmProduto);
+        
+                if (matchingCompra) {
+                    // Se houver correspondência, adiciona a compra existente ao array
+                    const newCompra = {...matchingCompra, mpFabricado: produto.mpFabricado}
+                    arrayCompras.push(newCompra);
+                } else {
+                    // Se não houver correspondência, cria um novo objeto ComprasModel com base no produto
+                    const newCompra: ComprasModel = {
+                        cdProduto: produto.cdProduto,
+                        cxProduto: null,
+                        dtCompra: null,
+                        kgProduto: null,
+                        nmProduto: produto.nmProduto,
+                        mpFabricado: produto.mpFabricado,
+                        qntMinima: null, // Preencha com o valor apropriado ou ajuste conforme necessário
+                        nrOrdem: produto.nrOrdem,
+                        quantidade: 0,
+                        totalPago: null,
+                        tpProduto: SituacaoProduto.FABRICADO,
+                        vlUnitario: produto.vlUnitario
+                    };
+                    arrayCompras.push(newCompra);
+                }
+            });
+        
+            return arrayCompras;
+        }
+    }
+
+    useEffect(() => {
+        if (optionTpProduto === SituacaoProduto.COMPRADO ) {
+            const filterUniqueNames = databaseSearch();
+            if(filterUniqueNames){
+                const uniqueNames: string[] = Array.from(new Set(filterUniqueNames.map((nome: ComprasModel) => nome.nmProduto)));
+                const maxProductsByUniqueNames = lastProduct(filterUniqueNames, uniqueNames);
+                setUniqueNames(maxProductsByUniqueNames);
+            }
+        } else {
+            const filterUniqueNames = databaseSearch()
+            if(filterUniqueNames){
+                const uniqueNames = Array.from(new Set(filterUniqueNames.map((nome: ComprasModel) => nome.nmProduto)));
+                const maxProductsByUniqueNames = lastProduct(filterUniqueNames, uniqueNames);
+                setUniqueNames(maxProductsByUniqueNames);
+            }
+        }
+        
+    }, [tpProduto, isEdit, optionTpProduto]);
     return uniqueNames;
 }

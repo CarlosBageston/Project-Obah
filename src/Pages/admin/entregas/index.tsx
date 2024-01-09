@@ -13,7 +13,7 @@ import React, { useState, useEffect, useRef } from "react";
 import ClienteModel from "../cadastroClientes/model/cliente";
 import formatDate from "../../../Components/masks/formatDate";
 import FormAlert from "../../../Components/FormAlert/formAlert";
-import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc } from "firebase/firestore";
 import { Autocomplete, AutocompleteChangeReason, TextField } from "@mui/material";
 
 import {
@@ -37,9 +37,8 @@ import {
     ContainerTableCliente,
 } from './style'
 import { BoxTitleDefault } from "../estoque/style";
-import EstoqueModel, { Versao } from '../estoque/model/estoque';
-import ComprasModel from '../compras/model/compras';
 import useFormatCurrency from '../../../hooks/formatCurrency';
+import useEstoque from '../../../hooks/useEstoque';
 
 
 const objClean: EntregaModel = {
@@ -59,7 +58,8 @@ export default function Entregas() {
     const [scrollActive, setScrollActive] = useState<boolean>(false)
     const [shouldShow, setShouldShow] = useState<boolean>(false);
 
-    const { formatBrazilianCurrencyTable } = useFormatCurrency();
+    const { NumberFormatForBrazilianCurrency } = useFormatCurrency();
+    const { removedStockEntrega } = useEstoque();
 
     const initialValues: EntregaModel = ({ ...objClean });
     const ref = useRef<HTMLDivElement>(null);
@@ -73,13 +73,6 @@ export default function Entregas() {
         setDataTable: setDataTableEntregas,
         loading
     } = GetData('Entregas', recarregue) as { dataTable: EntregaModel[], setDataTable: (data: EntregaModel[]) => void, loading: boolean };
-
-    const {
-        dataTable: dataTableEstoque,
-    } = GetData('Estoque', recarregue) as { dataTable: EstoqueModel[] };
-    const {
-        dataTable: dataTableCompras,
-    } = GetData('Compras', recarregue) as { dataTable: ComprasModel[] };
 
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<EntregaModel>({
         validateOnBlur: true,
@@ -116,74 +109,10 @@ export default function Entregas() {
         setQuantidades({})
         setKey(Math.random());
     }
-    async function updateRemovedStock(estoque: EstoqueModel) {
-        const estoqueExistente = dataTableEstoque.find(
-            estoques => estoques.nmProduto === estoque.nmProduto
-        );
-        if (estoqueExistente) {
-            const refID: string = estoqueExistente.id ?? '';
-            const refTable = doc(db, "Estoque", refID);
-            for (const versao of estoqueExistente.versaos) {
-                if (versao.vrQntd <= 0) {
-                    const compraCorrespondente = dataTableCompras.find(compra =>
-                        compra.nmProduto === estoqueExistente.nmProduto && compra.nrOrdem === versao.versao
-                    );
-                    if (compraCorrespondente && compraCorrespondente.id) {
-                        await deleteDoc(doc(db, "Compras", compraCorrespondente.id));
-                    }
-
-                }
-            }
-            const versoesValidas = estoque.versaos.filter(versao => versao.vrQntd > 0);
-            await updateDoc(refTable, {
-                nmProduto: estoque.nmProduto,
-                cdProduto: estoque.cdProduto,
-                quantidade: estoque.quantidade,
-                tpProduto: estoque.tpProduto,
-                qntMinima: estoque.qntMinima,
-                versaos: versoesValidas
-            })
-        }
-    }
-    async function removedStock() {
-        if (!clienteCurrent) return;
-        clienteCurrent.produtos.forEach(async produto => {
-            const estoqueMP = dataTableEstoque.find(estoque => estoque.nmProduto === produto.nmProduto);
-            if (estoqueMP) {
-                const listVersaoComQntd: Versao[] = [...estoqueMP.versaos];
-                const versoesOrdenadas = estoqueMP.versaos.sort((a, b) => a.versao - b.versao);
-                versoesOrdenadas.forEach(versao => {
-                    if (quantidades[produto.nmProduto] > 0) {
-                        const qntdMinima = Math.min(quantidades[produto.nmProduto], versao.vrQntd)
-                        const novaQuantidade = estoqueMP.quantidade - qntdMinima;
-                        const novaQntdPorVersao = versao.vrQntd - qntdMinima
-                        if (novaQuantidade > 0) {
-                            versao.vrQntd = novaQntdPorVersao;
-                        } else {
-                            versao.vrQntd = 0
-                        }
-
-                        estoqueMP.quantidade = novaQuantidade
-                        quantidades[produto.nmProduto] -= qntdMinima;
-                    }
-                })
-                await updateRemovedStock({
-                    nmProduto: estoqueMP.nmProduto,
-                    cdProduto: estoqueMP.cdProduto,
-                    quantidade: estoqueMP.quantidade,
-                    tpProduto: estoqueMP.tpProduto,
-                    qntMinima: estoqueMP.qntMinima,
-                    versaos: listVersaoComQntd,
-                });
-            }
-
-        })
-
-    }
 
     //enviando formulario
     async function hundleSubmitForm() {
-        removedStock()
+        removedStockEntrega(clienteCurrent, quantidades)
         await addDoc(collection(db, "Entregas"), {
             ...values,
             quantidades: quantidades
@@ -347,7 +276,7 @@ export default function Entregas() {
                                         <TextTable>{produto.nmProduto}</TextTable>
                                     </NameProduto>
                                     <ValueProduto>
-                                        <TextTable>{formatBrazilianCurrencyTable(produto.vlVendaProduto)}</TextTable>
+                                        <TextTable>{NumberFormatForBrazilianCurrency(produto.vlVendaProduto)}</TextTable>
                                     </ValueProduto>
                                     <QntProduto>
                                         <Input

@@ -1,5 +1,4 @@
 import SituacaoProduto from "../../../../enumeration/situacaoProduto"
-import ComprasModel from "../../compras/model/compras"
 
 
 /**
@@ -8,23 +7,22 @@ import ComprasModel from "../../compras/model/compras"
 * @author Carlos Bageston
 */
 
-interface ProdutoEscaniado{
+export interface ProdutoEscaniado{
             nmProduto: string,
             cdProduto: string,
-            vlVendaProduto: string,
+            vlVendaProduto: number,
             quantidadeVenda: number,
             tpProduto: SituacaoProduto | null,
-            mpFabricado: ComprasModel[],
-            vlLucro?: string,
-            vlTotalMult?: string
+            vlLucro?: number,
+            vlTotalMult?: number
         }
 
 interface VendaModel {
     dtProduto: string | null,
     vlLucroTotal?: number,
-    vlTotal: number | null,
-    vlRecebido: string,
-    vlTroco: number | null,
+    vlTotal: number ,
+    vlRecebido: number,
+    vlTroco: number ,
     id?: string,
     produtoEscaniado: ProdutoEscaniado[]
 }

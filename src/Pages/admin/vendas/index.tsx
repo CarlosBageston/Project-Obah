@@ -2,7 +2,7 @@ import * as Yup from 'yup';
 import { format } from "date-fns";
 import { useFormik } from 'formik';
 import { db } from "../../../firebase";
-import VendaModel from "./model/vendas";
+import VendaModel, { ProdutoEscaniado } from "./model/vendas";
 import { CgAddR } from 'react-icons/cg';
 import Input from "../../../Components/input";
 import Button from "../../../Components/button";
@@ -37,13 +37,15 @@ import {
     ContainerProdutos,
     ContainerDescricao,
 } from './style'
+import useFormatCurrency from '../../../hooks/formatCurrency';
+import useEstoque from '../../../hooks/useEstoque';
 
 
 const objClean: VendaModel = {
-    vlTotal: null,
+    vlTotal: 0,
     dtProduto: '',
-    vlRecebido: '',
-    vlTroco: null,
+    vlRecebido: 0,
+    vlTroco: 0,
     produtoEscaniado: []
 }
 export default function Vendas() {
@@ -51,6 +53,9 @@ export default function Vendas() {
     const [qntBolas, setQntBolas] = useState<string>('');
     const [key, setKey] = useState<number>(0);
     const [multiplica, setMultiplica] = useState<number | undefined>(undefined);
+
+    const { NumberFormatForBrazilianCurrency, convertToNumber, formatCurrencyRealTime } = useFormatCurrency();
+    const { removedStockVenda } = useEstoque();
 
 
     const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
@@ -85,40 +90,45 @@ export default function Vendas() {
         return () => clearInterval(intervalId);
     }, []);
 
+    function calcularTotais(vlVendaProduto: number, quantidade: number, vlUnitario: number) {
+        const valorTotal = quantidade * vlVendaProduto;
+        const total = vlVendaProduto - vlUnitario;
+        const totalLucro = total * quantidade;
+        const formatTotalLucro = parseFloat(totalLucro.toFixed(2))
+
+        return { valorTotal, formatTotalLucro };
+    }
+
+    function adicionarProdutoAoArray(values: any, novoProduto: ProdutoEscaniado) {
+        const novoArrayProdutos = [...values.produtoEscaniado, novoProduto];
+        setFieldValue('produtoEscaniado', novoArrayProdutos);
+    }
     //lendo codigo de barras em tempo real, fazendo busca no banco e multiplicando valor caso necessario
     useEffect(() => {
         const isBarcodeNumeric = !isNaN(Number(barcode));
+        const produtoEncontrado = dataTableProduto.find((p) => p.cdProduto === barcode);
+        if (!produtoEncontrado) return;
+
+        const vlVendaProduto = produtoEncontrado.vlVendaProduto
+
         if (multiplica && isBarcodeNumeric) {
-            const produtoEncontrado = dataTableProduto.find((p) => p.cdProduto === barcode);
             if (produtoEncontrado) {
-                //calculando total da venda
-                const valorFormat = produtoEncontrado.vlVendaProduto.match(/\d+/g)?.join('.');
-                const valorTotal = multiplica * Number(valorFormat);
-
-                //calculando total de lucro
-                const valorVenda = Number(produtoEncontrado.vlVendaProduto.match(/\d+/g)?.join('.'));
-                const valorPago = produtoEncontrado.vlUnitario
-                const total = valorVenda - valorPago;
-                const totalLucro = total * multiplica
-
-                const novoProduto = { ...produtoEncontrado, vlTotalMult: `R$ ${valorTotal},00`, quantidadeVenda: multiplica, vlLucro: totalLucro.toString() };
-                setFieldValue('produtoEscaniado', values.produtoEscaniado.concat(novoProduto));
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                const { mpFabricado, ...rest } = produtoEncontrado;
+                const { valorTotal, formatTotalLucro } = calcularTotais(vlVendaProduto, multiplica, produtoEncontrado.vlUnitario);
+                const novoProduto: ProdutoEscaniado = { ...rest, vlTotalMult: valorTotal, quantidadeVenda: multiplica, vlLucro: formatTotalLucro };
+                adicionarProdutoAoArray(values, novoProduto);
             }
             setBarcode('')
             setMultiplica(undefined)
             setKey(Math.random())
         } else if (isBarcodeNumeric) {
-            const produtoEncontrado = dataTableProduto.find((p) => p.cdProduto === barcode);
-            if (produtoEncontrado) {
-                //calculando total de lucro
-                const valorVenda = Number(produtoEncontrado.vlVendaProduto.match(/\d+/g)?.join('.'));
-                const valorPago = produtoEncontrado.vlUnitario
-                const totalLucro = valorVenda - valorPago;
-
-                const novoProduto = { ...produtoEncontrado, quantidadeVenda: 1, vlLucro: totalLucro.toString(), vlTotalMult: `R$ ${valorVenda},00` }
-                setFieldValue('produtoEscaniado', values.produtoEscaniado.concat(novoProduto));
-                setBarcode('')
-            }
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { mpFabricado, ...rest } = produtoEncontrado;
+            const { formatTotalLucro } = calcularTotais(vlVendaProduto, 1, produtoEncontrado.vlUnitario);
+            const novoProduto: ProdutoEscaniado = { ...rest, quantidadeVenda: 1, vlLucro: formatTotalLucro, vlTotalMult: vlVendaProduto };
+            adicionarProdutoAoArray(values, novoProduto);
+            setBarcode('');
         }
     }, [barcode]);
 
@@ -129,22 +139,15 @@ export default function Vendas() {
         const isLetra = /^(?=\p{L})[\p{L}\d\s]+$/u.test(codigoDeBarras);
 
         if (e.key === 'Enter' && isLetra) {
+            const produtoEncontrado = dataTableProduto.find((p) => p.nmProduto.toLowerCase() === barcode.toLowerCase());
             if (multiplica) {
-                const produtoEncontrado = dataTableProduto.find((p) => p.nmProduto.toLowerCase() === barcode.toLowerCase());
                 if (produtoEncontrado) {
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                    const { mpFabricado, ...rest } = produtoEncontrado;
+                    const { valorTotal, formatTotalLucro } = calcularTotais(produtoEncontrado.vlVendaProduto, multiplica, produtoEncontrado.vlUnitario);
+                    const novoProduto: ProdutoEscaniado = { ...rest, vlTotalMult: valorTotal, quantidadeVenda: multiplica, vlLucro: formatTotalLucro };
+                    adicionarProdutoAoArray(values, novoProduto);
 
-                    //calculando total da venda
-                    const valorFormat = produtoEncontrado.vlVendaProduto.match(/\d+/g)?.join('.');
-                    const valorTotal = multiplica * Number(valorFormat);
-
-                    //calculando total de lucro
-                    const valorVenda = Number(produtoEncontrado.vlVendaProduto.match(/\d+/g)?.join('.'));
-                    const valorPago = produtoEncontrado.vlUnitario
-                    const total = valorVenda - valorPago;
-                    const totalLucro = total * multiplica
-
-                    const novoProduto = { ...produtoEncontrado, vlTotalMult: `R$ ${valorTotal},00`, quantidadeVenda: multiplica, vlLucro: totalLucro.toString() };
-                    setFieldValue('produtoEscaniado', values.produtoEscaniado.concat(novoProduto));
                     setBarcode('');
                     setMultiplica(undefined);
                     setKey(Math.random())
@@ -153,15 +156,13 @@ export default function Vendas() {
                     setProdutoNotFound(true)
                 }
             } else {
-                const produtoEncontrado = dataTableProduto.find((p) => p.nmProduto.toLowerCase() === barcode.toLowerCase());
                 if (produtoEncontrado) {
-                    //calculando total de lucro
-                    const valorVenda = Number(produtoEncontrado.vlVendaProduto.match(/\d+/g)?.join('.'));
-                    const valorPago = produtoEncontrado.vlUnitario
-                    const totalLucro = valorVenda - valorPago;
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                    const { mpFabricado, ...rest } = produtoEncontrado;
+                    const { formatTotalLucro } = calcularTotais(produtoEncontrado.vlVendaProduto, 1, produtoEncontrado.vlUnitario);
+                    const novoProduto: ProdutoEscaniado = { ...rest, quantidadeVenda: 1, vlLucro: formatTotalLucro, vlTotalMult: produtoEncontrado.vlVendaProduto };
+                    adicionarProdutoAoArray(values, novoProduto);
 
-                    const novoProduto = { ...produtoEncontrado, quantidadeVenda: 1, vlLucro: totalLucro.toString(), vlTotalMult: `R$ ${valorVenda},00` }
-                    setFieldValue('produtoEscaniado', values.produtoEscaniado.concat(novoProduto));
                     setBarcode('');
                     setProdutoNotFound(false)
                 } else {
@@ -187,17 +188,24 @@ export default function Vendas() {
     //busca o valor de todos os produtos adicionados e soma todos eles
     useEffect(() => {
         //calculando todos os valores de total de venda
-        const precoFiltrado = values.produtoEscaniado.map(scanner => Number(scanner.vlTotalMult?.match(/\d+/g)?.join(".")))
-            .filter(valor => !isNaN(valor));
+        const precoFiltrado = values.produtoEscaniado.map(scanner => scanner.vlTotalMult);
         const precoTotal = precoFiltrado.reduce((total, produto) => {
-            return total + produto;
+            // Certifique-se de que produto seja um número válido antes de adicionar ao total
+            if (typeof produto === 'number' && !isNaN(produto) && typeof total === 'number' && !isNaN(total)) {
+                const produtoArredondado = parseFloat(produto.toFixed(2));
+                return total + produtoArredondado;
+            }
+            return total;
         }, 0);
 
         //calculando todos os valores de total de lucro
-        const precoFiltradoLucro = values.produtoEscaniado.map(scanner => Number(scanner.vlLucro?.match(/\d+/g)?.join(".")))
-            .filter(valor => !isNaN(valor));
+        const precoFiltradoLucro = values.produtoEscaniado.map(scanner => scanner.vlLucro)
         const precoTotalLucro = precoFiltradoLucro.reduce((total, produto) => {
-            return total + produto;
+            if (typeof produto === 'number' && !isNaN(produto) && typeof total === 'number' && !isNaN(total)) {
+                const produtoArredondado = parseFloat(produto.toFixed(2));
+                return total + produtoArredondado;
+            }
+            return total;
         }, 0);
 
         setFieldValue('vlTotal', precoTotal);
@@ -206,17 +214,22 @@ export default function Vendas() {
 
     //faz o calculo do troco
     useEffect(() => {
-        const valorFormat = values.vlRecebido.match(/\d+/g)?.join('.')
-        const troco = Number(valorFormat) - Number(values.vlTotal)
+        const vlRecebido = convertToNumber(values.vlRecebido.toString())
+        const troco = vlRecebido - values.vlTotal
         setFieldValue('vlTroco', troco)
-    }, [values.vlRecebido])
+    }, [values.vlRecebido, values.vlTroco])
+
 
     //envia os valor pro banco
     async function handleSubmitForm() {
-
-        if (values.vlRecebido !== '') {
+        removedStockVenda(values.produtoEscaniado)
+        if (values.vlRecebido) {
+            const valuesUpdate: VendaModel = {
+                ...values,
+                vlRecebido: convertToNumber(values.vlRecebido.toString())
+            };
             await addDoc(collection(db, "Vendas"), {
-                ...values
+                ...valuesUpdate
             }).then(() => {
                 setSubmitForm(true);
                 setTimeout(() => { setSubmitForm(undefined) }, 3000)
@@ -235,12 +248,11 @@ export default function Vendas() {
         const produtoEncontrado = dataTableProduto.find((p) => p.cdProduto === '9788545200345');
         if (produtoEncontrado) {
 
-            const valorVenda = Number(produtoEncontrado.vlVendaProduto.match(/\d+/g)?.join('.'));
             const valorPago = produtoEncontrado.vlUnitario
-            const totalLucro = valorVenda - valorPago;
+            const totalLucro = produtoEncontrado.vlVendaProduto - valorPago;
 
-            const novoProduto = { ...produtoEncontrado, quantidadeVenda: 1, vlLucro: totalLucro.toString(), vlTotalMult: `R$ ${valorVenda},00` }
-            setFieldValue('produtoEscaniado', values.produtoEscaniado.concat(novoProduto));
+            const novoProduto: ProdutoEscaniado = { ...produtoEncontrado, quantidadeVenda: 1, vlLucro: totalLucro, vlTotalMult: produtoEncontrado.vlVendaProduto }
+            setFieldValue('produtoEscaniado', values.produtoEscaniado.push(novoProduto));
         }
     }
 
@@ -248,12 +260,11 @@ export default function Vendas() {
     function casquinha() {
         const produtoEncontrado = dataTableProduto.find((p) => p.cdProduto === '9788534508476');
         if (produtoEncontrado) {
-            const valorVenda = Number(produtoEncontrado.vlVendaProduto.match(/\d+/g)?.join('.'));
             const valorPago = produtoEncontrado.vlUnitario
-            const totalLucro = valorVenda - valorPago;
+            const totalLucro = produtoEncontrado.vlVendaProduto - valorPago;
 
-            const novoProduto = { ...produtoEncontrado, quantidadeVenda: 1, vlLucro: totalLucro.toString(), vlTotalMult: `R$ ${valorVenda},00` }
-            setFieldValue('produtoEscaniado', values.produtoEscaniado.concat(novoProduto));
+            const novoProduto: ProdutoEscaniado = { ...produtoEncontrado, quantidadeVenda: 1, vlLucro: totalLucro, vlTotalMult: produtoEncontrado.vlVendaProduto }
+            setFieldValue('produtoEscaniado', values.produtoEscaniado.push(novoProduto));
         }
     }
 
@@ -261,12 +272,10 @@ export default function Vendas() {
     function tacaSundae() {
         if (qntBolas !== '') {
             const produtoEncontrado = dataTableProduto.find((p) => p.cdProduto === '9788544001554');
-            const valor = produtoEncontrado?.vlVendaProduto;
-            const valorFormat = valor?.match(/\d+/g)?.join('.');
-            const valorTotal = Number(qntBolas) * Number(valorFormat);
 
             if (produtoEncontrado) {
-                const novoProduto = { ...produtoEncontrado, vlVendaProduto: `R$ ${valorTotal},00`, quantidadeVenda: Number(qntBolas) };
+                const valorTotal = Number(qntBolas) * produtoEncontrado?.vlVendaProduto;
+                const novoProduto = { ...produtoEncontrado, vlVendaProduto: valorTotal, quantidadeVenda: Number(qntBolas) };
                 setFieldValue('produtoEscaniado', values.produtoEscaniado.concat(novoProduto));
             }
 
@@ -276,19 +285,6 @@ export default function Vendas() {
         } else {
             setIsValidQntBolas(true)
         }
-    }
-
-    //função que formata o valor do input 
-    function formatarValor(valor: string) {
-        const inputText = valor.replace(/\D/g, "");
-        let formattedText = "";
-        if (inputText.length <= 2) {
-            formattedText = inputText;
-        } else {
-            const regex = /^(\d*)(\d{2})$/;
-            formattedText = inputText.replace(regex, '$1,$2');
-        }
-        return inputText ? "R$ " + formattedText : "";
     }
 
     return (
@@ -342,7 +338,7 @@ export default function Vendas() {
                                 <DivAdicionais>
                                     <div>
                                         <div style={{ display: "flex" }}>
-                                            <TextAdicional >Taça Sundae</TextAdicional>
+                                            <TextAdicional>Taça Sundae</TextAdicional>
                                             <StyleButton
                                                 type="button"
                                                 startIcon={<CgAddR />}
@@ -369,12 +365,12 @@ export default function Vendas() {
                                 label="Valor Pago"
                                 error={isValid ? 'Campo Obrigatório' : ''}
                                 name="valorRecebido"
-                                value={values.vlRecebido}
+                                value={values.vlRecebido !== 0 ? values.vlRecebido : ''}
                                 maxLength={9}
-                                onChange={e => setFieldValue('vlRecebido', formatarValor(e.target.value))}
+                                onChange={e => { setFieldValue('vlRecebido', formatCurrencyRealTime(e.target.value)) }}
                             />
-                            <ResultadoTotal>Total: {values.vlTotal ? `R$ ${values.vlTotal.toFixed(2).replace(".", ",")}` : ''}</ResultadoTotal>
-                            <ResultadoTotal>Troco: {values.vlTroco ? `R$ ${values.vlTroco.toFixed(2).replace(".", ",")}` : ''}</ResultadoTotal>
+                            <ResultadoTotal>Total: {values.vlTotal ? NumberFormatForBrazilianCurrency(values.vlTotal) : ''}</ResultadoTotal>
+                            <ResultadoTotal>Troco: {values.vlTroco ? NumberFormatForBrazilianCurrency(values.vlTroco) : ''}</ResultadoTotal>
                         </div>
                         <div>
                             <Button
@@ -407,7 +403,7 @@ export default function Vendas() {
                                     {values.produtoEscaniado.map(produto => (
                                         <ContainerPreco key={produto.cdProduto}>
                                             <TitlePreco>{produto.nmProduto}</TitlePreco>
-                                            <TitlePreco>{produto.vlTotalMult}</TitlePreco>
+                                            <TitlePreco>{produto.vlTotalMult ? NumberFormatForBrazilianCurrency(produto.vlTotalMult) : ''}</TitlePreco>
                                         </ContainerPreco>
                                     ))}
                                 </>

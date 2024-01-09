@@ -48,7 +48,7 @@ export function IsAdding({ data, isAdding, setFieldValue, setIsVisibleTpProduto,
         dataTable,
     } = GetData('Produtos', true) as { dataTable: ProdutosModel[] };
 
-    const { formatBrazilianCurrency } = useFormatCurrency();
+    const { formatCurrencyRealTime } = useFormatCurrency();
 
     useEffect(() => {
         if (addingScreen === 'Cliente') {
@@ -98,7 +98,7 @@ export function IsAdding({ data, isAdding, setFieldValue, setIsVisibleTpProduto,
     const handleChangeProdutoCliente = (e: React.ChangeEvent<HTMLInputElement>, produto: any) => {
         const newMpFabricado = [...products];
         const index = newMpFabricado.findIndex((item) => item.nmProduto === produto.nmProduto);
-        newMpFabricado[index].vlVendaProduto = formatBrazilianCurrency(e.target.value)
+        newMpFabricado[index].vlVendaProduto = formatCurrencyRealTime(e.target.value)
         setFieldValue("produtos", newMpFabricado);
     }
 

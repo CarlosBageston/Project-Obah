@@ -13,7 +13,7 @@ import ClienteModel from '../cadastroClientes/model/cliente';
 import { useUniqueNames } from '../../../hooks/useUniqueName';
 import formatDate from "../../../Components/masks/formatDate";
 import ProdutosModel from "../cadastroProdutos/model/produtos";
-import EstoqueModel, { Versao } from '../estoque/model/estoque';
+import EstoqueModel from '../estoque/model/estoque';
 import FormAlert from "../../../Components/FormAlert/formAlert";
 import DashboardCompras from '../dashboard/model/dashboardCompra';
 import SituacaoProduto from "../../../enumeration/situacaoProduto";
@@ -31,6 +31,8 @@ import {
 } from './style'
 import { BoxTitleDefault } from "../estoque/style";
 import useFormatCurrency from '../../../hooks/formatCurrency';
+import useEstoque from '../../../hooks/useEstoque';
+import AlertDialog from '../../../Components/FormAlert/dialogForm';
 
 
 const objClean: ComprasModel = {
@@ -56,8 +58,13 @@ export default function AtualizarEstoque() {
     const [selectAutoComplete, setSelectAutoComplete] = useState<boolean>(false);
     const [selected, setSelected] = useState<ComprasModel | undefined>();
     const [isEdit, setIsEdit] = useState<boolean>(false);
+    const [openDialog, setOpenDialog] = useState<boolean>(false);
+    const [estoqueVazio, setEstoqueVazio] = useState<boolean>(false);
+    const [nmProduto, setNmProduto] = useState<string>('');
+    const [produtosProcessados, setProdutosProcessados] = useState(new Set<string>());
 
-    const { convertToNumber, formatBrazilianCurrency } = useFormatCurrency()
+    const { convertToNumber, formatCurrency, formatCurrencyRealTime } = useFormatCurrency();
+    const { removedStockCompras } = useEstoque();
 
     const inputsConfig: InputConfig[] = [
         { label: 'Nome Do Produto', propertyName: 'nmProduto' },
@@ -106,7 +113,7 @@ export default function AtualizarEstoque() {
             cdProduto: Yup.string().required('Campo obrigatório'),
             vlUnitario: Yup.string().required('Campo obrigatório'),
             dtCompra: Yup.string().required('Campo obrigatório'),
-            cxProduto: Yup.number().optional().nullable(),
+            cxProduto: Yup.number().transform((value) => (isNaN(value) ? undefined : value)).optional().nullable(),
             tpProduto: Yup.number().transform((value) => (isNaN(value) ? undefined : value)).required('Campo obrigatório'),
             quantidade: Yup.number().transform((value) => (isNaN(value) ? undefined : value)).required('Campo obrigatório'),
             qntMinima: Yup.number().required('Campo obrigatório').typeError('Campo obrigatório'),
@@ -130,6 +137,12 @@ export default function AtualizarEstoque() {
             qntMinima: null,
             nrOrdem: undefined
         })
+        setSelectAutoComplete(false);
+        setFieldValue('cdProduto', '');
+        setFieldValue('vlUnitario', '');
+        setFieldValue('qntMinima', '');
+        setFieldValue('cxProduto', '');
+        setFieldValue('kgProduto', '');
         setKey(Math.random());
     }
 
@@ -182,6 +195,18 @@ export default function AtualizarEstoque() {
             }
         });
     }
+    function foundProducts(item: ComprasModel) {
+        let versao = 0;
+        let encontrado: ComprasModel | null = null;
+        for (const compra of dataTable) {
+            if (compra.nrOrdem === undefined || compra.nmProduto !== item.nmProduto) continue;
+            if (compra.nrOrdem >= versao) {
+                versao = compra.nrOrdem;
+                encontrado = compra;
+            }
+        }
+        return encontrado
+    }
     // Este método recalcula os preços dos produtos com base nos valores fornecidos e nos registros de compras.
     function recalculateProduct(valuesUpdate: ComprasModel, produtosEncontrado: ProdutosModel[]) {
         produtoDataTable.forEach(produto => {
@@ -189,16 +214,30 @@ export default function AtualizarEstoque() {
                 let soma = 0.0;
 
                 // Recalcule a soma dos totalPago após a atualização
-                produto.mpFabricado.forEach(item => {
-                    if (item.nmProduto !== valuesUpdate.nmProduto) {
-                        const encontrado = dataTable.find(compra => compra.nmProduto === item.nmProduto)
-                        const totalAtualizado = calculateTotalValue(item, encontrado as ComprasModel)
-                        soma += totalAtualizado
-                    } else {
-                        const totalAtualizado = calculateTotalValue(item, valuesUpdate)
-                        soma += totalAtualizado
-                    }
-                });
+                try {
+                    produto.mpFabricado.forEach(item => {
+                        if (!produtosProcessados.has(item.nmProduto)) {
+                            if (item.nmProduto !== valuesUpdate.nmProduto) {
+                                const encontrado = foundProducts(item)
+                                if (encontrado) {
+                                    const totalAtualizado = calculateTotalValue(item, encontrado)
+                                    soma += totalAtualizado
+                                } else {
+                                    setOpenDialog(true);
+                                    setNmProduto(item.nmProduto)
+                                    setProdutosProcessados(new Set(produtosProcessados.add(item.nmProduto)))
+                                    throw new Error("Produto não encontrado");
+                                }
+                            } else {
+                                const totalAtualizado = calculateTotalValue(item, valuesUpdate)
+                                soma += totalAtualizado
+                            }
+                        }
+                    });
+                } catch (error) {
+                    throw new Error("Produto não encontrado no estoque");
+                }
+                produto.nrOrdem += 1
                 const newProduto = { ...produto, vlUnitario: parseFloat(soma.toFixed(2)) }
                 produtosEncontrado.push(newProduto);
             }
@@ -208,8 +247,19 @@ export default function AtualizarEstoque() {
     // Este método recalcula os preços dos produtos encontrados com base nos registros de compras.
     function recalculateProductFound(produtosEncontrado: ProdutosModel[], produtoAtualizados: ProdutosModel[]) {
         produtosEncontrado.forEach(items => {
-            const foundProduct = dataTable.find(produto => produto.nmProduto === items.nmProduto)
-            const updateValueProduct = { ...foundProduct, vlUnitario: items.vlUnitario }
+            let updateValueProduct: ComprasModel = objClean;
+            try {
+                const foundProduct = dataTable.find(produto => produto.nmProduto === items.nmProduto)
+                if (foundProduct) {
+                    updateValueProduct = { ...foundProduct, vlUnitario: items.vlUnitario };
+                } else {
+                    throw new Error("Produto não encontrado");
+                }
+            } catch (error) {
+                setOpenDialog(true);
+                setNmProduto(items.nmProduto)
+                throw error;
+            }
             produtoDataTable.forEach(produto => {
                 if (produto.mpFabricado.some(mp => mp.nmProduto.includes(items.nmProduto))) {
                     let soma = 0.0;
@@ -219,13 +269,15 @@ export default function AtualizarEstoque() {
                             const totalAtualizado = calculateTotalValue(item, updateValueProduct as ComprasModel)
                             soma += totalAtualizado
                         } else {
-                            const encontrado = dataTable.find(compra => compra.nmProduto === item.nmProduto)
+                            const encontrado = foundProducts(item)
                             const totalAtualizado = calculateTotalValue(item, encontrado as ComprasModel)
                             soma += totalAtualizado
                         }
                     });
                     const newProduto = { ...produto, vlUnitario: parseFloat(soma.toFixed(2)) }
                     produtoAtualizados.push(newProduto);
+                } else {
+                    produtoAtualizados.push(items)
                 }
             });
         })
@@ -280,71 +332,6 @@ export default function AtualizarEstoque() {
         }
     }
 
-    async function updateRemovedStock(estoque: EstoqueModel) {
-        const estoqueExistente = dataTableEstoque.find(
-            estoques => estoques.nmProduto === estoque.nmProduto
-        );
-        if (estoqueExistente) {
-            const refID: string = estoqueExistente.id ?? '';
-            const refTable = doc(db, "Estoque", refID);
-            for (const versao of estoqueExistente.versaos) {
-                if (versao.vrQntd <= 0) {
-                    const compraCorrespondente = dataTable.find(compra =>
-                        compra.nmProduto === estoqueExistente.nmProduto && compra.nrOrdem === versao.versao
-                    );
-                    if (compraCorrespondente && compraCorrespondente.id) {
-                        await deleteDoc(doc(db, "Compras", compraCorrespondente.id));
-                    }
-
-                }
-            }
-            const versoesValidas = estoque.versaos.filter(versao => versao.vrQntd > 0);
-            await updateDoc(refTable, {
-                nmProduto: estoque.nmProduto,
-                cdProduto: estoque.cdProduto,
-                quantidade: estoque.quantidade,
-                tpProduto: estoque.tpProduto,
-                qntMinima: estoque.qntMinima,
-                versaos: versoesValidas
-            })
-        }
-    }
-
-    async function removedStock(values: ComprasModel) {
-        values.mpFabricado?.forEach(async mp => {
-            const estoqueMP = dataTableEstoque.find(estoque => estoque.nmProduto === mp.nmProduto);
-            if (estoqueMP) {
-                let qntdUsadaProducao = values.quantidade * mp.quantidade;
-                const listVersaoComQntd: Versao[] = [...estoqueMP.versaos];
-                const versoesOrdenadas = estoqueMP.versaos.sort((a, b) => a.versao - b.versao);
-
-                versoesOrdenadas.forEach(versao => {
-                    if (qntdUsadaProducao > 0) {
-                        const qntdMinima = Math.min(qntdUsadaProducao, versao.vrQntd)
-                        const novaQuantidade = estoqueMP.quantidade - qntdMinima;
-                        const novaQntdPorVersao = versao.vrQntd - qntdMinima
-                        if (novaQuantidade > 0) {
-                            versao.vrQntd = novaQntdPorVersao;
-                        } else {
-                            versao.vrQntd = 0
-                        }
-
-                        estoqueMP.quantidade = novaQuantidade
-                        qntdUsadaProducao -= qntdMinima;
-                    }
-                })
-                await updateRemovedStock({
-                    nmProduto: estoqueMP.nmProduto,
-                    cdProduto: estoqueMP.cdProduto,
-                    quantidade: estoqueMP.quantidade,
-                    tpProduto: estoqueMP.tpProduto,
-                    qntMinima: estoqueMP.qntMinima,
-                    versaos: listVersaoComQntd,
-                });
-            }
-        })
-    }
-
     async function calculateValueTotal(valueCurrent: number, dateBuy: Date | null) {
         let sumValue: number = 0
         const mesAtual = moment(dateBuy, "DD/MM/YYYY").format("DD/MM/YYYY");
@@ -391,7 +378,6 @@ export default function AtualizarEstoque() {
             vlUnitario: convertToNumber(values.vlUnitario.toString()),
             totalPago: values.totalPago && convertToNumber(values.totalPago?.toString())
         };
-
         try {
             if (valuesUpdate.tpProduto === SituacaoProduto.COMPRADO) {
                 const produtosEncontrado: ProdutosModel[] = [];
@@ -412,9 +398,16 @@ export default function AtualizarEstoque() {
             }
             if (values.tpProduto === SituacaoProduto.FABRICADO) {
                 createStock(valuesUpdate)
-                removedStock(valuesUpdate)
+                removedStockCompras(valuesUpdate, setOpenDialog, setEstoqueVazio, setNmProduto)
             }
         } catch (error) {
+            if (error instanceof Error) {
+                if (error.message.includes("estoque")) {
+                    setEstoqueVazio(false)
+                    return;
+                }
+            }
+
             setSubmitForm(false);
             setTimeout(() => { setSubmitForm(undefined) }, 3000);
             console.error("Erro durante o processamento:", error);
@@ -438,7 +431,9 @@ export default function AtualizarEstoque() {
         setSelectAutoComplete(false);
         setRecarregueDashboard(true)
     }
-
+    const handleOKClick = () => {
+        setOpenDialog(false);
+    };
     // Este useEffect é responsável por calcular e atualizar o campo 'totalPago' com base nas quantidades e valores unitários,
     // considerando a formatação monetária, tanto para o modo de edição (isEdit e selected) quanto para o modo de criação (values).
     // O cálculo é realizado multiplicando a quantidade pelo valor unitário, formatando o resultado e atualizando o estado correspondente.
@@ -454,7 +449,7 @@ export default function AtualizarEstoque() {
         } else {
             const multiplication = values.quantidade * convertToNumber(values.vlUnitario.toString())
             if (!isNaN(multiplication)) {
-                setFieldValue('totalPago', formatBrazilianCurrency(multiplication.toString()))
+                setFieldValue('totalPago', formatCurrency(multiplication.toString()))
             } else {
                 setFieldValue('totalPago', 0)
             }
@@ -486,17 +481,12 @@ export default function AtualizarEstoque() {
 
     function handleAutoComplete(newValue: ComprasModel, reason: AutocompleteChangeReason) {
         if (reason === 'clear' || reason === 'removeOption') {
-            setSelectAutoComplete(false);
-            setFieldValue('cdProduto', '');
-            setFieldValue('vlUnitario', '');
-            setFieldValue('qntMinima', '');
-            setFieldValue('cxProduto', '');
-            setFieldValue('kgProduto', '');
+            cleanState()
         } else if (newValue) {
             setSelectAutoComplete(true);
             setFieldValue('nrOrdem', newValue.nrOrdem);
             setFieldValue('cdProduto', newValue.cdProduto);
-            setFieldValue('vlUnitario', formatBrazilianCurrency(newValue.vlUnitario.toString()));
+            setFieldValue('vlUnitario', formatCurrency(newValue.vlUnitario.toString()));
             setFieldValue('qntMinima', newValue.qntMinima);
             setFieldValue('nmProduto', newValue.nmProduto);
             if (newValue.cxProduto) {
@@ -510,6 +500,8 @@ export default function AtualizarEstoque() {
             }
         }
     }
+
+    useEffect(() => { cleanState() }, [values.tpProduto])
 
     return (
         <Box>
@@ -549,7 +541,7 @@ export default function AtualizarEstoque() {
                         )}
                     </FormControl>
                     <Autocomplete
-                        options={useUniqueNames(dataTable, values.tpProduto, values.tpProduto)}
+                        options={useUniqueNames(dataTable, values.tpProduto, values.tpProduto, produtoDataTable, dataTableEstoque)}
                         getOptionLabel={(option) => option.nmProduto || ""}
                         onChange={(e, newValue, reason) => handleAutoComplete(newValue, reason)}
                         disabled={values.tpProduto === null}
@@ -607,12 +599,12 @@ export default function AtualizarEstoque() {
                         label="Valor Unitário"
                         onBlur={handleBlur}
                         name="vlUnitario"
-                        value={values.vlUnitario ? values.vlUnitario : ''}
+                        value={values.vlUnitario && values.vlUnitario.toString() !== 'R$ 0,00' ? values.vlUnitario : ''}
                         disabled={values.tpProduto === SituacaoProduto.FABRICADO}
-                        maxLength={9}
-                        onChange={e => setFieldValue(e.target.name, formatBrazilianCurrency(e.target.value))}
+                        maxLength={15}
+                        onChange={e => setFieldValue(e.target.name, formatCurrencyRealTime(e.target.value))}
                         error={touched.vlUnitario && errors.vlUnitario ? errors.vlUnitario : ''}
-                        raisedLabel={selectAutoComplete || values.vlUnitario ? true : false}
+                        raisedLabel={values.vlUnitario && values.vlUnitario.toString() !== 'R$ 0,00' ? true : false}
                     />
                 </DivInput>
                 <DivInput>
@@ -661,7 +653,7 @@ export default function AtualizarEstoque() {
                         name="totalPago"
                         value={values.totalPago && values.totalPago.toString() !== 'R$ 0,00' ? values.totalPago : ''}
                         onChange={() => { }}
-                        maxLength={9}
+                        maxLength={15}
                         error={''}
                         raisedLabel={values.totalPago && values.totalPago.toString() !== 'R$ 0,00' ? true : false}
                     />
@@ -701,6 +693,7 @@ export default function AtualizarEstoque() {
                     style={{ margin: '1rem 4rem 2rem 95%', height: '4rem', width: '12rem' }}
                 />
                 <FormAlert submitForm={submitForm} name={'Estoque'} />
+                <AlertDialog open={openDialog} onOKClick={handleOKClick} nmProduto={nmProduto} estoqueVazio={estoqueVazio} />
             </ContainerButton>
 
             {/*Tabala */}

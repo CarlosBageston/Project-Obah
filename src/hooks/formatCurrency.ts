@@ -12,7 +12,7 @@ export default function useFormatCurrency(){
      * @param valor - A string contendo o valor a ser formatado.
      * @returns O valor formatado como moeda brasileira (R$).
      */
-    function formatBrazilianCurrency(valor: string) {
+    function formatCurrency(valor: string) {
         // Remove todos os caracteres não numéricos
         const cleanedValue = valor.replace(/[^\d.,]/g, '').replace(',', '.');
         
@@ -26,6 +26,28 @@ export default function useFormatCurrency(){
         });
 
         return formattedText;
+    } 
+    /**
+     * Formata um valor monetário em tempo real.
+     *
+     * Esta função é destinada a ser usada em tempo real, geralmente no evento onChange
+     * de um campo de entrada, para ajustar a formatação à medida que o usuário digita.
+     *
+     * @param valor - O valor a ser formatado. Pode conter caracteres não numéricos.
+     * @returns Uma string formatada como moeda brasileira (R$), em tempo real.
+     * 
+     */
+    function formatCurrencyRealTime(valor: string) {
+        const inputText = valor.replace(/\D/g, "");
+        let formattedText = "";
+        if (inputText.length <= 2) {
+            formattedText = inputText;
+        } else {
+            const regex = /^(\d*)(\d{2})$/;
+            formattedText = inputText.replace(regex, '$1,$2');
+            formattedText = formattedText.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        }
+        return inputText ? "R$ " + formattedText : "";
     }
     /**
      * Formata um valor monetário brasileiro a partir de um número.
@@ -33,7 +55,7 @@ export default function useFormatCurrency(){
      * @param valor - O valor a ser formatado.
      * @returns O valor formatado como moeda brasileira (R$).
      */
-    function formatBrazilianCurrencyTable(valor: number) {
+    function NumberFormatForBrazilianCurrency (valor: number) {
         // Formata como moeda brasileira (R$)
         const formattedText = valor.toLocaleString('pt-BR', {
             style: 'currency',
@@ -58,8 +80,9 @@ export default function useFormatCurrency(){
     }
 
     return {
-        formatBrazilianCurrency,
-        formatBrazilianCurrencyTable,
-        convertToNumber
+        formatCurrency,
+        NumberFormatForBrazilianCurrency,
+        convertToNumber,
+        formatCurrencyRealTime
     }
 }

@@ -36,7 +36,8 @@ const objClean: ProdutoModel = {
     vlVendaProduto: 0,
     tpProduto: null,
     stEntrega: false,
-    mpFabricado: []
+    mpFabricado: [],
+    nrOrdem: 0
 }
 
 export default function CadastroProduto() {
@@ -48,7 +49,7 @@ export default function CadastroProduto() {
     const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
     const [initialValues, setInitialValues] = useState<ProdutoModel>({ ...objClean });
 
-    const { convertToNumber, formatBrazilianCurrency } = useFormatCurrency();
+    const { convertToNumber, formatCurrency, formatCurrencyRealTime } = useFormatCurrency();
 
     const inputsConfig = [
         { label: 'Nome', propertyName: 'nmProduto' },
@@ -97,7 +98,8 @@ export default function CadastroProduto() {
             vlVendaProduto: 0,
             tpProduto: null,
             stEntrega: false,
-            mpFabricado: []
+            mpFabricado: [],
+            nrOrdem: 0
         })
         setKey(Math.random());
     }
@@ -107,7 +109,10 @@ export default function CadastroProduto() {
         const valuesUpdate = { ...values, nrOrdem: 0 };
         valuesUpdate.vlVendaProduto = convertToNumber(valuesUpdate.vlVendaProduto.toString())
         valuesUpdate.vlUnitario = convertToNumber(valuesUpdate.vlUnitario.toString())
-
+        valuesUpdate.mpFabricado.forEach(mp => {
+            const quantidade = mp.quantidade ? parseFloat(mp.quantidade.toString().replace(',', '.')) : 0;
+            return mp.quantidade = quantidade;
+        });
         await addDoc(collection(db, "Produtos"), {
             ...valuesUpdate
         })
@@ -171,7 +176,7 @@ export default function CadastroProduto() {
             } as ProdutoModel | undefined));
         } else {
             somaFormat = calculateTotalValue(values.mpFabricado, comprasDataTable);
-            setFieldValue('vlUnitario', formatBrazilianCurrency(somaFormat.toString()));
+            setFieldValue('vlUnitario', formatCurrency(somaFormat.toString()));
         }
     }, [comprasDataTable, values.mpFabricado, isVisibleTpProuto, selected?.mpFabricado]);
 
@@ -259,7 +264,7 @@ export default function CadastroProduto() {
                         onBlur={handleBlur}
                         name="vlVendaProduto"
                         value={values.vlVendaProduto ? values.vlVendaProduto : ''}
-                        onChange={e => setFieldValue(e.target.name, formatBrazilianCurrency(e.target.value))}
+                        onChange={e => setFieldValue(e.target.name, formatCurrencyRealTime(e.target.value))}
                         error={touched.vlVendaProduto && errors.vlVendaProduto ? errors.vlVendaProduto : ''}
                         styleDiv={{ marginTop: 4 }}
                         style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
@@ -272,7 +277,7 @@ export default function CadastroProduto() {
                         disabled={values.tpProduto === SituacaoProduto.FABRICADO}
                         raisedLabel={values.tpProduto === SituacaoProduto.FABRICADO}
                         value={values.vlUnitario && values.vlUnitario.toString() !== "R$ 0,00" ? values.vlUnitario : ''}
-                        onChange={e => setFieldValue(e.target.name, formatBrazilianCurrency(e.target.value))}
+                        onChange={e => setFieldValue(e.target.name, formatCurrencyRealTime(e.target.value))}
                         error={touched.vlUnitario && errors.vlUnitario ? errors.vlUnitario : ''}
                         styleDiv={{ marginTop: 4 }}
                         style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}

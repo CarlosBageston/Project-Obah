@@ -53,7 +53,7 @@ type TableProps = {
 const GenericTable = ({ columns, data, isLoading, error, styleDiv, onSelectedRow, onDelete, onEdit, isdisabled: isdisabled, isVisibleEdit, isVisibledDelete }: TableProps) => {
     const [selectedRowId, setSelectedRowId] = useState<string | undefined>(undefined);
 
-    const { formatBrazilianCurrencyTable } = useFormatCurrency();
+    const { NumberFormatForBrazilianCurrency } = useFormatCurrency();
 
     const handleRowClick = (rowId: string, row: any) => {
         if (typeof onSelectedRow === 'function') {
@@ -105,7 +105,7 @@ const GenericTable = ({ columns, data, isLoading, error, styleDiv, onSelectedRow
                                         {columns.map((column) => (
                                             <StyledTableCell key={column.name}>
                                                 {column.isCurrency // ta errado isso aqui, ta formatando errado.
-                                                    ? formatBrazilianCurrencyTable(column.name.split('.').reduce((obj, key) => obj?.[key], row))
+                                                    ? NumberFormatForBrazilianCurrency(column.name.split('.').reduce((obj, key) => obj?.[key], row))
                                                     : column.name.split('.').reduce((obj, key) => obj?.[key], row)
                                                 }
                                             </StyledTableCell>

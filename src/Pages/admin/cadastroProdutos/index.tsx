@@ -287,7 +287,7 @@ export default function CadastroProduto() {
             {/*Adicionando Produto */}
             <IsAdding
                 addingScreen="Produto"
-                data={useUniqueNames(comprasDataTable, values.tpProduto, SituacaoProduto.COMPRADO)}
+                data={useUniqueNames(comprasDataTable, values.tpProduto, SituacaoProduto.COMPRADO, dataTable)}
                 isAdding={isVisibleTpProuto}
                 products={values.mpFabricado}
                 setFieldValue={setFieldValue}
@@ -306,7 +306,7 @@ export default function CadastroProduto() {
                 isEdit={isEdit}
                 products={selected ? selected.mpFabricado : []}
                 setIsEdit={setIsEdit}
-                newData={useUniqueNames(comprasDataTable, values.tpProduto, SituacaoProduto.COMPRADO, isEdit)}
+                newData={useUniqueNames(comprasDataTable, values.tpProduto, SituacaoProduto.COMPRADO, dataTable, undefined, isEdit)}
             />
             <ContainerButton>
                 <Button

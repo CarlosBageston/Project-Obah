@@ -548,7 +548,6 @@ export default function AtualizarEstoque() {
                         freeSolo
                         renderInput={(params) => (
                             <TextField
-
                                 {...params}
                                 label="Nome do Produto"
                                 variant="standard"

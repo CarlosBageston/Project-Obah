@@ -52,6 +52,39 @@ export function useUniqueNames(
         });
         return maxProductsByUniqueNames;
     }
+
+    function createCompraModel(
+        cdProduto: string,
+        nmProduto: string,
+        optionTpProduto: SituacaoProduto,
+        qntMinima?: number,
+        nrOrdem?: number,
+        vlUnitario?: number,
+        mpFabricado?: ComprasModel[]
+        ) {
+        const defaultProps: ComprasModel = {
+            cdProduto: cdProduto,
+            cxProduto: null,
+            dtCompra: null,
+            kgProduto: null,
+            nmProduto: nmProduto,
+            qntMinima: qntMinima ? qntMinima : null,
+            nrOrdem: nrOrdem ? nrOrdem : 0,
+            quantidade: 0,
+            mpFabricado: mpFabricado ? mpFabricado : undefined,
+            totalPago: null,
+            vlUnitario: vlUnitario ? vlUnitario : 0,
+            tpProduto: null
+        };
+    
+        if (optionTpProduto === SituacaoProduto.COMPRADO) {
+            defaultProps.tpProduto = SituacaoProduto.COMPRADO;
+        } else if (optionTpProduto === SituacaoProduto.FABRICADO) {
+            defaultProps.tpProduto = SituacaoProduto.FABRICADO;
+        }
+    
+        return { ...defaultProps };
+    }
     /**
      * Realiza a busca de produtos na base de dados com base no tipo de produto e outras condições.
      * 
@@ -59,50 +92,49 @@ export function useUniqueNames(
      */
     function databaseSearch() {
         const databaseCompras = dataTable.filter((produtos: ComprasModel) => produtos.tpProduto === SituacaoProduto.COMPRADO)
-        if(dataTableEstoque && optionTpProduto === SituacaoProduto.COMPRADO){
+        if(dataTableEstoque && optionTpProduto === SituacaoProduto.COMPRADO && dataTableProduto){
             dataTableEstoque.forEach(stock => {
                 if(stock.quantidade === 0){
-                    const newCompra: ComprasModel ={
-                        cdProduto: stock.cdProduto,
-                        cxProduto: null,
-                        dtCompra: null,
-                        kgProduto: null,
-                        nmProduto: stock.nmProduto,
-                        qntMinima: stock.qntMinima,
-                        nrOrdem: 0,
-                        quantidade: 0,
-                        totalPago: null,
-                        tpProduto: stock.tpProduto,
-                        vlUnitario: 0
-                    } 
+                    const newCompra: ComprasModel = createCompraModel(stock.cdProduto, stock.nmProduto, stock.tpProduto, stock.qntMinima)
                     databaseCompras.push(newCompra)
                 }
             })
+            dataTableProduto.forEach(produto => {
+                const matchingCompra = dataTable.find(compra => compra.nmProduto === produto.nmProduto);
+                if (!matchingCompra && produto.tpProduto === SituacaoProduto.COMPRADO) {
+                    const newCompra: ComprasModel = createCompraModel(
+                        produto.cdProduto, 
+                        produto.nmProduto, 
+                        SituacaoProduto.COMPRADO,
+                        undefined, 
+                        produto.nrOrdem,
+                        produto.vlUnitario, 
+                        produto.mpFabricado
+                        )
+                    databaseCompras.push(newCompra);
+                }
+            });
             return databaseCompras;
         }
         if (dataTableProduto && optionTpProduto === SituacaoProduto.FABRICADO) {
             const arrayCompras: ComprasModel[] = [];
         
             dataTableProduto.forEach(produto => {
+                if(produto.tpProduto === SituacaoProduto.COMPRADO) return;
                 const matchingCompra = dataTable.find(compra => compra.nmProduto === produto.nmProduto);
-                if (matchingCompra) {
+                if (matchingCompra ) {
                     const newCompra = {...matchingCompra, mpFabricado: produto.mpFabricado}
                     arrayCompras.push(newCompra);
                 } else {
-                    const newCompra: ComprasModel = {
-                        cdProduto: produto.cdProduto,
-                        cxProduto: null,
-                        dtCompra: null,
-                        kgProduto: null,
-                        nmProduto: produto.nmProduto,
-                        mpFabricado: produto.mpFabricado,
-                        qntMinima: null, 
-                        nrOrdem: produto.nrOrdem,
-                        quantidade: 0,
-                        totalPago: null,
-                        tpProduto: SituacaoProduto.FABRICADO,
-                        vlUnitario: produto.vlUnitario
-                    };
+                    const newCompra: ComprasModel = createCompraModel(
+                        produto.cdProduto, 
+                        produto.nmProduto, 
+                        SituacaoProduto.FABRICADO,
+                        undefined, 
+                        produto.nrOrdem,
+                        produto.vlUnitario, 
+                        produto.mpFabricado
+                        )
                     arrayCompras.push(newCompra);
                 }
             });

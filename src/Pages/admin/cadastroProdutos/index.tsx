@@ -74,7 +74,11 @@ export default function CadastroProduto() {
         initialValues,
         validationSchema: Yup.object().shape({
             nmProduto: Yup.string().required('Campo obrigatório'),
-            cdProduto: Yup.string().required('Campo obrigatório'),
+            cdProduto: Yup.string().required('Campo obrigatório').test('valueUnique', 'Esse código já está cadastrado', value => {
+                const cod = dataTable.find(cod => cod.cdProduto === value)
+                if (cod) return false
+                return true
+            }),
             vlUnitario: Yup.string().required('Campo obrigatório'),
             vlVendaProduto: Yup.string().required('Campo obrigatório'),
             tpProduto: Yup.number().transform((value) => (isNaN(value) ? undefined : value)).required('Campo obrigatório'),

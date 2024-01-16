@@ -36,6 +36,9 @@ import {
     BoxButtonInput,
     ContainerProdutos,
     ContainerDescricao,
+    DivSuggestions,
+    Suggestions,
+    SuggestionsLi,
 } from './style'
 import useFormatCurrency from '../../../hooks/formatCurrency';
 import useEstoque from '../../../hooks/useEstoque';
@@ -49,20 +52,18 @@ const objClean: VendaModel = {
     produtoEscaniado: []
 }
 export default function Vendas() {
+    const [key, setKey] = useState<number>(0);
     const [barcode, setBarcode] = useState("");
     const [qntBolas, setQntBolas] = useState<string>('');
-    const [key, setKey] = useState<number>(0);
+    const [ShowSuggestion, setShowSuggestion] = useState(false);
+    const [isValidQntBolas, setIsValidQntBolas] = useState<boolean>(false);
+    const [produtoNotFound, setProdutoNotFound] = useState<boolean>(false);
     const [multiplica, setMultiplica] = useState<number | undefined>(undefined);
+    const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
+    const [productSuggestion, setProductSuggestion] = useState<ProdutosModel[]>([]);
 
     const { NumberFormatForBrazilianCurrency, convertToNumber, formatCurrencyRealTime } = useFormatCurrency();
     const { removedStockVenda } = useEstoque();
-
-
-    const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
-
-    const [isValid, setIsValid] = useState<boolean>(false);
-    const [isValidQntBolas, setIsValidQntBolas] = useState<boolean>(false);
-    const [produtoNotFound, setProdutoNotFound] = useState<boolean>(false);
 
     //realizando busca no banco de dados
     const {
@@ -71,24 +72,22 @@ export default function Vendas() {
 
     const initialValues: VendaModel = ({ ...objClean });
 
-    const { values, handleSubmit, setFieldValue } = useFormik<VendaModel>({
+    const { values, handleSubmit, setFieldValue, touched, errors } = useFormik<VendaModel>({
         validateOnBlur: true,
         validateOnChange: true,
         initialValues,
         validationSchema: Yup.object().shape({
+            vlRecebido: Yup.string().required("Campo Obrigatório")
         }),
         onSubmit: handleSubmitForm,
     });
 
     //intervalo para que mostre as horas em tempo real
     useEffect(() => {
-        const intervalId = setInterval(() => {
-            const data = new Date();
-            const dataFormatada = format(data, 'dd/MM/yyyy HH:mm');
-            setFieldValue('dtProduto', dataFormatada);
-        }, 1000);
-        return () => clearInterval(intervalId);
-    }, []);
+        const data = new Date();
+        const dataFormatada = format(data, 'dd/MM/yyyy HH:mm');
+        setFieldValue('dtProduto', dataFormatada);
+    }, [values.vlRecebido]);
 
     function calcularTotais(vlVendaProduto: number, quantidade: number, vlUnitario: number) {
         const valorTotal = quantidade * vlVendaProduto;
@@ -180,7 +179,6 @@ export default function Vendas() {
             setFieldValue('vlTroco', null),
             setFieldValue('produtoEscaniado', []),
             setFieldValue('tpProduto', SituacaoProduto.FABRICADO),
-            setIsValid(false),
             setKey(Math.random()),
             setIsValidQntBolas(false)
     }
@@ -223,24 +221,20 @@ export default function Vendas() {
     //envia os valor pro banco
     async function handleSubmitForm() {
         removedStockVenda(values.produtoEscaniado)
-        if (values.vlRecebido) {
-            const valuesUpdate: VendaModel = {
-                ...values,
-                vlRecebido: convertToNumber(values.vlRecebido.toString())
-            };
-            await addDoc(collection(db, "Vendas"), {
-                ...valuesUpdate
-            }).then(() => {
-                setSubmitForm(true);
-                setTimeout(() => { setSubmitForm(undefined) }, 3000)
-            }).catch(() => {
-                setSubmitForm(false);
-                setTimeout(() => { setSubmitForm(undefined) }, 3000)
-            });
-            clearState();
-        } else {
-            setIsValid(true);
-        }
+        const valuesUpdate: VendaModel = {
+            ...values,
+            vlRecebido: convertToNumber(values.vlRecebido.toString())
+        };
+        await addDoc(collection(db, "Vendas"), {
+            ...valuesUpdate
+        }).then(() => {
+            setSubmitForm(true);
+            setTimeout(() => { setSubmitForm(undefined) }, 3000)
+        }).catch(() => {
+            setSubmitForm(false);
+            setTimeout(() => { setSubmitForm(undefined) }, 3000)
+        });
+        clearState();
     }
 
     //adicionando cascão a lista de compras 
@@ -276,7 +270,7 @@ export default function Vendas() {
             if (produtoEncontrado) {
                 const valorTotal = Number(qntBolas) * produtoEncontrado?.vlVendaProduto;
                 const novoProduto = { ...produtoEncontrado, vlVendaProduto: valorTotal, quantidadeVenda: Number(qntBolas) };
-                setFieldValue('produtoEscaniado', values.produtoEscaniado.concat(novoProduto));
+                setFieldValue('produtoEscaniado', values.produtoEscaniado.push(novoProduto));
             }
 
             setQntBolas('');
@@ -287,6 +281,32 @@ export default function Vendas() {
         }
     }
 
+    function onKeyPressHandleSubmit(e: React.KeyboardEvent<HTMLInputElement>) {
+        if (e.key === 'Enter') return handleSubmit;
+    }
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const codigoDeBarras = e.currentTarget.value;
+        setBarcode(codigoDeBarras);
+
+        // Realize a busca no banco de dados
+        const resultados = dataTableProduto.filter(
+            cod => cod.nmProduto.toLowerCase().includes(codigoDeBarras.toLowerCase())
+        );
+
+        if (resultados.length > 0) {
+            setShowSuggestion(true);
+            setProductSuggestion(resultados);
+        } else {
+            setShowSuggestion(false);
+            setProductSuggestion([]);
+        }
+    };
+    const selectSuggestion = (produto: ProdutosModel) => {
+        setBarcode(produto.nmProduto);
+        setProductSuggestion([]);
+        setShowSuggestion(false);
+    };
     return (
         <Box>
             <Title>Painel de Vendas</Title>
@@ -306,14 +326,26 @@ export default function Vendas() {
                             onKeyPress={handleMultiplicaKeyPress}
                         />
                     </DivMultiplicar>
+
                     <Input
                         error={produtoNotFound ? 'Nome não encontrado, verifique o nome e tente novamente' : ''}
                         label="Código do Produto:"
                         name=""
-                        onChange={e => setBarcode(e.currentTarget.value)}
+                        onChange={handleInputChange}
                         value={barcode}
                         onKeyPress={handleMultiplicaKeyPress}
                     />
+                    {ShowSuggestion && (
+                        <DivSuggestions>
+                            <Suggestions>
+                                {productSuggestion.map((produto) => (
+                                    <SuggestionsLi key={produto.id} onClick={() => selectSuggestion(produto)}>
+                                        {produto.nmProduto}
+                                    </SuggestionsLi>
+                                ))}
+                            </Suggestions>
+                        </DivSuggestions>
+                    )}
                 </ContainerInput>
                 <BoxProduto>
                     <BoxButtonInput>
@@ -363,10 +395,11 @@ export default function Vendas() {
                             <Input
                                 key={`valorRecebido${key}`}
                                 label="Valor Pago"
-                                error={isValid ? 'Campo Obrigatório' : ''}
+                                error={touched.vlRecebido && errors.vlRecebido ? errors.vlRecebido : ''}
                                 name="valorRecebido"
                                 value={values.vlRecebido !== 0 ? values.vlRecebido : ''}
                                 maxLength={9}
+                                onKeyPress={e => onKeyPressHandleSubmit(e)}
                                 onChange={e => { setFieldValue('vlRecebido', formatCurrencyRealTime(e.target.value)) }}
                             />
                             <ResultadoTotal>Total: {values.vlTotal ? NumberFormatForBrazilianCurrency(values.vlTotal) : ''}</ResultadoTotal>

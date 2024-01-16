@@ -140,3 +140,42 @@ font-weight: bold;
 export const DivMultiplicar = styled.div`
 width: 8rem;
 `;
+
+export const DivSuggestions = styled.div`
+position: relative;
+`;
+export const Suggestions = styled.ul`
+position: absolute;
+background-color: #f7f6f6;
+width: 100%;
+max-height: 200px;
+overflow: auto;
+border: 2px solid #bbbbbb;
+border-top: none;
+z-index: 2;
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+    background-color: #F5F5F5;
+  }
+::-webkit-scrollbar-thumb {
+    background-color: #888;
+    border-radius: 8px;
+  }
+::-webkit-scrollbar-thumb:hover {
+    background-color: #555;
+  }
+`;
+export const SuggestionsLi = styled.li`
+padding: 8px;
+font-size: 20px;
+
+&:hover {
+    background: ${props => props.theme.paletteColor.primaryBlue};
+    box-shadow: 0 0 8px 1px rgba(0, 142, 236, 0.815);
+    transition: all 0.2s ease-out;
+    color: #fff;
+    transform: translateY(-2px);
+    cursor: pointer;
+  }
+`;

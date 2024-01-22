@@ -20,10 +20,13 @@ import {
 } from "./style";
 import { Autocomplete, Stack, TextField } from "@mui/material";
 import SituacaoProduto from "../../enumeration/situacaoProduto";
+import useFormatCurrency from "../../hooks/formatCurrency";
 export interface InputConfig {
     label: string;
     propertyName: string;
-    type?: 'number' | 'string'
+    type?: 'number' | 'string',
+    isCurrency?: boolean,
+    isDisable?: boolean
 }
 
 interface IsEditProps {
@@ -66,6 +69,8 @@ export function IsEdit({ data, handleEditRow, inputsConfig, isEdit, products, se
     const [filterTpProdutoComprado, setFilterTpProdutoComprado] = useState<any>()
     const [newProduct, setNewProduct] = useState<any>()
 
+    const { NumberFormatForBrazilianCurrency, formatCurrencyRealTime } = useFormatCurrency();
+
     useEffect(() => {
         if (dataSelected) {
             if (editingScreen === 'Cliente') {
@@ -78,12 +83,33 @@ export function IsEdit({ data, handleEditRow, inputsConfig, isEdit, products, se
         }
     }, [dataSelected])
 
-    const handleChange = (e: ChangeEvent<HTMLInputElement>, propertyName: string, type: 'string' | 'number') => {
+    useEffect(() => {
+        if (isEdit) {
+            const formattedData = { ...data };
+
+            inputsConfig.forEach(inputConfig => {
+                const propertyName = inputConfig.propertyName;
+                const value = data[propertyName];
+
+                if (inputConfig.isCurrency && typeof value === 'number') {
+                    formattedData[propertyName] = NumberFormatForBrazilianCurrency(value);
+                }
+            });
+
+            setSelected(formattedData);
+        }
+    }, [isEdit]);
+
+    const handleChange = (e: ChangeEvent<HTMLInputElement>, propertyName: string, type: 'string' | 'number', isCurrency: boolean | undefined) => {
         const { value } = e.target;
         if (type && type === 'number') {
             const newData = { ...data };
             const numericValue = parseFloat(value.replace(/[^\d.-]/g, ''));
             newData[propertyName] = isNaN(numericValue) ? null : numericValue;
+            setSelected(newData);
+        } else if (isCurrency) {
+            const newData = { ...data };
+            newData[propertyName] = formatCurrencyRealTime(value);
             setSelected(newData);
         } else {
             const newData = { ...data };
@@ -173,12 +199,13 @@ export function IsEdit({ data, handleEditRow, inputsConfig, isEdit, products, se
                             {inputsConfig.map((inputConfig) => (
                                 <div key={inputConfig.propertyName}>
                                     <Input
+                                        disabled={inputConfig.isDisable}
                                         key={inputConfig.propertyName}
                                         error=""
                                         label={inputConfig.label}
                                         name={inputConfig.propertyName}
-                                        onChange={(e) => handleChange(e, inputConfig.propertyName, inputConfig.type ? inputConfig.type : 'string')}
-                                        value={data[inputConfig.propertyName]}
+                                        onChange={(e) => handleChange(e, inputConfig.propertyName, inputConfig.type ? inputConfig.type : 'string', inputConfig.isCurrency)}
+                                        value={inputConfig.isCurrency ? NumberFormatForBrazilianCurrency(data[inputConfig.propertyName]) : data[inputConfig.propertyName]}
                                         raisedLabel
                                         style={{ fontSize: '16px' }}
                                         styleLabel={{ marginTop: '0', fontSize: 12 }}
@@ -259,6 +286,13 @@ export function IsEdit({ data, handleEditRow, inputsConfig, isEdit, products, se
                     </ContainerFlutuante>
                 ) : (
                     <ContainerFlutuante >
+                        <BoxClose>
+                            <DivClose
+                                onClick={() => setIsEdit(false)}
+                            >
+                                <StyledAiOutlineClose />
+                            </DivClose>
+                        </BoxClose>
                         <div>
                             <TitleDefault style={{ margin: '0 0 8px 0' }}>
                                 {
@@ -281,12 +315,13 @@ export function IsEdit({ data, handleEditRow, inputsConfig, isEdit, products, se
                             {inputsConfig.map((inputConfig) => (
                                 <div key={inputConfig.propertyName}>
                                     <Input
+                                        disabled={inputConfig.isDisable}
                                         key={inputConfig.propertyName}
                                         error=""
                                         label={inputConfig.label}
                                         name={inputConfig.propertyName}
-                                        onChange={(e) => handleChange(e, inputConfig.propertyName, inputConfig.type ? inputConfig.type : 'string')}
-                                        value={data[inputConfig.propertyName]}
+                                        onChange={(e) => handleChange(e, inputConfig.propertyName, inputConfig.type ? inputConfig.type : 'string', inputConfig.isCurrency)}
+                                        value={inputConfig.isCurrency ? NumberFormatForBrazilianCurrency(data[inputConfig.propertyName]) : data[inputConfig.propertyName]}
                                         raisedLabel
                                         style={{ fontSize: '16px' }}
                                         styleLabel={{ marginTop: '0', fontSize: 12 }}

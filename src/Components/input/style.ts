@@ -9,6 +9,7 @@ export const InputWrapper = styled.div`
   padding: 15px 0 0;
   margin-top: 10px;
   width: 100%;
+  height: 4rem;
 `;
 
 export const LabelWrapper = styled.label<{ isDisabled?: boolean, raisedLabel?:boolean, filled?:boolean  }>`

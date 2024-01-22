@@ -10,7 +10,7 @@ import React, { useState, useEffect } from "react";
 import ComprasModel from "../compras/model/compras";
 import GenericTable from "../../../Components/table";
 import FiltroGeneric from "../../../Components/filtro";
-import { IsEdit } from "../../../Components/isEdit/isEdit";
+import { InputConfig, IsEdit } from "../../../Components/isEdit/isEdit";
 import { useUniqueNames } from '../../../hooks/useUniqueName';
 import FormAlert from "../../../Components/FormAlert/formAlert";
 import { IsAdding } from "../../../Components/isAdding/isAdding";
@@ -51,12 +51,7 @@ export default function CadastroProduto() {
 
     const { convertToNumber, formatCurrency, formatCurrencyRealTime } = useFormatCurrency();
 
-    const inputsConfig = [
-        { label: 'Nome', propertyName: 'nmProduto' },
-        { label: 'Código do Produto', propertyName: 'cdProduto' },
-        { label: 'Valor de Venda', propertyName: 'vlVendaProduto' },
-        { label: 'Valor Pago', propertyName: 'vlUnitario' },
-    ];
+
 
     //realizando busca no banco de dados
     const {
@@ -79,8 +74,14 @@ export default function CadastroProduto() {
                 if (cod) return false
                 return true
             }),
-            vlUnitario: Yup.string().required('Campo obrigatório'),
-            vlVendaProduto: Yup.string().required('Campo obrigatório'),
+            vlUnitario: Yup.string().required('Campo obrigatório').test('vlUnitario', 'Campo Obrigatório', (value) => {
+                const numericValue = value.replace(/[^\d]/g, '');
+                return parseFloat(numericValue) > 0;
+            }),
+            vlVendaProduto: Yup.string().required('Campo obrigatório').test('vlVendaProduto', 'Campo Obrigatório', (value) => {
+                const numericValue = value.replace(/[^\d]/g, '');
+                return parseFloat(numericValue) > 0;
+            }),
             tpProduto: Yup.number().transform((value) => (isNaN(value) ? undefined : value)).required('Campo obrigatório'),
             mpFabricado: Yup.array().test("array vazio", 'Campo obrigatório', function (value) {
                 const tpProduto = this.resolve(Yup.ref('tpProduto'));
@@ -107,7 +108,12 @@ export default function CadastroProduto() {
         })
         setKey(Math.random());
     }
-
+    const inputsConfig: InputConfig[] = [
+        { label: 'Nome', propertyName: 'nmProduto' },
+        { label: 'Código do Produto', propertyName: 'cdProduto' },
+        { label: 'Valor de Venda', propertyName: 'vlVendaProduto', isCurrency: true },
+        { label: 'Valor Pago', propertyName: 'vlUnitario', isCurrency: true, isDisable: selected?.tpProduto === SituacaoProduto.FABRICADO },
+    ];
     //enviando formulario
     async function handleSubmitForm() {
         const valuesUpdate = { ...values, nrOrdem: 0 };
@@ -151,6 +157,9 @@ export default function CadastroProduto() {
         if (selected) {
             const refID: string = selected.id ?? '';
             const refTable = doc(db, "Produtos", refID);
+
+            selected.vlVendaProduto = convertToNumber(selected.vlVendaProduto.toString())
+            selected.vlUnitario = convertToNumber(selected.vlUnitario.toString())
 
             if (JSON.stringify(selected) !== JSON.stringify(initialValues)) {
                 await updateDoc(refTable, { ...selected })

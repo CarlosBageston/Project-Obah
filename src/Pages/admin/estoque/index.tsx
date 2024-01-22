@@ -45,7 +45,7 @@ export default function Estoque() {
                     <BoxTitleFilterDefault>
                         <BoxTitleDefault>
                             <div>
-                                <FiltroGeneric data={dataTableComprado} setFilteredData={setDataTableComprado} carregarDados={setRecarregue} type="produto" />
+                                <FiltroGeneric data={dataTableFabricado} setFilteredData={setDataTableFabricado} carregarDados={setRecarregue} type="produto" />
                             </div>
                         </BoxTitleDefault>
                         <BoxFilterDefault>
@@ -72,7 +72,7 @@ export default function Estoque() {
                     <BoxTitleFilterDefault>
                         <BoxTitleDefault>
                             <div>
-                                <FiltroGeneric data={dataTableFabricado} setFilteredData={setDataTableFabricado} carregarDados={setRecarregue} type="produto" />
+                                <FiltroGeneric data={dataTableComprado} setFilteredData={setDataTableComprado} carregarDados={setRecarregue} type="produto" />
                             </div>
                         </BoxTitleDefault>
                         <BoxFilterDefault>

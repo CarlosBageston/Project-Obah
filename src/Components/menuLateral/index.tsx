@@ -127,6 +127,7 @@ export default function MenuLateral() {
 
     const handleDrawerClose = () => {
         setOpen(false);
+        setOpenSubOpcao(false)
     };
     const list = () => (
         <Box

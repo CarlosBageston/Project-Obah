@@ -52,7 +52,7 @@ export const StyledListItemButton = styled(ListItemButton)`
         position: absolute;
         background-color: 'transparent';
         clip-path: inset(0 2% 0 0);
-        top: -20px;
+        top: -19px;
         right: 8px;
         height: 20px;
         width: 25px;
@@ -68,7 +68,7 @@ export const StyledListItemButton = styled(ListItemButton)`
         position: absolute;
         background-color: 'transparent';
         clip-path: inset(-1px -1% -6px 0px);
-        bottom: -20px;
+        bottom: -19px;
         right: 8px;
         height: 20px;
         width: 25px;

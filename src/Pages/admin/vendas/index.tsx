@@ -77,7 +77,10 @@ export default function Vendas() {
         validateOnChange: true,
         initialValues,
         validationSchema: Yup.object().shape({
-            vlRecebido: Yup.string().required("Campo Obrigatório")
+            vlRecebido: Yup.string().required("Campo Obrigatório").test('vlRecebido', 'Campo Obrigatório', (value) => {
+                const numericValue = value.replace(/[^\d]/g, '');
+                return parseFloat(numericValue) > 0;
+            })
         }),
         onSubmit: handleSubmitForm,
     });
@@ -111,13 +114,11 @@ export default function Vendas() {
         const vlVendaProduto = produtoEncontrado.vlVendaProduto
 
         if (multiplica && isBarcodeNumeric) {
-            if (produtoEncontrado) {
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                const { mpFabricado, ...rest } = produtoEncontrado;
-                const { valorTotal, formatTotalLucro } = calcularTotais(vlVendaProduto, multiplica, produtoEncontrado.vlUnitario);
-                const novoProduto: ProdutoEscaniado = { ...rest, vlTotalMult: valorTotal, quantidadeVenda: multiplica, vlLucro: formatTotalLucro };
-                adicionarProdutoAoArray(values, novoProduto);
-            }
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { mpFabricado, ...rest } = produtoEncontrado;
+            const { valorTotal, formatTotalLucro } = calcularTotais(vlVendaProduto, multiplica, produtoEncontrado.vlUnitario);
+            const novoProduto: ProdutoEscaniado = { ...rest, vlTotalMult: valorTotal, quantidadeVenda: multiplica, vlLucro: formatTotalLucro };
+            adicionarProdutoAoArray(values, novoProduto);
             setBarcode('')
             setMultiplica(undefined)
             setKey(Math.random())
@@ -396,7 +397,7 @@ export default function Vendas() {
                                 key={`valorRecebido${key}`}
                                 label="Valor Pago"
                                 error={touched.vlRecebido && errors.vlRecebido ? errors.vlRecebido : ''}
-                                name="valorRecebido"
+                                name="vlRecebido"
                                 value={values.vlRecebido !== 0 ? values.vlRecebido : ''}
                                 maxLength={9}
                                 onKeyPress={e => onKeyPressHandleSubmit(e)}
@@ -433,8 +434,8 @@ export default function Vendas() {
                                         <TitleNota>Descrição do Produto</TitleNota>
                                         <TitleNota>Valor do Produto</TitleNota>
                                     </ContainerDescricao>
-                                    {values.produtoEscaniado.map(produto => (
-                                        <ContainerPreco key={produto.cdProduto}>
+                                    {values.produtoEscaniado.map((produto, index) => (
+                                        <ContainerPreco key={index}>
                                             <TitlePreco>{produto.nmProduto}</TitlePreco>
                                             <TitlePreco>{produto.vlTotalMult ? NumberFormatForBrazilianCurrency(produto.vlTotalMult) : ''}</TitlePreco>
                                         </ContainerPreco>

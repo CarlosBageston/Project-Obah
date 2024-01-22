@@ -70,9 +70,9 @@ export default function AtualizarEstoque() {
         { label: 'Nome Do Produto', propertyName: 'nmProduto' },
         { label: 'Código do Produto', propertyName: 'cdProduto' },
         { label: 'Data', propertyName: 'dtCompra' },
-        { label: 'Valor Unitário', propertyName: 'vlUnitario', type: 'number' },
+        { label: 'Valor Unitário', propertyName: 'vlUnitario', isCurrency: true },
         { label: 'Quantidade', propertyName: 'quantidade', type: 'number' },
-        { label: 'Valor Total', propertyName: 'totalPago', type: 'number' },
+        { label: 'Valor Total', propertyName: 'totalPago', isCurrency: true, isDisable: true },
         { label: 'Quant. mínima em estoque', propertyName: 'qntMinima', type: 'number' },
         { label: 'Quantidade na Caixa', propertyName: 'cxProduto', type: 'number' },
         { label: 'Quantidade KG', propertyName: 'kgProduto', type: 'number' },
@@ -111,11 +111,16 @@ export default function AtualizarEstoque() {
         validationSchema: Yup.object().shape({
             nmProduto: Yup.string().required('Campo obrigatório'),
             cdProduto: Yup.string().required('Campo obrigatório'),
-            vlUnitario: Yup.string().required('Campo obrigatório'),
+            vlUnitario: Yup.string().required('Campo obrigatório').test('vlVendaProduto', 'Campo Obrigatório', (value) => {
+                const numericValue = value.replace(/[^\d]/g, '');
+                return parseFloat(numericValue) > 0;
+            }),
             dtCompra: Yup.string().required('Campo obrigatório'),
             cxProduto: Yup.number().transform((value) => (isNaN(value) ? undefined : value)).optional().nullable(),
             tpProduto: Yup.number().transform((value) => (isNaN(value) ? undefined : value)).required('Campo obrigatório'),
-            quantidade: Yup.number().transform((value) => (isNaN(value) ? undefined : value)).required('Campo obrigatório'),
+            quantidade: Yup.number().transform((value) => (isNaN(value) ? undefined : value)).required('Campo obrigatório').test('vlVendaProduto', 'Campo Obrigatório', (value) => {
+                return value > 0;
+            }),
             qntMinima: Yup.number().required('Campo obrigatório').typeError('Campo obrigatório'),
             nrOrdem: Yup.number().optional().nullable()
         }),
@@ -439,7 +444,7 @@ export default function AtualizarEstoque() {
     // O cálculo é realizado multiplicando a quantidade pelo valor unitário, formatando o resultado e atualizando o estado correspondente.
     useEffect(() => {
         if (isEdit && selected) {
-            const multiplication = selected.quantidade * selected.vlUnitario
+            const multiplication = convertToNumber(selected.quantidade.toString()) * convertToNumber(selected.vlUnitario.toString())
             if (!isNaN(multiplication)) {
                 setSelected((prevSelected) => ({
                     ...prevSelected,
@@ -461,6 +466,9 @@ export default function AtualizarEstoque() {
         if (selected) {
             const refID: string = selected.id ?? '';
             const refTable = doc(db, "Compras", refID);
+
+            selected.totalPago = convertToNumber(selected.totalPago?.toString() ?? '')
+            selected.vlUnitario = convertToNumber(selected.vlUnitario.toString())
 
             if (JSON.stringify(selected) !== JSON.stringify(initialValues)) {
                 await updateDoc(refTable, { ...selected })
@@ -502,7 +510,11 @@ export default function AtualizarEstoque() {
     }
 
     useEffect(() => { cleanState() }, [values.tpProduto])
-
+    function onKeyPress(e: React.KeyboardEvent<HTMLInputElement>) {
+        if (e.key === 'Enter') {
+            handleSubmit()
+        }
+    }
     return (
         <Box>
             <Title>Atualização de estoque</Title>
@@ -641,6 +653,7 @@ export default function AtualizarEstoque() {
                         name="quantidade"
                         value={values.quantidade || ''}
                         maxLength={10}
+                        onKeyPress={onKeyPress}
                         onChange={e => setFieldValue(e.target.name, parseFloat(e.target.value))}
                         error={touched.quantidade && errors.quantidade ? errors.quantidade : ''}
                     />
@@ -671,6 +684,7 @@ export default function AtualizarEstoque() {
                     style={{ paddingBottom: 0 }}
                     styleLabel={{ fontSize: '0.8rem' }}
                     raisedLabel={values.qntMinima ? true : false}
+                    onKeyPress={onKeyPress}
                 />
             </div>
             {/* Editar Estoque */}

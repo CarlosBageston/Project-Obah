@@ -267,7 +267,7 @@ export default function CadastroCliente() {
                 {/* Editar o cliente */}
                 <IsEdit
                     editingScreen='Cliente'
-                    data={selected}
+                    selected={selected}
                     handleEditRow={handleEditRow}
                     inputsConfig={inputsConfig}
                     isEdit={isEdit}

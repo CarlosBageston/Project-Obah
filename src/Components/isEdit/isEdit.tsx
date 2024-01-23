@@ -32,7 +32,7 @@ export interface InputConfig {
 interface IsEditProps {
     isEdit: boolean;
     inputsConfig: InputConfig[];
-    data: any;
+    selected: any;
     products: any[];
     handleEditRow: () => void;
     setSelected: React.Dispatch<React.SetStateAction<any | undefined>>;
@@ -63,7 +63,7 @@ interface IsEditProps {
  * @returns Retorna o formulário flutuante de edição de clientes, produtos ou estoque.
  */
 
-export function IsEdit({ data, handleEditRow, inputsConfig, isEdit, products, setSelected, editingScreen, setIsEdit, newData: dataSelected }: IsEditProps) {
+export function IsEdit({ selected, handleEditRow, inputsConfig, isEdit, products, setSelected, editingScreen, setIsEdit, newData: dataSelected }: IsEditProps) {
     const [isAdding, setIsAdding] = useState<boolean>(false)
     const [filterTpProdutoFabricado, setFilterTpProdutoFabricado] = useState<any>()
     const [filterTpProdutoComprado, setFilterTpProdutoComprado] = useState<any>()
@@ -85,11 +85,11 @@ export function IsEdit({ data, handleEditRow, inputsConfig, isEdit, products, se
 
     useEffect(() => {
         if (isEdit) {
-            const formattedData = { ...data };
+            const formattedData = { ...selected };
 
             inputsConfig.forEach(inputConfig => {
                 const propertyName = inputConfig.propertyName;
-                const value = data[propertyName];
+                const value = selected[propertyName];
 
                 if (inputConfig.isCurrency && typeof value === 'number') {
                     formattedData[propertyName] = NumberFormatForBrazilianCurrency(value);
@@ -103,16 +103,16 @@ export function IsEdit({ data, handleEditRow, inputsConfig, isEdit, products, se
     const handleChange = (e: ChangeEvent<HTMLInputElement>, propertyName: string, type: 'string' | 'number', isCurrency: boolean | undefined) => {
         const { value } = e.target;
         if (type && type === 'number') {
-            const newData = { ...data };
+            const newData = { ...selected };
             const numericValue = parseFloat(value.replace(/[^\d.-]/g, ''));
             newData[propertyName] = isNaN(numericValue) ? null : numericValue;
             setSelected(newData);
         } else if (isCurrency) {
-            const newData = { ...data };
+            const newData = { ...selected };
             newData[propertyName] = formatCurrencyRealTime(value);
             setSelected(newData);
         } else {
-            const newData = { ...data };
+            const newData = { ...selected };
             newData[propertyName] = value;
             setSelected(newData);
         }
@@ -205,7 +205,7 @@ export function IsEdit({ data, handleEditRow, inputsConfig, isEdit, products, se
                                         label={inputConfig.label}
                                         name={inputConfig.propertyName}
                                         onChange={(e) => handleChange(e, inputConfig.propertyName, inputConfig.type ? inputConfig.type : 'string', inputConfig.isCurrency)}
-                                        value={inputConfig.isCurrency ? NumberFormatForBrazilianCurrency(data[inputConfig.propertyName]) : data[inputConfig.propertyName]}
+                                        value={inputConfig.isCurrency ? NumberFormatForBrazilianCurrency(selected[inputConfig.propertyName]) : selected[inputConfig.propertyName]}
                                         raisedLabel
                                         style={{ fontSize: '16px' }}
                                         styleLabel={{ marginTop: '0', fontSize: 12 }}
@@ -264,7 +264,7 @@ export function IsEdit({ data, handleEditRow, inputsConfig, isEdit, products, se
                                                     error=""
                                                     label={editingScreen === 'Cliente' ? "Valor do Produto" : "Quantidade"}
                                                     name={produto.nmProduto}
-                                                    onChange={(e) => { editingScreen === 'Cliente' ? handleChangeCliente(e, index) : handleChangeProduct(e, data, index) }}
+                                                    onChange={(e) => { editingScreen === 'Cliente' ? handleChangeCliente(e, index) : handleChangeProduct(e, selected, index) }}
                                                     value={editingScreen === 'Cliente' ? produto.vlVendaProduto : produto.quantidade}
                                                     raisedLabel
                                                     style={{ fontSize: '1rem' }}
@@ -321,7 +321,7 @@ export function IsEdit({ data, handleEditRow, inputsConfig, isEdit, products, se
                                         label={inputConfig.label}
                                         name={inputConfig.propertyName}
                                         onChange={(e) => handleChange(e, inputConfig.propertyName, inputConfig.type ? inputConfig.type : 'string', inputConfig.isCurrency)}
-                                        value={inputConfig.isCurrency ? NumberFormatForBrazilianCurrency(data[inputConfig.propertyName]) : data[inputConfig.propertyName]}
+                                        value={inputConfig.isCurrency ? NumberFormatForBrazilianCurrency(selected[inputConfig.propertyName]) : selected[inputConfig.propertyName]}
                                         raisedLabel
                                         style={{ fontSize: '16px' }}
                                         styleLabel={{ marginTop: '0', fontSize: 12 }}

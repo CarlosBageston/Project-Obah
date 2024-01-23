@@ -64,7 +64,7 @@ export default function AtualizarEstoque() {
     const [produtosProcessados, setProdutosProcessados] = useState(new Set<string>());
 
     const { convertToNumber, formatCurrency, formatCurrencyRealTime } = useFormatCurrency();
-    const { removedStockCompras } = useEstoque();
+    const { removedStockCompras, updateStock } = useEstoque();
 
     const inputsConfig: InputConfig[] = [
         { label: 'Nome Do Produto', propertyName: 'nmProduto' },
@@ -444,11 +444,11 @@ export default function AtualizarEstoque() {
     // O cálculo é realizado multiplicando a quantidade pelo valor unitário, formatando o resultado e atualizando o estado correspondente.
     useEffect(() => {
         if (isEdit && selected) {
-            const multiplication = convertToNumber(selected.quantidade.toString()) * convertToNumber(selected.vlUnitario.toString())
+            const multiplication = selected.quantidade * convertToNumber(selected.vlUnitario.toString())
             if (!isNaN(multiplication)) {
                 setSelected((prevSelected) => ({
                     ...prevSelected,
-                    totalPago: parseFloat(multiplication.toFixed(2)) || 0,
+                    totalPago: formatCurrency(multiplication.toString()) as unknown as number,
                 } as ComprasModel | undefined));
             }
         } else {
@@ -466,7 +466,15 @@ export default function AtualizarEstoque() {
         if (selected) {
             const refID: string = selected.id ?? '';
             const refTable = doc(db, "Compras", refID);
-
+            const estoque: EstoqueModel = {
+                nmProduto: selected.nmProduto,
+                cdProduto: selected.cdProduto,
+                qntMinima: selected.qntMinima || 0,
+                quantidade: calculateQuantity(selected),
+                tpProduto: selected.tpProduto || 0,
+                versaos: [],
+            }
+            updateStock(estoque, selected.nrOrdem)
             selected.totalPago = convertToNumber(selected.totalPago?.toString() ?? '')
             selected.vlUnitario = convertToNumber(selected.vlUnitario.toString())
 
@@ -691,7 +699,7 @@ export default function AtualizarEstoque() {
             <IsEdit
                 editingScreen='Estoque'
                 setSelected={setSelected}
-                data={selected}
+                selected={selected}
                 handleEditRow={handleEditRow}
                 inputsConfig={inputsConfig}
                 isEdit={isEdit}

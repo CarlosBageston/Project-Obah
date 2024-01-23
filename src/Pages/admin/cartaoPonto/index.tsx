@@ -28,10 +28,7 @@ const objClean: CartaoPontoModel = {
     uid: undefined,
     vlHora: undefined
 }
-export default function CartaoPonto() {
-
-
-
+function CartaoPonto() {
     const [key, setKey] = useState<number>(0);
     const [currentColaborador, setCurrentColaborador] = useState<ColaboradorModel | null>();
     const [initialValues, setInitialValues] = useState<CartaoPontoModel>({ ...objClean });
@@ -294,3 +291,5 @@ export default function CartaoPonto() {
         </Box>
     )
 }
+
+export default CartaoPonto;

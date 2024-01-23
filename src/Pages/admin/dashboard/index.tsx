@@ -34,7 +34,7 @@ import { useFormik } from 'formik';
 import DashboardModel from './model/dashboard';
 
 
-export default function Dashboard() {
+function Dashboard() {
 
     const { dataVertical, optionsVertical, dadosPorMesVertical } = ChartBarVertical();
     const { dataLine, optionsLine, ref, dadosPorMes } = ChartLine();
@@ -192,3 +192,5 @@ export default function Dashboard() {
         </Box>
     )
 }
+
+export default Dashboard;

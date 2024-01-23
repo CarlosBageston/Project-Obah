@@ -63,7 +63,7 @@ interface IsEditProps {
  * @returns Retorna o formulário flutuante de edição de clientes, produtos ou estoque.
  */
 
-export function IsEdit({ selected, handleEditRow, inputsConfig, isEdit, products, setSelected, editingScreen, setIsEdit, newData: dataSelected }: IsEditProps) {
+function IsEdit({ selected, handleEditRow, inputsConfig, isEdit, products, setSelected, editingScreen, setIsEdit, newData: dataSelected }: IsEditProps) {
     const [isAdding, setIsAdding] = useState<boolean>(false)
     const [filterTpProdutoFabricado, setFilterTpProdutoFabricado] = useState<any>()
     const [filterTpProdutoComprado, setFilterTpProdutoComprado] = useState<any>()
@@ -342,3 +342,4 @@ export function IsEdit({ selected, handleEditRow, inputsConfig, isEdit, products
         </>
     )
 }
+export default IsEdit;

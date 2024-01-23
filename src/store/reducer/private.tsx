@@ -14,7 +14,7 @@ import logo from '../../assets/Image/logo.png';
 * @returns O componente de rota privada.
 */
 
-export default function PrivateRoute() {
+function PrivateRoute() {
     const { userLogado } = useSelector((state: State) => state.user);
     const dispatch = useDispatch();
     const [loading, setLoading] = useState(true);
@@ -55,3 +55,5 @@ export default function PrivateRoute() {
         </>
     );
 }
+
+export default PrivateRoute;

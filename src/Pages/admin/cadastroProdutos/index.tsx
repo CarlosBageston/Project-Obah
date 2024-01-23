@@ -6,18 +6,19 @@ import Button from "../../../Components/button";
 import GetData from "../../../firebase/getData";
 import { FormikTouched, useFormik } from 'formik';
 import { BoxTitleDefault } from "../estoque/style";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy } from "react";
 import ComprasModel from "../compras/model/compras";
 import GenericTable from "../../../Components/table";
 import FiltroGeneric from "../../../Components/filtro";
-import { InputConfig, IsEdit } from "../../../Components/isEdit/isEdit";
+import { InputConfig } from "../../../Components/isEdit/isEdit";
 import { useUniqueNames } from '../../../hooks/useUniqueName';
 import FormAlert from "../../../Components/FormAlert/formAlert";
-import { IsAdding } from "../../../Components/isAdding/isAdding";
 import SituacaoProduto from "../../../enumeration/situacaoProduto";
 import { calculateTotalValue } from '../../../hooks/useCalculateTotalValue';
 import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { Checkbox, FormControl, FormControlLabel, InputLabel, MenuItem, Select, } from "@mui/material";
+const IsEdit = lazy(() => import('../../../Components/isEdit/isEdit'));
+const IsAdding = lazy(() => import('../../../Components/isAdding/isAdding'));
 import {
     Box,
     Title,
@@ -40,7 +41,7 @@ const objClean: ProdutoModel = {
     nrOrdem: 0
 }
 
-export default function CadastroProduto() {
+function CadastroProduto() {
     const [key, setKey] = useState<number>(0);
     const [isEdit, setIsEdit] = useState<boolean>(false);
     const [recarregue, setRecarregue] = useState<boolean>(true);
@@ -363,3 +364,5 @@ export default function CadastroProduto() {
         </Box>
     );
 }
+
+export default CadastroProduto;

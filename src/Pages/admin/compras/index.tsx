@@ -3,7 +3,7 @@ import moment from 'moment';
 import { useFormik } from 'formik';
 import { db } from "../../../firebase";
 import ComprasModel from "./model/compras";
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy } from "react";
 import Input from "../../../Components/input";
 import Button from "../../../Components/button";
 import GetData from "../../../firebase/getData";
@@ -17,11 +17,11 @@ import EstoqueModel from '../estoque/model/estoque';
 import FormAlert from "../../../Components/FormAlert/formAlert";
 import DashboardCompras from '../dashboard/model/dashboardCompra';
 import SituacaoProduto from "../../../enumeration/situacaoProduto";
-import { InputConfig, IsEdit } from "../../../Components/isEdit/isEdit";
+import { InputConfig } from "../../../Components/isEdit/isEdit";
 import { calculateTotalValue } from '../../../hooks/useCalculateTotalValue';
 import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { Autocomplete, AutocompleteChangeReason, FormControl, InputLabel, MenuItem, Select, TextField } from "@mui/material";
-
+const IsEdit = lazy(() => import('../../../Components/isEdit/isEdit'));
 import {
     Box,
     ContainerInputs,
@@ -49,7 +49,7 @@ const objClean: ComprasModel = {
     nrOrdem: undefined
 }
 
-export default function AtualizarEstoque() {
+function AtualizarEstoque() {
     const [key, setKey] = useState<number>(0);
     const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
     const [initialValues, setInitialValues] = useState<ComprasModel>({ ...objClean });
@@ -751,3 +751,5 @@ export default function AtualizarEstoque() {
         </Box>
     );
 }
+
+export default AtualizarEstoque;

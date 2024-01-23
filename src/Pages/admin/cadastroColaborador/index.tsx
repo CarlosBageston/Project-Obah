@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import { useState } from "react";
+import { lazy, useState } from "react";
 import { useFormik } from "formik";
 import { db } from "../../../firebase";
 import Input from "../../../Components/input";
@@ -10,11 +10,11 @@ import { BoxTitleDefault } from "../estoque/style";
 import { ContainerInputs, DivInput } from "./style";
 import GenericTable from "../../../Components/table";
 import FiltroGeneric from "../../../Components/filtro";
-import { IsEdit } from "../../../Components/isEdit/isEdit";
 import FormAlert from "../../../Components/FormAlert/formAlert";
 import formatPhone from "../../../Components/masks/maskTelefone";
 import { Box, ContainerButton, TitleDefault } from "../cadastroClientes/style";
 import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
+const IsEdit = lazy(() => import('../../../Components/isEdit/isEdit'));
 
 
 
@@ -28,7 +28,7 @@ const objClean: ColaboradorModel = {
     idCartaoPonto: undefined,
     vlHora: undefined
 }
-export default function CadastroColaborador() {
+function CadastroColaborador() {
 
     const [isEdit, setIsEdit] = useState<boolean>(false);
     const [selected, setSelected] = useState<ColaboradorModel>();
@@ -290,3 +290,5 @@ export default function CadastroColaborador() {
         </>
     )
 }
+
+export default CadastroColaborador;

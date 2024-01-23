@@ -1,20 +1,17 @@
 import { auth } from '../../firebase';
-import { useEffect, useState } from 'react';
-import logo from '../../assets/Image/logo.png';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { Dots } from '../../store/assets/loadingStyle';
 import { onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
-import { Box, Container, DivInput, Title, Input, Button, Error, BoxLoading } from './style';
+import { Box, Container, DivInput, Title, Input, Button, Error } from './style';
 import { State, setEmail, setPassword, setError, setUser, setuserLogado } from '../../store/reducer/reducer';
 
 
 
-export default function Login() {
+function Login() {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const { email, password, error } = useSelector((state: State) => state.user);
-    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -24,7 +21,6 @@ export default function Login() {
             } else {
                 dispatch(setuserLogado(false));
             }
-            setLoading(false);
         });
 
         return () => {
@@ -55,51 +51,43 @@ export default function Login() {
 
     return (
         <>
-            {loading ?
-                <BoxLoading>
-                    <div>
-                        <img src={logo} alt="logo da empresa" width={250} />
-                    </div>
-                    <Dots />
-                </BoxLoading>
-                :
-                <Box>
-                    <Container>
-                        <Title>Bem-vindo</Title>
-                        <DivInput>
-                            <Input
-                                type="text"
-                                id="email"
-                                name="email"
-                                value={email}
-                                placeholder='E-mail'
-                                onChange={e => dispatch(setEmail(e.target.value))}
-                            />
+            <Box>
+                <Container>
+                    <Title>Bem-vindo</Title>
+                    <DivInput>
+                        <Input
+                            type="text"
+                            id="email"
+                            name="email"
+                            value={email}
+                            placeholder='E-mail'
+                            onChange={e => dispatch(setEmail(e.target.value))}
+                        />
 
-                            <Input
-                                type="password"
-                                id="password"
-                                name="password"
-                                placeholder='Senha'
-                                value={password}
-                                onChange={e => dispatch(setPassword(e.target.value))}
-                                onKeyDown={e => onKeyPressAuthenticate(e)}
-                            />
-                            <Error>{error}</Error>
-                            <Button
-                                onKeyDown={e => onKeyPressAuthenticate(e)}
-                                onClick={authenticateUser}
-                            >
-                                Login
-                                <div className="arrow-wrapper">
-                                    <div className="arrow"></div>
-                                </div>
-                            </Button>
-                        </DivInput>
+                        <Input
+                            type="password"
+                            id="password"
+                            name="password"
+                            placeholder='Senha'
+                            value={password}
+                            onChange={e => dispatch(setPassword(e.target.value))}
+                            onKeyDown={e => onKeyPressAuthenticate(e)}
+                        />
+                        <Error>{error}</Error>
+                        <Button
+                            onKeyDown={e => onKeyPressAuthenticate(e)}
+                            onClick={authenticateUser}
+                        >
+                            Login
+                            <div className="arrow-wrapper">
+                                <div className="arrow"></div>
+                            </div>
+                        </Button>
+                    </DivInput>
 
-                    </Container>
-                </Box>
-            }
+                </Container>
+            </Box>
         </>
     )
 }
+export default Login;

@@ -249,7 +249,7 @@ export default function CadastroColaborador() {
                 <IsEdit
                     editingScreen='Colaborador'
                     setSelected={setSelected}
-                    data={selected}
+                    selected={selected}
                     handleEditRow={handleEditRow}
                     inputsConfig={inputsConfig}
                     isEdit={isEdit}

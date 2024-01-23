@@ -195,9 +195,56 @@ export default function useEstoque(){
             }
         })
     }
+
+    /**
+     * Atualiza o estoque.
+     *
+     * @param {EstoqueModel} estoque - Objeto representando o estoque a ser atualizado.
+     * @param { number | undefined} versao - Numero da versão que está sendo atualizado.
+     */
+    async function updateStock(estoque: EstoqueModel, versao: number | undefined) {
+        const estoqueExistente = dataTableEstoque.find(
+            estoques => estoques.nmProduto === estoque.nmProduto
+        );
+        if (estoqueExistente) {
+            const refID: string = estoqueExistente.id ?? '';
+            const refTable = doc(db, "Estoque", refID);
+            const versaoCorrespondente = estoqueExistente.versaos.find(versaoObjeto =>
+                versaoObjeto.versao === versao
+            );
+            if (versaoCorrespondente) {
+                // Atualiza a quantidade da versão correspondente
+                versaoCorrespondente.vrQntd = estoque.quantidade;
+    
+                // Atualiza os outros valores do estoque
+                estoqueExistente.qntMinima = estoque.qntMinima;
+                estoqueExistente.nmProduto = estoque.nmProduto;
+                estoqueExistente.cdProduto = estoque.cdProduto;
+    
+                // Soma a quantidade de todas as versões
+                const totalQuantidadeVersoes = estoqueExistente.versaos.reduce((total, current) => {
+                    return total + current.vrQntd;
+                }, 0);
+    
+                // Atualiza a quantidade total no estoque
+                estoqueExistente.quantidade = totalQuantidadeVersoes;
+
+                await updateDoc(refTable, {
+                    nmProduto: estoqueExistente.nmProduto,
+                    cdProduto: estoqueExistente.cdProduto,
+                    quantidade: estoqueExistente.quantidade,
+                    tpProduto: estoqueExistente.tpProduto,
+                    qntMinima: estoqueExistente.qntMinima,
+                    versaos: estoqueExistente.versaos,
+                });
+            }
+        }
+    }
+
     return {
         removedStockEntrega,
         removedStockVenda, 
-        removedStockCompras
+        removedStockCompras,
+        updateStock
     }
 }

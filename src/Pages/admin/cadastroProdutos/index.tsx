@@ -313,7 +313,7 @@ export default function CadastroProduto() {
             <IsEdit
                 editingScreen='Produto'
                 setSelected={setSelected}
-                data={selected}
+                selected={selected}
                 handleEditRow={handleEditRow}
                 inputsConfig={inputsConfig}
                 isEdit={isEdit}

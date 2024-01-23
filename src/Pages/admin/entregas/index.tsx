@@ -48,7 +48,7 @@ const objClean: EntregaModel = {
     quantidades: [],
 }
 
-export default function Entregas() {
+function Entregas() {
     const [key, setKey] = useState<number>(0);
     const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
     const [selected, setSelected] = useState<EntregaModel>();
@@ -351,3 +351,5 @@ export default function Entregas() {
         </Box>
     );
 }
+
+export default Entregas;

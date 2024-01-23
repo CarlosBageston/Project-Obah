@@ -14,7 +14,7 @@ import {
 } from './style';
 import SituacaoProduto from "../../../enumeration/situacaoProduto";
 
-export default function Estoque() {
+function Estoque() {
     const [recarregue, setRecarregue] = useState<boolean>(true);
     const [dataTableFabricado, setDataTableFabricado] = useState<EstoqueModel[]>([])
     const [dataTableComprado, setDataTableComprado] = useState<EstoqueModel[]>([])
@@ -99,3 +99,5 @@ export default function Estoque() {
         </Box>
     );
 }
+
+export default Estoque;

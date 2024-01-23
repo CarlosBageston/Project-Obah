@@ -51,7 +51,7 @@ const objClean: VendaModel = {
     vlTroco: 0,
     produtoEscaniado: []
 }
-export default function Vendas() {
+function Vendas() {
     const [key, setKey] = useState<number>(0);
     const [barcode, setBarcode] = useState("");
     const [qntBolas, setQntBolas] = useState<string>('');
@@ -450,3 +450,5 @@ export default function Vendas() {
         </Box>
     );
 }
+
+export default Vendas;

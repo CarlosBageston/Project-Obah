@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import { useState } from 'react';
+import { lazy, useState } from 'react';
 import { useFormik } from 'formik';
 import { db } from '../../../firebase';
 import ClienteModel from './model/cliente';
@@ -8,12 +8,12 @@ import GetData from '../../../firebase/getData';
 import Button from '../../../Components/button';
 import GenericTable from '../../../Components/table';
 import FiltroGeneric from '../../../Components/filtro';
-import { IsEdit } from '../../../Components/isEdit/isEdit';
 import ProdutosModel from '../cadastroProdutos/model/produtos';
 import FormAlert from '../../../Components/FormAlert/formAlert';
-import { IsAdding } from '../../../Components/isAdding/isAdding';
 import formatPhone from '../../../Components/masks/maskTelefone';
 import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+const IsEdit = lazy(() => import('../../../Components/isEdit/isEdit'));
+const IsAdding = lazy(() => import('../../../Components/isAdding/isAdding'));
 
 //import do styled components
 import {
@@ -38,7 +38,7 @@ const objClean: ClienteModel = {
     produtos: []
 }
 
-export default function CadastroCliente() {
+function CadastroCliente() {
     const [key, setKey] = useState<number>(0);
     const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
     const [recarregue, setRecarregue] = useState<boolean>(true);
@@ -309,3 +309,5 @@ export default function CadastroCliente() {
         </>
     )
 }
+
+export default CadastroCliente;

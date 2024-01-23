@@ -173,6 +173,27 @@ justify-content: space-between;
 align-items: stretch;
 overflow-x: auto;
 padding-top: 1rem;
+ ::-webkit-scrollbar {
+      width: 8px; 
+      background-color: #f0f0f0; 
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background-color: #9999; 
+      border-radius: 4px; 
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background-color: #999; 
+    }
+
+    ::-webkit-scrollbar-track {
+      background-color: #f0f0f0;
+    }
+
+    ::-webkit-scrollbar-track:hover {
+      background-color: #d3d3d3; 
+    }
 `;
 
 export const BoxClose = styled.div`

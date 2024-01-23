@@ -41,7 +41,7 @@ interface IsAddingProps {
  * @returns Retorna o formulário flutuante de adição de matérias-primas ou produtos.
  */
 
-export function IsAdding({ data, isAdding, setFieldValue, setIsVisibleTpProduto, products, addingScreen, errors, touched }: IsAddingProps) {
+function IsAdding({ data, isAdding, setFieldValue, setIsVisibleTpProduto, products, addingScreen, errors, touched }: IsAddingProps) {
     const [filterTpProdutoFabricado, setFilterTpProdutoFabricado] = useState<any>()
     const [filterTpProdutoComprado, setFilterTpProdutoComprado] = useState<any>()
     const {
@@ -203,3 +203,5 @@ export function IsAdding({ data, isAdding, setFieldValue, setIsVisibleTpProduto,
         </>
     )
 }
+
+export default IsAdding;

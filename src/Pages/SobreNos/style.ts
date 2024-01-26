@@ -1,7 +1,8 @@
+import { MapContainer } from "react-leaflet";
 import styled from "styled-components";
 
 export const Box = styled.div`
-height: 140vh;
+height: 100%;
 `
 
 export const ContainerTitle = styled.div`
@@ -25,14 +26,29 @@ align-items: center;
 justify-content: space-evenly;
 width: 100%;
 margin-top: 3rem;
+@media (max-width: 700px){
+    flex-direction: column;
+}
+@media (max-width: 1200px){
+    justify-content: center;
+}
 `
 
 export const CotainerSobre = styled.div`
-width: 33rem;
+width: 75%;
+@media (max-width: 700px){
+    width: 20rem;
+    padding-bottom: 1rem
+}
 `
 export const CotainerSlide = styled.div`
-width: 25rem;
-margin-left: -10rem;
+width: 60%;
+@media (max-width: 1200px){
+    width: 45%;
+}
+@media (max-width: 700px){
+    width: 100%;
+}
 `
 
 export const ContainerAllMap = styled.div`
@@ -40,6 +56,12 @@ display: flex;
 padding-bottom: 6rem;
 padding-top: 6rem;
 justify-content: space-evenly;
+
+@media (max-width: 700px){
+    flex-direction: column;
+    align-items: center;
+    padding-top: 8rem;
+}
 `
 
 export const ContainerButton = styled.div`
@@ -81,6 +103,14 @@ display: flex;
 flex-direction: column;
 justify-content: space-between;
 margin-left: -20rem;
+@media (max-width: 700px){
+    margin-left: 0;
+    margin-top: 1rem;
+    width: 80%;
+}
+@media (max-width: 1500px) and (min-width: 700px) {
+    margin-left: 0;
+}
 `
 
 export const ContainerIcons = styled.div`
@@ -89,4 +119,45 @@ justify-content: space-between;
 width: 13rem;
 `
 
+export const MapContainerLeaflet = styled(MapContainer)`
+height: 20rem;
+width: 35rem;
+margin-right: 4rem;
+box-shadow: 5px 5px 11px -1px rgb(0 0 0 / 45%);
+
+@media (max-width: 700px){
+    height: 20rem;
+    width: 80%;
+    margin-right: 0;
+}
+@media (max-width: 1000px) and (min-width: 700px) {
+    margin-right: 2rem;
+    margin-left: 1rem;
+}
+`;
+
+export const Image = styled.img`
+  max-width: 50%;
+  margin-left: 25%;
+  @media (max-width: 1200px){
+    max-width: 100%;
+    padding: 0 8px;
+    margin-left: 0;
+  }
+`;
  
+export const TitleAbout = styled.h1`
+@media (max-width: 700px){
+    font-size: 1.6rem;
+}
+`;
+
+export const DivText = styled.div`
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+width: 37%;
+@media (max-width: 700px){
+    width: 90%;
+}
+`;

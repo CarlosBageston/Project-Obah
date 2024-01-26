@@ -4,7 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import ToolTip from "../../Components/ToolTip";
 import useObserver from "../../hooks/useObserver";
 import { useEffect, useRef, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { TileLayer, Marker, Popup } from "react-leaflet";
 
 //Import Imagens/Icons
 import iconFacebook from '../../assets/Icon/facebook-icon.png'
@@ -16,9 +16,12 @@ import sorveteriaInterna from '../../assets/Image/chiquinho-sorvetes.webp'
 //Import Style
 import {
     Box,
+    Image,
     Title,
     Button,
+    DivText,
     Contagem,
+    TitleAbout,
     CotainerSobre,
     ContainerInfo,
     CotainerSlide,
@@ -27,6 +30,7 @@ import {
     ContainerAllMap,
     ContainerButton,
     ContainerAllSlide,
+    MapContainerLeaflet,
 } from "./style";
 
 
@@ -56,9 +60,12 @@ export default function SobreNos() {
         infinite: true,
         speed: 500,
         slidesToShow: 1,
-        slidesToScroll: 1
+        slidesToScroll: 1,
+        arrows: false,
+        autoplay: true,
+        autoplaySpeed: 4000,
+        cssEase: "linear"
     };
-
     //cordenadas para o mapa
     const center = { lat: -25.755124, lng: -53.075229 };
     const zoom = 15;
@@ -76,8 +83,8 @@ export default function SobreNos() {
                     <Title>anos de tradição</Title>
                 </ContainerTitle>
                 <ContainerAllSlide>
-                    <div>
-                        <h1>Conheça a Sorveteria Obah!</h1>
+                    <DivText>
+                        <TitleAbout>Conheça a Sorveteria Obah!</TitleAbout>
                         <CotainerSobre>
                             A sorveteria Obah tem na essência de seus produtos a fabricação
                             de forma semi-artesanal produzidas por uma Chef Profissional com mais de 25 anos
@@ -85,18 +92,14 @@ export default function SobreNos() {
                             Acolhendo seus clientes em um ambiente de sorveteria tradicional
                             para a tranquilidade e casualidade.
                         </CotainerSobre>
-                    </div>
+                    </DivText>
                     <CotainerSlide>
                         <Slider {...settings}>
-                            <div>
-                                <div>
-                                    <img src={sorveteriaExterna} alt="sorvete" width={400} />
-                                </div>
+                            <div >
+                                <Image src={sorveteriaExterna} alt="sorvete" />
                             </div>
-                            <div>
-                                <div>
-                                    <img src={sorveteriaInterna} alt="sorvete" width={400} />
-                                </div>
+                            <div >
+                                <Image src={sorveteriaInterna} alt="sorvete" />
                             </div>
                         </Slider>
                     </CotainerSlide>
@@ -109,10 +112,9 @@ export default function SobreNos() {
                 {/*Mapa */}
 
                 <ContainerAllMap ref={targetRef}>
-                    <MapContainer
+                    <MapContainerLeaflet
                         center={center}
                         zoom={zoom}
-                        style={{ height: "20rem", width: "35rem", boxShadow: "5px 5px 11px -1px rgb(0 0 0 / 45%)", marginRight: '4rem' }}
                     >
                         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                         <Marker position={center} >
@@ -124,11 +126,13 @@ export default function SobreNos() {
                                 <Button onClick={handleGoogleMapsClick} >Ver no Google Maps</Button>
                             </ContainerButton>
                         </Marker>
-                    </MapContainer>
+                    </MapContainerLeaflet>
                     <ContainerInfo>
                         <div>
                             <h1>Telefone</h1>
                             <p>(46) 99935-8718</p>
+                            <p>(46) 99924-8250</p>
+                            <p>(46) 99901-4982</p>
                         </div>
                         <div>
                             <h1>Localização</h1>

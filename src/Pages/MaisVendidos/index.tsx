@@ -17,9 +17,7 @@ export default function MaisVendidos() {
     return (
         <>
             <Box id='maisVendidos'>
-                <div>
-                    <ImageDetailTop src={derreter} alt='derreter' />
-                </div>
+                <ImageDetailTop src={derreter} alt='derreter' />
                 <div>
                     <Title>Queridinhos </Title>
                 </div>
@@ -49,9 +47,7 @@ export default function MaisVendidos() {
                         </div>
                     </ContainerImgName>
                 </ContainerAllImage>
-                <div>
-                    <ImageDetailBottom src={derreter} alt='derreter' />
-                </div>
+                <ImageDetailBottom src={derreter} alt='derreter' />
             </Box>
         </>
     )

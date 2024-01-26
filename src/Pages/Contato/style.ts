@@ -30,24 +30,42 @@ export const ContainerContato = styled.div`
 display: flex;
 justify-content: space-evenly;
 margin-top: 4rem;
+@media (max-width: 1000px){
+    flex-direction: column;
+    align-items: center;
+}
+
 `;
 export const ContainerBox = styled.div`
-width: 30em;
+width: 30rem;
 height: 33rem;
 background-color: rgb(163 163 163);
 padding: 1rem;
 background-color: #72000c;
 border-radius: 1rem;
 box-shadow: 5px 5px 11px 0px rgb(0 0 0 / 60%);
+@media (max-width: 1000px){
+    width: 90%;
+    margin-bottom: 2rem;
+}
+@media (max-width: 1000px) and (min-width: 700px) {
+    margin-top: 1rem;
+}
 `;
 
 export const TitleBox = styled.h1`
 color: #ffc107;
 font-size: 3rem;
+@media (max-width: 700px){
+    font-size: 2rem;
+}
 `;
 
 export const SubTitleBox = styled(TitleBox)`
 font-size: 2.1rem;
+@media (max-width: 700px){
+    font-size: 2rem;
+}
 `;
 export const SubTitleWhatsapp = styled(TitleBox)`
 font-size: 1.4rem;

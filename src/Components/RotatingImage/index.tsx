@@ -60,13 +60,17 @@ export const RotatingImage: React.FC<Props> = ({
 };
 
 const ContainerImageSingle = styled.div`
-  width: 12rem;
+width: 12rem;
 height: 12rem;
 background-color: wheat;
 border-radius: 50%;
 display: flex;
 justify-content: center;
 box-shadow: 2px 2px 2px 2px #00000024;
+@media (max-width: 700px) {
+    width: 10rem;
+    height: 10rem;
+}
 `;
 
 const Image = styled.img<{ changeImage?: boolean, rotateImage?: boolean }>`
@@ -96,5 +100,9 @@ ${({ rotateImage }) =>
 transform: rotateY(0deg);
 transition: transform 0.2s linear 0.2s;
 `}
+
+@media (max-width: 700px) {
+    width: 120px;
+}
 
 `

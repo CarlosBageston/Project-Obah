@@ -11,7 +11,11 @@ export default function Carousel() {
         infinite: true,
         speed: 500,
         slidesToShow: 1,
-        slidesToScroll: 1
+        slidesToScroll: 1,
+        arrows: false,
+        autoplay: true,
+        autoplaySpeed: 4000,
+        cssEase: "linear"
     };
     return (
         <>
@@ -27,7 +31,9 @@ export default function Carousel() {
                                 <Title>Com 25% de desconto</Title>
                                 <SubTitle >Uma explosão de sabores <br />em cada colherada!</SubTitle>
                             </ContainerTitle>
-                            <img src={sorvete} alt="sorvete" />
+                            <div style={{ maxWidth: '90%' }}>
+                                <img src={sorvete} alt="sorvete" />
+                            </div>
                         </ContainerCarousel>
                     </div>
                     <div>
@@ -36,7 +42,9 @@ export default function Carousel() {
                                 <Title>Com 25% de desconto</Title>
                                 <SubTitle >Uma explosão de sabores <br />em cada colherada!</SubTitle>
                             </ContainerTitle>
-                            <img src={sorvete} alt="sorvete" />
+                            <div style={{ maxWidth: '90%' }}>
+                                <img src={sorvete} alt="sorvete" />
+                            </div>
                         </ContainerCarousel>
                     </div>
                 </Slider>

@@ -13,9 +13,16 @@ margin-top: 3rem;
 `;
 export const ImageDetail = styled.img`
 position: absolute;
-top: 0;
+top: -1px;
 left: 0;
 width: 100%;
+`;
+
+export const DivText = styled.div`
+margin-left: -35rem;
+@media (max-width: 700px){
+    margin-left: 0;
+}
 `;
 
 export const Text = styled.p`
@@ -23,7 +30,7 @@ font-size: 14px;
 color: #dfdfdf;
 margin-top: 1rem;
 
-@media screen and (max-width: 540px) {
+@media (max-width: 700px) {
     font-size: 10px;
     padding-left: 12px;
 }
@@ -33,8 +40,8 @@ export const Image = styled.img`
 width: 7rem;
 margin-top: 18px;
 
-@media screen and (max-width: 540px) {
- width:90px ;
+@media (max-width: 700px) {
+ width: 90px;
  margin: 8px;
 }
 `;

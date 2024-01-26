@@ -88,7 +88,7 @@ export default function Contato() {
     }
     return (
         <>
-            <Box>
+            <Box id="contato">
                 {/*toolTip */}
                 <ToolTip tooltipRef={targetRef} />
                 <div>

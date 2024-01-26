@@ -9,10 +9,14 @@ width: 100%;
 `
 
 export const ContainerCarousel = styled.div`
-    display: flex;
-    justify-content: center;
-`
+display: flex;
+justify-content: center;
 
+@media (max-width: 700px) {
+    flex-direction: column;
+    padding-top: 6rem;
+}
+`
 export const ContainerTitle = styled.div`
 display: flex;
 flex-direction: column;
@@ -28,12 +32,6 @@ font-family: ${props => props.theme.fontsDefault.secondaryFont};
 
 export const SubTitle = styled(Title) `
 font-size: 2rem;
-`
-
-export const ImageLogo = styled.img`
-z-index: 1;
-margin-top: 4rem;
-transform: rotate(5deg);
 `
 
 export const ImageDetail = styled.img`

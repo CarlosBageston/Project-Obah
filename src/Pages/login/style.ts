@@ -92,7 +92,6 @@ export const Button = styled.button`
   --hover-color: #111;
   --arrow-width: 10px;
   --arrow-stroke: 2px;
-  box-sizing: border-box;
   border: 0;
   border-radius: 20px;
   color: var(--secondary-color);
@@ -122,7 +121,6 @@ export const Button = styled.button`
 
   .arrow::before {
     content: "";
-    box-sizing: border-box;
     position: absolute;
     border: solid var(--secondary-color);
     border-width: 0 var(--arrow-stroke) var(--arrow-stroke) 0;

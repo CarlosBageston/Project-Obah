@@ -52,8 +52,16 @@ font-size: 1.2rem;
 
 export const ImageLogo = styled.img`
 z-index: 1;
-margin-top: 4rem;
+width: 15rem;
+margin-right: -4.5rem;
+margin-top: 3rem;
 transform: rotate(5deg);
+@media (max-width: 700px) {
+    margin-top: 1rem;
+}
+@media (max-width: 1400px) and (min-width: 700px) {
+    margin-right: -1.5rem;
+}
 `;
 
 export const Admin = styled.li`

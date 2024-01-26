@@ -37,11 +37,11 @@ margin-top: 1rem;
 `;
 
 export const Image = styled.img`
-width: 7rem;
+width: 12rem;
 margin-top: 18px;
 
 @media (max-width: 700px) {
- width: 90px;
+ width: 10rem;
  margin: 8px;
 }
 `;

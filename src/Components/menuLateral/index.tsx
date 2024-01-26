@@ -2,8 +2,8 @@ import { useState } from 'react';
 import List from '@mui/material/List';
 import Divider from '@mui/material/Divider';
 import MuiDrawer from '@mui/material/Drawer';
-import logo from '../../assets/Image/logo.png';
 import { Link, Outlet } from 'react-router-dom';
+import logo from '../../assets/Image/logo-admin.png';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import { styled, Theme, CSSObject } from '@mui/material/styles';
 import MuiAppBar, { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
@@ -242,11 +242,11 @@ export default function MenuLateral() {
                 <div onClick={handleDrawerClose}>
                     {open ? (
                         <BoxTitle>
-                            <img src={logo} alt="Logo da empresa" width={80} />
+                            <img src={logo} alt="Logo da empresa" width={220} />
                             <Title>Sorveteria Obah!</Title>
                         </BoxTitle>
                     ) : (
-                        <img src={logo} alt="mini logo" width={60} style={{ marginLeft: 4 }} />
+                        <img src={logo} alt="mini logo" width={70} />
                     )}
                 </div>
                 <Divider color="#fafafad4" />

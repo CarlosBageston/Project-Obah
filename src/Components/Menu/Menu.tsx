@@ -25,7 +25,7 @@ export default function Menu() {
         <>
             <Box id="menu">
                 <ContainerImage>
-                    <ImageLogo src={logo} alt="logo" width={150} />
+                    <ImageLogo src={logo} alt="logo" />
                 </ContainerImage>
                 <ContainerMenu>
                     <ContainerList>

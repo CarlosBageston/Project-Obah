@@ -3,10 +3,10 @@ import moment from 'moment';
 import { useFormik } from 'formik';
 import { db } from "../../../firebase";
 import ComprasModel from "./model/compras";
-import { useState, useEffect, lazy } from "react";
 import Input from "../../../Components/input";
 import Button from "../../../Components/button";
 import GetData from "../../../firebase/getData";
+import { useState, useEffect, lazy } from "react";
 import GenericTable from "../../../Components/table";
 import FiltroGeneric from "../../../Components/filtro";
 import ClienteModel from '../cadastroClientes/model/cliente';
@@ -30,9 +30,12 @@ import {
     ContainerButton,
 } from './style'
 import { BoxTitleDefault } from "../estoque/style";
+
+//hooks
 import useFormatCurrency from '../../../hooks/formatCurrency';
 import useEstoque from '../../../hooks/useEstoque';
 import AlertDialog from '../../../Components/FormAlert/dialogForm';
+import useHandleInputKeyPress from '../../../hooks/useHandleInputKeyPress';
 
 
 const objClean: ComprasModel = {
@@ -65,6 +68,7 @@ function AtualizarEstoque() {
 
     const { convertToNumber, formatCurrency, formatCurrencyRealTime } = useFormatCurrency();
     const { removedStockCompras, updateStock } = useEstoque();
+    const { onKeyPressHandleSubmit } = useHandleInputKeyPress();
 
     const inputsConfig: InputConfig[] = [
         { label: 'Nome Do Produto', propertyName: 'nmProduto' },
@@ -518,11 +522,7 @@ function AtualizarEstoque() {
     }
 
     useEffect(() => { cleanState() }, [values.tpProduto])
-    function onKeyPress(e: React.KeyboardEvent<HTMLInputElement>) {
-        if (e.key === 'Enter') {
-            handleSubmit()
-        }
-    }
+
     return (
         <Box>
             <Title>Atualização de estoque</Title>
@@ -661,7 +661,7 @@ function AtualizarEstoque() {
                         name="quantidade"
                         value={values.quantidade || ''}
                         maxLength={10}
-                        onKeyPress={onKeyPress}
+                        onKeyPress={e => onKeyPressHandleSubmit(e, handleSubmit)}
                         onChange={e => setFieldValue(e.target.name, parseFloat(e.target.value))}
                         error={touched.quantidade && errors.quantidade ? errors.quantidade : ''}
                     />
@@ -692,7 +692,7 @@ function AtualizarEstoque() {
                     style={{ paddingBottom: 0 }}
                     styleLabel={{ fontSize: '0.8rem' }}
                     raisedLabel={values.qntMinima ? true : false}
-                    onKeyPress={onKeyPress}
+                    onKeyPress={e => onKeyPressHandleSubmit(e, handleSubmit)}
                 />
             </div>
             {/* Editar Estoque */}

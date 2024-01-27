@@ -66,7 +66,7 @@ export default function useHandleInputKeyPress() {
      * Adiciona o efeito ao nível do documento para ouvir eventos de teclado para a tecla especificada.
      *
      * @param key - Código da tecla.
-     * @param callback - Função de retorno de chamada a ser chamada quando a tecla é pressionada.
+     * @param callback - Função que retorna chamada quando a tecla é pressionada.
      */
     const useShortcut = (key: string, callback: () => void) => {
         useEffect(() => {

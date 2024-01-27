@@ -1,18 +1,20 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import * as Yup from 'yup';
 import { format } from "date-fns";
 import { useFormik } from 'formik';
 import { db } from "../../../firebase";
-import VendaModel, { ProdutoEscaniado } from "./model/vendas";
 import { CgAddR } from 'react-icons/cg';
+import { IoMdClose } from "react-icons/io";
 import Input from "../../../Components/input";
 import Button from "../../../Components/button";
 import GetData from "../../../firebase/getData";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { addDoc, collection } from "firebase/firestore";
+import VendaModel, { ProdutoEscaniado } from "./model/vendas";
 import ProdutosModel from "../cadastroProdutos/model/produtos";
 import FormAlert from "../../../Components/FormAlert/formAlert";
 import SituacaoProduto from "../../../enumeration/situacaoProduto";
-import iceCreamSad from '../../../assets/Image/drawingSadIceCream.png'
+import iceCreamSad from '../../../assets/Image/drawingSadIceCream.png';
 import {
     Box,
     Title,
@@ -39,9 +41,11 @@ import {
     DivSuggestions,
     Suggestions,
     SuggestionsLi,
+    DivIcon,
 } from './style'
 import useFormatCurrency from '../../../hooks/formatCurrency';
 import useEstoque from '../../../hooks/useEstoque';
+import useHandleInputKeyPress from '../../../hooks/useHandleInputKeyPress';
 
 
 const objClean: VendaModel = {
@@ -54,7 +58,7 @@ const objClean: VendaModel = {
 function Vendas() {
     const [key, setKey] = useState<number>(0);
     const [barcode, setBarcode] = useState("");
-    const [qntBolas, setQntBolas] = useState<string>('');
+    const [qntBolas, setQntBolas] = useState<number | undefined>(undefined);
     const [ShowSuggestion, setShowSuggestion] = useState(false);
     const [isValidQntBolas, setIsValidQntBolas] = useState<boolean>(false);
     const [produtoNotFound, setProdutoNotFound] = useState<boolean>(false);
@@ -63,6 +67,7 @@ function Vendas() {
     const [productSuggestion, setProductSuggestion] = useState<ProdutosModel[]>([]);
 
     const { NumberFormatForBrazilianCurrency, convertToNumber, formatCurrencyRealTime } = useFormatCurrency();
+    const { handleInputKeyDown, suggestionsRef, selectedSuggestionIndex, onKeyPressHandleSubmit } = useHandleInputKeyPress();
     const { removedStockVenda } = useEstoque();
 
     //realizando busca no banco de dados
@@ -72,12 +77,12 @@ function Vendas() {
 
     const initialValues: VendaModel = ({ ...objClean });
 
-    const { values, handleSubmit, setFieldValue, touched, errors } = useFormik<VendaModel>({
+    const { values, handleSubmit, setFieldValue, touched, errors, handleBlur, resetForm } = useFormik<VendaModel>({
         validateOnBlur: true,
         validateOnChange: true,
         initialValues,
         validationSchema: Yup.object().shape({
-            vlRecebido: Yup.string().required("Campo Obrigatório").test('vlRecebido', 'Campo Obrigatório', (value) => {
+            vlRecebido: Yup.string().required("Campo Obrigatório").test('vlRecebido', 'Valor Invalido', (value) => {
                 const numericValue = value.replace(/[^\d]/g, '');
                 return parseFloat(numericValue) > 0;
             })
@@ -101,7 +106,7 @@ function Vendas() {
         return { valorTotal, formatTotalLucro };
     }
 
-    function adicionarProdutoAoArray(values: any, novoProduto: ProdutoEscaniado) {
+    function adicionarProdutoAoArray(values: VendaModel, novoProduto: ProdutoEscaniado) {
         const novoArrayProdutos = [...values.produtoEscaniado, novoProduto];
         setFieldValue('produtoEscaniado', novoArrayProdutos);
     }
@@ -114,7 +119,6 @@ function Vendas() {
         const vlVendaProduto = produtoEncontrado.vlVendaProduto
 
         if (multiplica && isBarcodeNumeric) {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { mpFabricado, ...rest } = produtoEncontrado;
             const { valorTotal, formatTotalLucro } = calcularTotais(vlVendaProduto, multiplica, produtoEncontrado.vlUnitario);
             const novoProduto: ProdutoEscaniado = { ...rest, vlTotalMult: valorTotal, quantidadeVenda: multiplica, vlLucro: formatTotalLucro };
@@ -123,7 +127,6 @@ function Vendas() {
             setMultiplica(undefined)
             setKey(Math.random())
         } else if (isBarcodeNumeric) {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { mpFabricado, ...rest } = produtoEncontrado;
             const { formatTotalLucro } = calcularTotais(vlVendaProduto, 1, produtoEncontrado.vlUnitario);
             const novoProduto: ProdutoEscaniado = { ...rest, quantidadeVenda: 1, vlLucro: formatTotalLucro, vlTotalMult: vlVendaProduto };
@@ -135,14 +138,10 @@ function Vendas() {
 
     //buscando por nome do produto no banco e multiplicando valor caso necessario
     const handleMultiplicaKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        const codigoDeBarras = e.currentTarget.value;
-        const isLetra = /^(?=\p{L})[\p{L}\d\s]+$/u.test(codigoDeBarras);
-
-        if (e.key === 'Enter' && isLetra) {
+        if (e.key === 'Enter') {
             const produtoEncontrado = dataTableProduto.find((p) => p.nmProduto.toLowerCase() === barcode.toLowerCase());
             if (multiplica) {
                 if (produtoEncontrado) {
-                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
                     const { mpFabricado, ...rest } = produtoEncontrado;
                     const { valorTotal, formatTotalLucro } = calcularTotais(produtoEncontrado.vlVendaProduto, multiplica, produtoEncontrado.vlUnitario);
                     const novoProduto: ProdutoEscaniado = { ...rest, vlTotalMult: valorTotal, quantidadeVenda: multiplica, vlLucro: formatTotalLucro };
@@ -157,7 +156,6 @@ function Vendas() {
                 }
             } else {
                 if (produtoEncontrado) {
-                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
                     const { mpFabricado, ...rest } = produtoEncontrado;
                     const { formatTotalLucro } = calcularTotais(produtoEncontrado.vlVendaProduto, 1, produtoEncontrado.vlUnitario);
                     const novoProduto: ProdutoEscaniado = { ...rest, quantidadeVenda: 1, vlLucro: formatTotalLucro, vlTotalMult: produtoEncontrado.vlVendaProduto };
@@ -189,7 +187,6 @@ function Vendas() {
         //calculando todos os valores de total de venda
         const precoFiltrado = values.produtoEscaniado.map(scanner => scanner.vlTotalMult);
         const precoTotal = precoFiltrado.reduce((total, produto) => {
-            // Certifique-se de que produto seja um número válido antes de adicionar ao total
             if (typeof produto === 'number' && !isNaN(produto) && typeof total === 'number' && !isNaN(total)) {
                 const produtoArredondado = parseFloat(produto.toFixed(2));
                 return total + produtoArredondado;
@@ -236,54 +233,30 @@ function Vendas() {
             setTimeout(() => { setSubmitForm(undefined) }, 3000)
         });
         clearState();
+        resetForm()
     }
-
-    //adicionando cascão a lista de compras 
-    function cascao() {
-        const produtoEncontrado = dataTableProduto.find((p) => p.cdProduto === '9788545200345');
+    function addProduct(cdProduto: string, quantidade: number | undefined, isTaca: boolean) {
+        const produtoEncontrado = dataTableProduto.find((p) => p.cdProduto === cdProduto);
         if (produtoEncontrado) {
-
-            const valorPago = produtoEncontrado.vlUnitario
-            const totalLucro = produtoEncontrado.vlVendaProduto - valorPago;
-
-            const novoProduto: ProdutoEscaniado = { ...produtoEncontrado, quantidadeVenda: 1, vlLucro: totalLucro, vlTotalMult: produtoEncontrado.vlVendaProduto }
-            setFieldValue('produtoEscaniado', values.produtoEscaniado.push(novoProduto));
-        }
-    }
-
-    //adicionando casquinha a lista de compras
-    function casquinha() {
-        const produtoEncontrado = dataTableProduto.find((p) => p.cdProduto === '9788534508476');
-        if (produtoEncontrado) {
-            const valorPago = produtoEncontrado.vlUnitario
-            const totalLucro = produtoEncontrado.vlVendaProduto - valorPago;
-
-            const novoProduto: ProdutoEscaniado = { ...produtoEncontrado, quantidadeVenda: 1, vlLucro: totalLucro, vlTotalMult: produtoEncontrado.vlVendaProduto }
-            setFieldValue('produtoEscaniado', values.produtoEscaniado.push(novoProduto));
-        }
-    }
-
-    //adicionando taça sundae a lista de compras
-    function tacaSundae() {
-        if (qntBolas !== '') {
-            const produtoEncontrado = dataTableProduto.find((p) => p.cdProduto === '9788544001554');
-
-            if (produtoEncontrado) {
-                const valorTotal = Number(qntBolas) * produtoEncontrado?.vlVendaProduto;
-                const novoProduto = { ...produtoEncontrado, vlVendaProduto: valorTotal, quantidadeVenda: Number(qntBolas) };
-                setFieldValue('produtoEscaniado', values.produtoEscaniado.push(novoProduto));
+            let novoProduto: ProdutoEscaniado;
+            if (!isTaca) {
+                const valorPago = produtoEncontrado.vlUnitario;
+                const totalLucro = produtoEncontrado.vlVendaProduto - valorPago;
+                novoProduto = { ...produtoEncontrado, quantidadeVenda: 1, vlLucro: totalLucro, vlTotalMult: produtoEncontrado.vlVendaProduto };
+                adicionarProdutoAoArray(values, novoProduto)
+            } else {
+                if (quantidade) {
+                    const valorTotal = quantidade * produtoEncontrado?.vlVendaProduto;
+                    novoProduto = { ...produtoEncontrado, vlVendaProduto: valorTotal, quantidadeVenda: quantidade, vlTotalMult: valorTotal };
+                    adicionarProdutoAoArray(values, novoProduto)
+                    setQntBolas(undefined);
+                    setIsValidQntBolas(false)
+                    setKey(Math.random())
+                } else {
+                    setIsValidQntBolas(true)
+                }
             }
-
-            setQntBolas('');
-            setIsValidQntBolas(false)
-            setKey(Math.random())
-        } else {
-            setIsValidQntBolas(true)
         }
-    }
-
-    function onKeyPressHandleSubmit(e: React.KeyboardEvent<HTMLInputElement>) {
-        if (e.key === 'Enter') return handleSubmit;
     }
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -308,6 +281,19 @@ function Vendas() {
         setProductSuggestion([]);
         setShowSuggestion(false);
     };
+    function handleChangeTacaSundae(e: React.ChangeEvent<HTMLInputElement>) {
+        const inputValue = parseFloat(e.target.value);
+        if (!isNaN(inputValue) && inputValue !== 0) {
+            setQntBolas(inputValue);
+        } else {
+            setQntBolas(undefined);
+            setKey(Math.random())
+        }
+    }
+    function removedProdutoEscaneado(index: number) {
+        const remove = values.produtoEscaniado.filter((product, i) => i !== index)
+        setFieldValue('produtoEscaniado', remove);
+    }
     return (
         <Box>
             <Title>Painel de Vendas</Title>
@@ -334,13 +320,18 @@ function Vendas() {
                         name=""
                         onChange={handleInputChange}
                         value={barcode}
+                        onKeyDown={(e) => handleInputKeyDown(e, productSuggestion, selectSuggestion)}
                         onKeyPress={handleMultiplicaKeyPress}
                     />
                     {ShowSuggestion && (
                         <DivSuggestions>
-                            <Suggestions>
-                                {productSuggestion.map((produto) => (
-                                    <SuggestionsLi key={produto.id} onClick={() => selectSuggestion(produto)}>
+                            <Suggestions ref={suggestionsRef}>
+                                {productSuggestion.map((produto, index) => (
+                                    <SuggestionsLi
+                                        isSelected={index === selectedSuggestionIndex}
+                                        key={produto.id}
+                                        onClick={() => selectSuggestion(produto)}
+                                    >
                                         {produto.nmProduto}
                                     </SuggestionsLi>
                                 ))}
@@ -357,7 +348,7 @@ function Vendas() {
                                     <StyleButton
                                         type="button"
                                         startIcon={<CgAddR />}
-                                        onClick={cascao}
+                                        onClick={() => addProduct('12', undefined, false)}
                                     />
                                 </DivAdicionais>
                                 <DivAdicionais>
@@ -365,7 +356,7 @@ function Vendas() {
                                     <StyleButton
                                         type="button"
                                         startIcon={<CgAddR />}
-                                        onClick={casquinha}
+                                        onClick={() => addProduct('13', undefined, false)}
                                     />
                                 </DivAdicionais>
                                 <DivAdicionais>
@@ -375,7 +366,7 @@ function Vendas() {
                                             <StyleButton
                                                 type="button"
                                                 startIcon={<CgAddR />}
-                                                onClick={tacaSundae}
+                                                onClick={() => addProduct('14', qntBolas, true)}
                                             />
                                         </div>
                                         <Input
@@ -383,7 +374,7 @@ function Vendas() {
                                             error={isValidQntBolas ? 'Campo Obrigatório' : ''}
                                             label="Qnt. bolas sundae?"
                                             name=""
-                                            onChange={e => setQntBolas(e.target.value)}
+                                            onChange={handleChangeTacaSundae}
                                             value={qntBolas}
                                             style={{ fontSize: 14, }}
                                             styleDiv={{ marginTop: 4, paddingTop: 5 }}
@@ -398,9 +389,10 @@ function Vendas() {
                                 label="Valor Pago"
                                 error={touched.vlRecebido && errors.vlRecebido ? errors.vlRecebido : ''}
                                 name="vlRecebido"
+                                onBlur={handleBlur}
                                 value={values.vlRecebido !== 0 ? values.vlRecebido : ''}
                                 maxLength={9}
-                                onKeyPress={e => onKeyPressHandleSubmit(e)}
+                                onKeyPress={e => onKeyPressHandleSubmit(e, handleSubmit)}
                                 onChange={e => { setFieldValue('vlRecebido', formatCurrencyRealTime(e.target.value)) }}
                             />
                             <ResultadoTotal>Total: {values.vlTotal ? NumberFormatForBrazilianCurrency(values.vlTotal) : ''}</ResultadoTotal>
@@ -436,7 +428,14 @@ function Vendas() {
                                     </ContainerDescricao>
                                     {values.produtoEscaniado.map((produto, index) => (
                                         <ContainerPreco key={index}>
-                                            <TitlePreco>{produto.nmProduto}</TitlePreco>
+                                            <TitlePreco>
+                                                <DivIcon onClick={() => removedProdutoEscaneado(index)}>
+                                                    <IoMdClose />
+                                                </DivIcon>
+                                                <div>
+                                                    <p>{produto.nmProduto}</p>
+                                                </div>
+                                            </TitlePreco>
                                             <TitlePreco>{produto.vlTotalMult ? NumberFormatForBrazilianCurrency(produto.vlTotalMult) : ''}</TitlePreco>
                                         </ContainerPreco>
                                     ))}

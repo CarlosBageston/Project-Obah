@@ -96,10 +96,18 @@ display: flex;
 justify-content: space-between;
 `
 export const TitlePreco = styled.div`
+display: flex;
 color: #001f03;
 padding: 4px 12px;
 font-weight: 600;
 `
+
+export const DivIcon = styled.div`
+margin-right: 8px;
+display: flex;
+align-items: center;
+cursor: pointer;
+`;
 
 export const BoxProduto = styled.div`
 display: flex;
@@ -166,16 +174,22 @@ z-index: 2;
     background-color: #555;
   }
 `;
-export const SuggestionsLi = styled.li`
+export const SuggestionsLi = styled.li<{ isSelected: boolean }>`
 padding: 8px;
 font-size: 20px;
-
+${(props) => props.isSelected && `
+        background: ${props.theme.paletteColor.primaryBlue};
+        box-shadow: 0 0 8px 1px rgba(0, 142, 236, 0.815);
+        transition: all 0.2s ease-out;
+        color: #fff;
+        transform: translateY(-2px);
+    `}
 &:hover {
     background: ${props => props.theme.paletteColor.primaryBlue};
     box-shadow: 0 0 8px 1px rgba(0, 142, 236, 0.815);
     transition: all 0.2s ease-out;
     color: #fff;
     transform: translateY(-2px);
-    cursor: pointer;
-  }
+}
+cursor: pointer;
 `;

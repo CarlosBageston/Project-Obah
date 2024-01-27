@@ -311,7 +311,6 @@ function Vendas() {
                             onChange={e => setMultiplica(parseFloat(e.target.value))}
                             error={''}
                             inputRef={inputRef}
-                            // onFocus={inputRef}
                             onKeyPress={handleMultiplicaKeyPress}
                         />
                     </DivMultiplicar>

@@ -11,6 +11,7 @@ import ProdutosModel from "../Pages/admin/cadastroProdutos/model/produtos";
 export default function useHandleInputKeyPress() {
     const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState<number>(0);
     const suggestionsRef = useRef<HTMLUListElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
     /**
      * Efeito colateral para ajustar o scroll quando o índice da sugestão selecionada muda.
      */
@@ -60,7 +61,37 @@ export default function useHandleInputKeyPress() {
             }
         }
     };
+
+    /**
+     * Adiciona o efeito ao nível do documento para ouvir eventos de teclado para a tecla especificada.
+     *
+     * @param key - Código da tecla.
+     * @param callback - Função que retorna chamada quando a tecla é pressionada.
+     */
+    const useShortcut = (key: string, callback: () => void) => {
+        useEffect(() => {
+            const handleKeyPress = (e: Event) => {
+                if (e instanceof KeyboardEvent && e.key === key) {
+                    e.preventDefault();
+                    callback();
+                }
+            };
     
+            document.addEventListener("keydown", handleKeyPress);
+    
+            return () => {
+                document.removeEventListener("keydown", handleKeyPress);
+            };
+        }, [key, callback]);
+    };
+    // Adiciona o atalho de teclado usando o hook useShortcut
+    useShortcut("F2", () => {
+        if (inputRef.current) {
+            inputRef.current.focus();
+        }
+    });
+
+
     /**
      * Manipula o evento de tecla Enter para submeter um formulário.
      *
@@ -77,6 +108,7 @@ export default function useHandleInputKeyPress() {
         suggestionsRef,
         handleInputKeyDown,
         selectedSuggestionIndex,
-        onKeyPressHandleSubmit
+        onKeyPressHandleSubmit,
+        inputRef
     }
 }

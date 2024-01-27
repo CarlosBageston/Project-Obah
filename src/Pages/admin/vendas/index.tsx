@@ -67,7 +67,7 @@ function Vendas() {
     const [productSuggestion, setProductSuggestion] = useState<ProdutosModel[]>([]);
 
     const { NumberFormatForBrazilianCurrency, convertToNumber, formatCurrencyRealTime } = useFormatCurrency();
-    const { handleInputKeyDown, suggestionsRef, selectedSuggestionIndex, onKeyPressHandleSubmit } = useHandleInputKeyPress();
+    const { handleInputKeyDown, suggestionsRef, selectedSuggestionIndex, onKeyPressHandleSubmit, inputRef } = useHandleInputKeyPress();
     const { removedStockVenda } = useEstoque();
 
     //realizando busca no banco de dados
@@ -310,6 +310,8 @@ function Vendas() {
                             styleLabel={{ fontSize: 16, }}
                             onChange={e => setMultiplica(parseFloat(e.target.value))}
                             error={''}
+                            inputRef={inputRef}
+                            // onFocus={inputRef}
                             onKeyPress={handleMultiplicaKeyPress}
                         />
                     </DivMultiplicar>

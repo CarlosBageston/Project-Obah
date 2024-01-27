@@ -16,7 +16,7 @@ interface InputProps {
     onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
     disabled?: boolean | undefined;
     onFocus?: boolean | undefined;
-    ref?: ((instance: HTMLInputElement | null) => void) | React.RefObject<HTMLInputElement> | null | undefined;
+    inputRef?: ((instance: HTMLInputElement | null) => void) | React.RefObject<HTMLInputElement> | null | undefined;
     raisedLabel?: boolean;
     onKeyUp?: React.KeyboardEventHandler<HTMLInputElement> | undefined;
     onKeyDown?: React.KeyboardEventHandler<HTMLInputElement> | undefined;
@@ -46,7 +46,7 @@ interface InputProps {
  * @param key Uma chave única para o componente.
  * @param disabled Indica se o campo de entrada está desabilitado.
  * @param onFocus Indica se o campo de entrada está com foco.
- * @param ref Uma referência para o campo de entrada.
+ * @param inputRef Uma referência para o campo de entrada.
  * @param raisedLabel Indica se o rótulo deve ser exibido em relevo.
  * @param onKeyUp A função de callback chamada quando uma tecla é liberada no campo de entrada.
  * @param onKeyDown A função de callback chamada quando uma tecla é pressionada no campo de entrada.
@@ -70,7 +70,7 @@ function Input({
     key,
     disabled,
     onFocus,
-    ref,
+    inputRef,
     raisedLabel,
     onKeyUp,
     onKeyDown,
@@ -108,7 +108,7 @@ function Input({
                 onInput={onInput}
                 disabled={disabled}
                 autoFocus={onFocus}
-                ref={ref}
+                ref={inputRef}
                 onKeyUp={onKeyUp}
                 onKeyDown={onKeyDown}
                 onKeyPress={onKeyPress}

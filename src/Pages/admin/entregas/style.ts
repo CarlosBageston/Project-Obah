@@ -1,7 +1,4 @@
 import styled from "styled-components";
-import TableCell, { tableCellClasses } from '@mui/material/TableCell';
-import { styled as styleMui } from '@mui/material/styles';
-import TableRow from '@mui/material/TableRow';
 import { TitleDefault } from "../cadastroClientes/style";
 
 export const Box = styled.div`
@@ -39,10 +36,13 @@ border-left: none;
 `;
 export const QntProduto = styled.div`
 width: 10rem;
-padding: 41.5px 8px 8px 8px;
+padding: 0 8px;
 border: 2px solid #6a93ed;
 border-top: none;
 border-left: none;
+height: 6rem;
+display: flex;
+align-items: flex-end;
 `;
 export const ResultProduto = styled.div`
 width: 10rem;
@@ -56,11 +56,11 @@ export const ContainerTableCliente = styled.div<{isVisible?: boolean}>`
 overflow: auto;
 height: 19rem;
 display: flex;
-width: 42rem;
+width: 42.25rem;
 justify-content: flex-start;
 opacity: ${({ isVisible }) => isVisible ? 0 : 1};
 flex-direction: column;
-margin-top: -18px;
+margin-top: -8px;
 
 ::-webkit-scrollbar {
     width: 8px;
@@ -108,7 +108,7 @@ opacity: ${({ isVisible }) => isVisible ? 0 : 1};
 `;
 export const DivColumn = styled.div<{scrollActive: boolean}>`
 padding: 8px;
-width: ${({scrollActive}) => scrollActive ? '15.5rem' : '15.66rem'} ;
+width: ${({scrollActive}) => scrollActive ? '15.45rem' : '15.6rem'} ;
 border: 2px solid #6a93ed;
 border-radius: 20px;
 background-color: rgba(106, 147, 237, 0.13);
@@ -116,13 +116,17 @@ display: flex;
 align-items: center;
 justify-content: center;
 box-shadow: 0px 9px 11px -5px rgb(106, 147, 237);
+margin-left: -2px;
 `;
 
 export const DivColumnPrice = styled(DivColumn)`
- width:${({scrollActive}) => scrollActive ? ' 8.6rem' : '8.72rem'}  
+ width:${({scrollActive}) => scrollActive ? '8.75rem' : '8.89rem'}  
 `;
 export const DivColumnQntTotal = styled(DivColumn)`
-width: ${({scrollActive}) => scrollActive ? ' 8.7rem' : ' 8.8rem'}
+width: ${({scrollActive}) => scrollActive ? '8.7rem' : '8.81rem'}
+`;
+export const DivColumnTotal = styled(DivColumn)`
+width: ${({scrollActive}) => scrollActive ? '8.88rem' : '8.95rem'}
 `;
 
 export const LabelsHeader = styled.p`
@@ -138,4 +142,10 @@ display: flex;
 align-items: center;
 justify-content: space-around;
 width: 19rem;
+`;
+
+export const DivFlutuante = styled.div`
+height: 23px;
+margin-top: 19px;
+border: 1px solid rgb(106, 147, 237);
 `;

@@ -35,6 +35,8 @@ import {
     DivButtonAndTable,
     DivColumnQntTotal,
     ContainerTableCliente,
+    DivFlutuante,
+    DivColumnTotal,
 } from './style'
 import { BoxTitleDefault } from "../estoque/style";
 import useFormatCurrency from '../../../hooks/formatCurrency';
@@ -255,18 +257,23 @@ function Entregas() {
                 </DivInputs>
                 <DivButtonAndTable>
                     <BoxLabels isVisible={values.cliente?.nmCliente ? false : true}>
+                        <DivFlutuante />
                         <DivColumn scrollActive={scrollActive}>
                             <LabelsHeader>Descrição</LabelsHeader>
                         </DivColumn>
+                        <DivFlutuante />
                         <DivColumnPrice scrollActive={scrollActive}>
                             <LabelsHeader>Preço</LabelsHeader>
                         </DivColumnPrice>
+                        <DivFlutuante />
                         <DivColumnQntTotal scrollActive={scrollActive}>
                             <LabelsHeader>Quantidade</LabelsHeader>
                         </DivColumnQntTotal>
-                        <DivColumnQntTotal scrollActive={scrollActive}>
+                        <DivFlutuante />
+                        <DivColumnTotal scrollActive={scrollActive}>
                             <LabelsHeader>Total</LabelsHeader>
-                        </DivColumnQntTotal>
+                        </DivColumnTotal>
+                        <DivFlutuante style={{ marginLeft: '-2px' }} />
                     </BoxLabels>
                     <ContainerTableCliente isVisible={values.cliente?.nmCliente ? false : true} ref={ref}>
                         {clienteCurrent && clienteCurrent.produtos.map((produto) => (
@@ -292,9 +299,8 @@ function Entregas() {
                                                 }));
                                             }}
                                             value={quantidades[produto.nmProduto] ?? ''}
-                                            style={{ paddingBottom: 0 }}
-                                            styleLabel={{ fontSize: '0.9rem' }}
-                                            styleDiv={{ paddingTop: 8, marginTop: '2px' }}
+                                            style={{ marginTop: 14, height: '2rem' }}
+                                            styleLabel={{ fontSize: '1rem', top: 14 }}
                                         />
                                     </QntProduto>
                                     <ResultProduto>

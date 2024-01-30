@@ -150,8 +150,8 @@ function IsAdding({ data, isAdding, setFieldValue, setIsVisibleTpProduto, produc
                                     <TextField
                                         {...params}
                                         variant="standard"
-                                        label="Selecione MP necessaria para fabricar"
-                                        placeholder="matéria-prima"
+                                        label={addingScreen === 'Cliente' ? "Selecione os Prdutos vendidos a esse cliente" : "Selecione MP necessaria para fabricar"}
+                                        placeholder={addingScreen === 'Cliente' ? "Produtos" : "matéria-prima"}
                                     />
                                 )}
                             />

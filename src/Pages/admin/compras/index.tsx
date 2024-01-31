@@ -412,12 +412,13 @@ function AtualizarEstoque() {
                 }
             }
             if (values.tpProduto === SituacaoProduto.FABRICADO) {
+                await removedStockCompras(valuesUpdate, setOpenDialog, setEstoqueVazio, setNmProduto)
                 createStock(valuesUpdate)
-                removedStockCompras(valuesUpdate, setOpenDialog, setEstoqueVazio, setNmProduto)
             }
         } catch (error) {
             if (error instanceof Error) {
                 if (error.message.includes("estoque")) {
+                    dispatch(setLoading(false))
                     setEstoqueVazio(false)
                     return;
                 }

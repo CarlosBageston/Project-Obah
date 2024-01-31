@@ -1,6 +1,6 @@
 import * as Yup from 'yup';
-import { lazy, useState } from 'react';
 import { useFormik } from 'formik';
+import { lazy, useState } from 'react';
 import { db } from '../../../firebase';
 import ClienteModel from './model/cliente';
 import Input from '../../../Components/input';
@@ -8,9 +8,12 @@ import GetData from '../../../firebase/getData';
 import Button from '../../../Components/button';
 import GenericTable from '../../../Components/table';
 import FiltroGeneric from '../../../Components/filtro';
+import { useDispatch, useSelector } from 'react-redux';
+import useFormatCurrency from '../../../hooks/formatCurrency';
 import ProdutosModel from '../cadastroProdutos/model/produtos';
 import FormAlert from '../../../Components/FormAlert/formAlert';
 import formatPhone from '../../../Components/masks/maskTelefone';
+import { State, setLoading } from '../../../store/reducer/reducer';
 import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 const IsEdit = lazy(() => import('../../../Components/isEdit/isEdit'));
 const IsAdding = lazy(() => import('../../../Components/isAdding/isAdding'));
@@ -25,7 +28,6 @@ import {
     TitleDefault,
 } from './style';
 import { BoxTitleDefault } from '../estoque/style';
-import useFormatCurrency from '../../../hooks/formatCurrency';
 
 
 const objClean: ClienteModel = {
@@ -45,6 +47,8 @@ function CadastroCliente() {
     const [isVisibleTpProuto, setIsVisibleTpProduto] = useState<boolean>(false)
     const [isEdit, setIsEdit] = useState<boolean>(false);
     const [selected, setSelected] = useState<ClienteModel>();
+    const dispatch = useDispatch();
+    const { loading } = useSelector((state: State) => state.user);
 
     const { convertToNumber } = useFormatCurrency();
 
@@ -61,7 +65,7 @@ function CadastroCliente() {
     //realizando busca no banco de dados
     const {
         dataTable,
-        loading,
+        loading: isLoading,
         setDataTable
     } = GetData('Clientes', recarregue) as { dataTable: ClienteModel[], loading: boolean, setDataTable: (data: ClienteModel[]) => void };
     const {
@@ -140,16 +144,19 @@ function CadastroCliente() {
 
     //envia informações para o banco
     async function hundleSubmitForm() {
+        dispatch(setLoading(true))
         values.produtos.forEach((produto) => {
             produto.vlVendaProduto = convertToNumber(produto.vlVendaProduto.toString())
         })
         await addDoc(collection(db, "Clientes"), {
             ...values
         }).then(() => {
+            dispatch(setLoading(false))
             setSubmitForm(true);
             setDataTable([...dataTable, values]);
             setTimeout(() => { setSubmitForm(undefined) }, 3000)
         }).catch(() => {
+            dispatch(setLoading(false))
             setSubmitForm(false);
             setTimeout(() => { setSubmitForm(undefined) }, 3000)
         });
@@ -250,6 +257,7 @@ function CadastroCliente() {
                         type={'button'}
                         label={'Cadastrar Cliente'}
                         onClick={handleSubmit}
+                        disabled={loading}
                         style={{ margin: '1rem 0 3rem 0', height: '4rem', width: '14rem' }}
                     />
                 </ContainerButton>
@@ -292,7 +300,7 @@ function CadastroCliente() {
                         { label: 'Numero Casa', name: 'nrCasaCliente' },
                     ]}
                     data={dataTable}
-                    isLoading={loading}
+                    isLoading={isLoading}
                     onSelectedRow={setSelected}
                     onEdit={() => {
                         if (selected) {

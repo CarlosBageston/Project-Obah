@@ -8,11 +8,13 @@ import { IoMdClose } from "react-icons/io";
 import Input from "../../../Components/input";
 import Button from "../../../Components/button";
 import GetData from "../../../firebase/getData";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from 'react-redux';
 import { addDoc, collection } from "firebase/firestore";
 import VendaModel, { ProdutoEscaniado } from "./model/vendas";
 import ProdutosModel from "../cadastroProdutos/model/produtos";
 import FormAlert from "../../../Components/FormAlert/formAlert";
+import { State, setLoading } from '../../../store/reducer/reducer';
 import SituacaoProduto from "../../../enumeration/situacaoProduto";
 import iceCreamSad from '../../../assets/Image/drawingSadIceCream.png';
 import {
@@ -43,8 +45,10 @@ import {
     SuggestionsLi,
     DivIcon,
 } from './style'
-import useFormatCurrency from '../../../hooks/formatCurrency';
+
+//hooks
 import useEstoque from '../../../hooks/useEstoque';
+import useFormatCurrency from '../../../hooks/formatCurrency';
 import useHandleInputKeyPress from '../../../hooks/useHandleInputKeyPress';
 
 
@@ -65,6 +69,8 @@ function Vendas() {
     const [multiplica, setMultiplica] = useState<number | undefined>(undefined);
     const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
     const [productSuggestion, setProductSuggestion] = useState<ProdutosModel[]>([]);
+    const dispatch = useDispatch();
+    const { loading } = useSelector((state: State) => state.user);
 
     const { NumberFormatForBrazilianCurrency, convertToNumber, formatCurrencyRealTime } = useFormatCurrency();
     const { handleInputKeyDown, suggestionsRef, selectedSuggestionIndex, onKeyPressHandleSubmit, inputRef } = useHandleInputKeyPress();
@@ -218,6 +224,7 @@ function Vendas() {
 
     //envia os valor pro banco
     async function handleSubmitForm() {
+        dispatch(setLoading(true))
         removedStockVenda(values.produtoEscaniado)
         const valuesUpdate: VendaModel = {
             ...values,
@@ -226,9 +233,11 @@ function Vendas() {
         await addDoc(collection(db, "Vendas"), {
             ...valuesUpdate
         }).then(() => {
+            dispatch(setLoading(false))
             setSubmitForm(true);
             setTimeout(() => { setSubmitForm(undefined) }, 3000)
         }).catch(() => {
+            dispatch(setLoading(false))
             setSubmitForm(false);
             setTimeout(() => { setSubmitForm(undefined) }, 3000)
         });
@@ -402,7 +411,7 @@ function Vendas() {
                         <div>
                             <Button
                                 label='Finalizar venda'
-                                disabled={values.produtoEscaniado.length === 0 ? true : false}
+                                disabled={values.produtoEscaniado.length === 0 || loading}
                                 type="button"
                                 onClick={handleSubmit}
                                 style={{ height: 80, width: 200 }}
@@ -445,7 +454,7 @@ function Vendas() {
                         </ContainerNota>
                     </ContainerProdutos>
                 </BoxProduto>
-                <FormAlert submitForm={submitForm} name={'Venda'} />
+                <FormAlert submitForm={submitForm} name={'Venda'} styleLoadingMarginTop='-5rem' styleLoadingMarginLeft='-25rem' />
             </ContainerAll>
         </Box>
     );

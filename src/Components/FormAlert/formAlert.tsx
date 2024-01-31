@@ -1,11 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { Alert, AlertTitle } from '@mui/material';
 import { ContainerAlert } from './style';
+import { useSelector } from 'react-redux';
+import { useState, useEffect } from 'react';
+import { State } from '../../store/reducer/reducer';
+import { Alert, AlertTitle, Box, CircularProgress } from '@mui/material';
 
 
 interface Props {
     submitForm: boolean | undefined,
-    name: string
+    name: string,
+    styleLoadingMarginTop?: string
+    styleLoadingMarginLeft?: string
 }
 
 /**
@@ -19,11 +23,11 @@ interface Props {
  * O nome do item cadastrado é utilizado no conteúdo do alerta para fornecer informações específicas.
  */
 
-const FormAlert = ({ submitForm, name }: Props) => {
+const FormAlert = ({ submitForm, name, styleLoadingMarginTop, styleLoadingMarginLeft }: Props) => {
 
     const [fail, setFail] = useState(false);
     const [success, setSuccess] = useState(false);
-
+    const { loading } = useSelector((state: State) => state.user);
     useEffect(() => {
         if (submitForm === true) {
             setSuccess(true)
@@ -36,6 +40,20 @@ const FormAlert = ({ submitForm, name }: Props) => {
 
     return (
         <>
+
+            {loading ? (
+                <ContainerAlert>
+                    <Box
+                        style={{
+                            position: 'absolute',
+                            marginTop: styleLoadingMarginTop ? styleLoadingMarginTop : '5rem',
+                            marginLeft: styleLoadingMarginLeft ? styleLoadingMarginLeft : 0
+                        }}
+                    >
+                        <CircularProgress />
+                    </Box>
+                </ContainerAlert>
+            ) : null}
             {success && (
                 <ContainerAlert>
                     <Alert severity="success"

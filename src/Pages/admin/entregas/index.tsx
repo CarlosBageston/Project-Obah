@@ -8,11 +8,13 @@ import Button from "../../../Components/button";
 import { AiTwotonePrinter } from 'react-icons/ai';
 import GenericTable from "../../../Components/table";
 import FiltroGeneric from "../../../Components/filtro";
-import { NotaFiscal } from '../../../Components/notaFiscal';
+import { useDispatch, useSelector } from 'react-redux';
 import React, { useState, useEffect, useRef } from "react";
+import { NotaFiscal } from '../../../Components/notaFiscal';
 import ClienteModel from "../cadastroClientes/model/cliente";
 import formatDate from "../../../Components/masks/formatDate";
 import FormAlert from "../../../Components/FormAlert/formAlert";
+import { State, setLoading } from '../../../store/reducer/reducer';
 import { addDoc, collection, deleteDoc, doc } from "firebase/firestore";
 import { Autocomplete, AutocompleteChangeReason, TextField } from "@mui/material";
 
@@ -39,8 +41,10 @@ import {
     DivColumnTotal,
 } from './style'
 import { BoxTitleDefault } from "../estoque/style";
-import useFormatCurrency from '../../../hooks/formatCurrency';
+
+//hooks
 import useEstoque from '../../../hooks/useEstoque';
+import useFormatCurrency from '../../../hooks/formatCurrency';
 
 
 const objClean: EntregaModel = {
@@ -59,6 +63,8 @@ function Entregas() {
     const [quantidades, setQuantidades] = useState<{ [key: string]: number }>({});
     const [scrollActive, setScrollActive] = useState<boolean>(false)
     const [shouldShow, setShouldShow] = useState<boolean>(false);
+    const dispatch = useDispatch();
+    const { loading } = useSelector((state: State) => state.user);
 
     const { NumberFormatForBrazilianCurrency } = useFormatCurrency();
     const { removedStockEntrega } = useEstoque();
@@ -73,7 +79,7 @@ function Entregas() {
     const {
         dataTable: dataTableEntregas,
         setDataTable: setDataTableEntregas,
-        loading
+        loading: isLoading
     } = GetData('Entregas', recarregue) as { dataTable: EntregaModel[], setDataTable: (data: EntregaModel[]) => void, loading: boolean };
 
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<EntregaModel>({
@@ -114,17 +120,20 @@ function Entregas() {
 
     //enviando formulario
     async function hundleSubmitForm() {
+        dispatch(setLoading(true))
         removedStockEntrega(clienteCurrent, quantidades)
         await addDoc(collection(db, "Entregas"), {
             ...values,
             quantidades: quantidades
         })
             .then(() => {
+                dispatch(setLoading(false))
                 setSubmitForm(true)
                 setDataTableEntregas([...dataTableEntregas, values])
                 setTimeout(() => { setSubmitForm(undefined) }, 3000)
             })
             .catch(() => {
+                dispatch(setLoading(false))
                 setSubmitForm(false)
                 setTimeout(() => { setSubmitForm(undefined) }, 3000)
             });
@@ -328,12 +337,13 @@ function Entregas() {
                             label='Cadastrar Entrega'
                             type="button"
                             onClick={handleSubmit}
+                            disabled={loading}
                             style={{ margin: '2rem 0px 4rem 0px', height: '4rem', width: '12rem' }}
                         />
                     </DivButtons>
                 </DivButtonAndTable>
             </ContainerAll>
-            <FormAlert submitForm={submitForm} name={'Entregas'} />
+            <FormAlert submitForm={submitForm} name={'Entregas'} styleLoadingMarginTop='-12rem' />
             {/*Tabala */}
             <BoxTitleDefault>
                 <div>
@@ -348,7 +358,7 @@ function Entregas() {
                     { label: 'Lucro', name: 'vlLucro', isCurrency: true },
                 ]}
                 data={dataTableEntregas}
-                isLoading={loading}
+                isLoading={isLoading}
                 onSelectedRow={setSelected}
                 isVisibleEdit
                 onDelete={handleDeleteRow}

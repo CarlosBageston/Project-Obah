@@ -7,21 +7,22 @@ import Input from "../../../Components/input";
 import Button from "../../../Components/button";
 import GetData from "../../../firebase/getData";
 import { useState, useEffect, lazy } from "react";
+import EstoqueModel from '../estoque/model/estoque';
 import GenericTable from "../../../Components/table";
+import { useDispatch, useSelector } from 'react-redux';
 import FiltroGeneric from "../../../Components/filtro";
 import ClienteModel from '../cadastroClientes/model/cliente';
-import { useUniqueNames } from '../../../hooks/useUniqueName';
 import formatDate from "../../../Components/masks/formatDate";
 import ProdutosModel from "../cadastroProdutos/model/produtos";
-import EstoqueModel from '../estoque/model/estoque';
+import { InputConfig } from "../../../Components/isEdit/isEdit";
 import FormAlert from "../../../Components/FormAlert/formAlert";
 import DashboardCompras from '../dashboard/model/dashboardCompra';
+import { State, setLoading } from '../../../store/reducer/reducer';
 import SituacaoProduto from "../../../enumeration/situacaoProduto";
-import { InputConfig } from "../../../Components/isEdit/isEdit";
-import { calculateTotalValue } from '../../../hooks/useCalculateTotalValue';
 import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { Autocomplete, AutocompleteChangeReason, FormControl, InputLabel, MenuItem, Select, TextField } from "@mui/material";
 const IsEdit = lazy(() => import('../../../Components/isEdit/isEdit'));
+
 import {
     Box,
     ContainerInputs,
@@ -32,10 +33,12 @@ import {
 import { BoxTitleDefault } from "../estoque/style";
 
 //hooks
-import useFormatCurrency from '../../../hooks/formatCurrency';
 import useEstoque from '../../../hooks/useEstoque';
+import { useUniqueNames } from '../../../hooks/useUniqueName';
+import useFormatCurrency from '../../../hooks/formatCurrency';
 import AlertDialog from '../../../Components/FormAlert/dialogForm';
 import useHandleInputKeyPress from '../../../hooks/useHandleInputKeyPress';
+import { calculateTotalValue } from '../../../hooks/useCalculateTotalValue';
 
 
 const objClean: ComprasModel = {
@@ -65,6 +68,8 @@ function AtualizarEstoque() {
     const [estoqueVazio, setEstoqueVazio] = useState<boolean>(false);
     const [nmProduto, setNmProduto] = useState<string>('');
     const [produtosProcessados, setProdutosProcessados] = useState(new Set<string>());
+    const dispatch = useDispatch();
+    const { loading } = useSelector((state: State) => state.user);
 
     const { convertToNumber, formatCurrency, formatCurrencyRealTime } = useFormatCurrency();
     const { removedStockCompras, updateStock } = useEstoque();
@@ -84,7 +89,7 @@ function AtualizarEstoque() {
     //Realizando busca no banco de dados
     const {
         dataTable,
-        loading,
+        loading: isLoading,
         setDataTable
     } = GetData('Compras', recarregue) as {
         dataTable: ComprasModel[],
@@ -380,6 +385,7 @@ function AtualizarEstoque() {
 
     //enviando formulario
     async function handleSubmitForm() {
+        dispatch(setLoading(true))
         const newNrOrdem = values.nrOrdem || values.nrOrdem === 0 ? values.nrOrdem + 1 : 0;
         const valuesUpdate: ComprasModel = {
             ...values,
@@ -417,6 +423,7 @@ function AtualizarEstoque() {
                 }
             }
 
+            dispatch(setLoading(false))
             setSubmitForm(false);
             setTimeout(() => { setSubmitForm(undefined) }, 3000);
             console.error("Erro durante o processamento:", error);
@@ -427,11 +434,13 @@ function AtualizarEstoque() {
             ...valuesUpdate
         })
             .then(() => {
+                dispatch(setLoading(false))
                 setSubmitForm(true)
                 setTimeout(() => { setSubmitForm(undefined) }, 3000)
                 setDataTable([...dataTable, valuesUpdate])
             })
             .catch(() => {
+                dispatch(setLoading(false))
                 setSubmitForm(false)
                 setTimeout(() => { setSubmitForm(undefined) }, 3000)
             });
@@ -710,10 +719,12 @@ function AtualizarEstoque() {
                 <Button
                     label='Cadastrar Estoque'
                     type="button"
+                    disabled={loading}
                     onClick={handleSubmit}
                     style={{ margin: '1rem 4rem 2rem 95%', height: '4rem', width: '12rem' }}
                 />
-                <FormAlert submitForm={submitForm} name={'Estoque'} />
+                <FormAlert submitForm={submitForm} name={'Estoque'} styleLoadingMarginTop='-8rem' />
+
                 <AlertDialog open={openDialog} onOKClick={handleOKClick} nmProduto={nmProduto} estoqueVazio={estoqueVazio} />
             </ContainerButton>
 
@@ -735,7 +746,7 @@ function AtualizarEstoque() {
                     { label: 'Valor Total', name: 'totalPago', isCurrency: true }
                 ]}
                 data={dataTable}
-                isLoading={loading}
+                isLoading={isLoading}
                 isdisabled={selected ? false : true}
                 onSelectedRow={setSelected}
                 onEdit={() => {

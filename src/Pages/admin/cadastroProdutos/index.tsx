@@ -5,16 +5,16 @@ import Input from "../../../Components/input";
 import Button from "../../../Components/button";
 import GetData from "../../../firebase/getData";
 import { FormikTouched, useFormik } from 'formik';
+import { useState, useEffect, lazy } from "react";
 import { BoxTitleDefault } from "../estoque/style";
-import React, { useState, useEffect, lazy } from "react";
 import ComprasModel from "../compras/model/compras";
 import GenericTable from "../../../Components/table";
 import FiltroGeneric from "../../../Components/filtro";
-import { InputConfig } from "../../../Components/isEdit/isEdit";
-import { useUniqueNames } from '../../../hooks/useUniqueName';
+import { useDispatch, useSelector } from 'react-redux';
 import FormAlert from "../../../Components/FormAlert/formAlert";
+import { InputConfig } from "../../../Components/isEdit/isEdit";
+import { State, setLoading } from '../../../store/reducer/reducer';
 import SituacaoProduto from "../../../enumeration/situacaoProduto";
-import { calculateTotalValue } from '../../../hooks/useCalculateTotalValue';
 import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { Checkbox, FormControl, FormControlLabel, InputLabel, MenuItem, Select, } from "@mui/material";
 const IsEdit = lazy(() => import('../../../Components/isEdit/isEdit'));
@@ -27,8 +27,11 @@ import {
     ContainerButton,
     DivSituacaoProduto,
 } from './style';
-import useFormatCurrency from '../../../hooks/formatCurrency';
 
+//hooks
+import { useUniqueNames } from '../../../hooks/useUniqueName';
+import useFormatCurrency from '../../../hooks/formatCurrency';
+import { calculateTotalValue } from '../../../hooks/useCalculateTotalValue';
 
 const objClean: ProdutoModel = {
     cdProduto: '',
@@ -49,6 +52,8 @@ function CadastroProduto() {
     const [isVisibleTpProuto, setIsVisibleTpProduto] = useState<boolean>(false);
     const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
     const [initialValues, setInitialValues] = useState<ProdutoModel>({ ...objClean });
+    const dispatch = useDispatch();
+    const { loading } = useSelector((state: State) => state.user);
 
     const { convertToNumber, formatCurrency, formatCurrencyRealTime } = useFormatCurrency();
 
@@ -57,7 +62,7 @@ function CadastroProduto() {
     //realizando busca no banco de dados
     const {
         dataTable,
-        loading,
+        loading: isLoading,
         setDataTable
     } = GetData('Produtos', recarregue) as { dataTable: ProdutoModel[], loading: boolean, setDataTable: (data: ProdutoModel[]) => void };
     const {
@@ -117,6 +122,7 @@ function CadastroProduto() {
     ];
     //enviando formulario
     async function handleSubmitForm() {
+        dispatch(setLoading(true))
         const valuesUpdate = { ...values, nrOrdem: 0 };
         valuesUpdate.vlVendaProduto = convertToNumber(valuesUpdate.vlVendaProduto.toString())
         valuesUpdate.vlUnitario = convertToNumber(valuesUpdate.vlUnitario.toString())
@@ -128,11 +134,13 @@ function CadastroProduto() {
             ...valuesUpdate
         })
             .then(() => {
+                dispatch(setLoading(false))
                 setSubmitForm(true);
                 setDataTable([...dataTable, values]);
                 setTimeout(() => { setSubmitForm(undefined) }, 3000)
             })
             .catch(() => {
+                dispatch(setLoading(false))
                 setSubmitForm(false);
                 setTimeout(() => { setSubmitForm(undefined) }, 3000)
             });
@@ -326,11 +334,12 @@ function CadastroProduto() {
                 <Button
                     label='Cadastrar Produto'
                     type="button"
+                    disabled={loading}
                     onClick={handleSubmit}
                     style={{ margin: '1rem 4rem 2rem 95%', height: '4rem', width: '12rem' }}
                 />
 
-                <FormAlert submitForm={submitForm} name={'Produto'} />
+                <FormAlert submitForm={submitForm} name={'Produto'} styleLoadingMarginTop='-7rem' />
             </ContainerButton>
 
             {/*Tabala */}
@@ -348,7 +357,7 @@ function CadastroProduto() {
                     { label: 'Valor Pago', name: 'vlUnitario', isCurrency: true },
                 ]}
                 data={dataTable}
-                isLoading={loading}
+                isLoading={isLoading}
                 isdisabled={selected ? false : true}
                 onSelectedRow={setSelected}
                 onEdit={() => {

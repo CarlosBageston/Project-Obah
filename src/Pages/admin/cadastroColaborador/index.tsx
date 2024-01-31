@@ -1,6 +1,6 @@
 import * as Yup from 'yup';
-import { lazy, useState } from "react";
 import { useFormik } from "formik";
+import { lazy, useState } from "react";
 import { db } from "../../../firebase";
 import Input from "../../../Components/input";
 import GetData from "../../../firebase/getData";
@@ -10,8 +10,10 @@ import { BoxTitleDefault } from "../estoque/style";
 import { ContainerInputs, DivInput } from "./style";
 import GenericTable from "../../../Components/table";
 import FiltroGeneric from "../../../Components/filtro";
+import { useDispatch, useSelector } from 'react-redux';
 import FormAlert from "../../../Components/FormAlert/formAlert";
 import formatPhone from "../../../Components/masks/maskTelefone";
+import { State, setLoading } from '../../../store/reducer/reducer';
 import { Box, ContainerButton, TitleDefault } from "../cadastroClientes/style";
 import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
 const IsEdit = lazy(() => import('../../../Components/isEdit/isEdit'));
@@ -36,6 +38,8 @@ function CadastroColaborador() {
     const [key, setKey] = useState<number>(0);
     const [recarregue, setRecarregue] = useState<boolean>(true);
     const [initialValues, setInitialValues] = useState<ColaboradorModel>({ ...objClean });
+    const dispatch = useDispatch();
+    const { loading } = useSelector((state: State) => state.user);
 
     const inputsConfig = [
         { label: 'Nome', propertyName: 'nmColaborador' },
@@ -50,7 +54,7 @@ function CadastroColaborador() {
 
     const {
         dataTable,
-        loading,
+        loading: isLoading,
         setDataTable
     } = GetData('Colaborador', recarregue) as { dataTable: ColaboradorModel[], loading: boolean, setDataTable: (data: ColaboradorModel[]) => void };
 
@@ -121,13 +125,16 @@ function CadastroColaborador() {
 
     //envia informações para o banco
     async function hundleSubmitForm() {
+        dispatch(setLoading(true))
         await addDoc(collection(db, "Colaborador"), {
             ...values
         }).then(() => {
+            dispatch(setLoading(false))
             setSubmitForm(true);
             setDataTable([...dataTable, values]);
             setTimeout(() => { setSubmitForm(undefined) }, 3000)
         }).catch(() => {
+            dispatch(setLoading(false))
             setSubmitForm(false);
             setTimeout(() => { setSubmitForm(undefined) }, 3000)
         });
@@ -137,7 +144,7 @@ function CadastroColaborador() {
     return (
         <>
             <Box>
-                <div>
+                <div style={{ position: 'relative' }}>
                     <TitleDefault>Cadastro De Novos Colaborador</TitleDefault>
                     <ContainerInputs>
                         <DivInput>
@@ -240,6 +247,7 @@ function CadastroColaborador() {
                     <Button
                         type={'button'}
                         label={'Cadastrar Colaborador'}
+                        disabled={loading}
                         onClick={handleSubmit}
                         style={{ margin: '1rem 0 3rem 0', height: '4rem', width: '14rem' }}
                     />
@@ -273,7 +281,7 @@ function CadastroColaborador() {
                         { label: 'Numero Casa', name: 'nrCasaColaborador' },
                     ]}
                     data={dataTable}
-                    isLoading={loading}
+                    isLoading={isLoading}
                     onSelectedRow={setSelected}
                     onEdit={() => {
                         if (selected) {

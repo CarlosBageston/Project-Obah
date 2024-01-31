@@ -98,7 +98,7 @@ const GenericTable = ({ columns, data, isLoading, error, styleDiv, onSelectedRow
                                     <></>
                                 ) : (
                                     <StyledTableRow
-                                        key={rowId}
+                                        key={Math.random()}
                                         onClick={() => handleRowClick(rowId, row)}
                                         selected={isSelected}
                                     >

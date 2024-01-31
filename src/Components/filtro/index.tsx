@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
-import { IoMdClose } from 'react-icons/io'
+import React, { useEffect, useState } from 'react';
 import { BiSearchAlt } from 'react-icons/bi'
 import { CgPlayListSearch } from 'react-icons/cg'
-import { FormControl, Autocomplete, TextField } from '@mui/material';
+import { FormControl, Autocomplete, TextField, AutocompleteChangeReason } from '@mui/material';
 import { ContainerFilter, ContainerInput, StyledButton, ButtonFilter, ContainerButton } from './style'
 
 interface Props {
@@ -27,6 +26,7 @@ interface Props {
  */
 
 const FiltroGeneric = ({ data, setFilteredData, type, carregarDados }: Props) => {
+    const uniqueNames = [...new Set(data.map(item => item.nmProduto))];
     const [valueClient, setValueClient] = useState<any>();
     const [valueproduct, setValueproduct] = useState<any>();
     const [showInput, setShowInput] = useState<boolean>(false);
@@ -48,6 +48,10 @@ const FiltroGeneric = ({ data, setFilteredData, type, carregarDados }: Props) =>
         }
 
     }
+
+    useEffect(() => {
+
+    }, [data])
     //quando o tipo de filtro for cliente, ele chama essa função 
     const filterByCliente = (clientes: any) => {
         if (clientes || clientes.nmCliente) {
@@ -67,16 +71,26 @@ const FiltroGeneric = ({ data, setFilteredData, type, carregarDados }: Props) =>
         setValueproduct([])
         setValueClient('')
     };
-
-
+    function handleAutoComplete(newValue: any, reason: AutocompleteChangeReason) {
+        if (reason === 'clear' || reason === 'removeOption') {
+            cancelFiltered()
+        } else if (newValue) {
+            if (type === 'produto') {
+                const foundProduct = data.find(product => product.nmProduto === newValue)
+                setValueproduct(foundProduct)
+            } else {
+                setValueClient(newValue)
+            }
+        }
+    }
     let selectComponent = null;
     if (type === 'produto') {
         selectComponent = (
             <Autocomplete
                 id="tags-standard"
-                options={data}
-                getOptionLabel={(produto: any) => produto.nmProduto}
-                onChange={(event, value) => setValueproduct(value)}
+                options={uniqueNames}
+                getOptionLabel={(produto: string) => produto}
+                onChange={(e, newValue, reason) => handleAutoComplete(newValue, reason)}
                 renderInput={(params) => (
                     <TextField
                         {...params}
@@ -93,7 +107,7 @@ const FiltroGeneric = ({ data, setFilteredData, type, carregarDados }: Props) =>
                 id="tags-standard"
                 options={data}
                 getOptionLabel={(cliente: any) => cliente.nmCliente}
-                onChange={(event, value) => setValueClient(value)}
+                onChange={(e, value, reason) => handleAutoComplete(value, reason)}
                 renderInput={(params) => (
                     <TextField
                         {...params}
@@ -133,12 +147,6 @@ const FiltroGeneric = ({ data, setFilteredData, type, carregarDados }: Props) =>
                                     type="button"
                                     onClick={callFilter}
                                     startIcon={<BiSearchAlt size={25} />}
-                                >
-                                </ButtonFilter>
-                                <ButtonFilter
-                                    type="button"
-                                    onClick={cancelFiltered}
-                                    startIcon={<IoMdClose size={25} color='red' />}
                                 >
                                 </ButtonFilter>
                             </div>

@@ -6,6 +6,8 @@ import { db } from "../firebase";
 import ClienteModel from "../Pages/admin/cadastroClientes/model/cliente";
 import { ProdutoEscaniado } from "../Pages/admin/vendas/model/vendas";
 import { Dispatch, SetStateAction } from "react";
+import { useDispatch } from "react-redux";
+import { setLoading } from "../store/reducer/reducer";
 
 /**
  * Hook personalizado para manipulação de estoque.
@@ -13,9 +15,10 @@ import { Dispatch, SetStateAction } from "react";
  * Este hook fornece métodos para atualizar o estoque com base em diversas operações,
  * como remoção de produtos por entrega, venda, ou compras.
  *
- * @returns {Object} - Métodos relacionados à manipulação de estoque.
+ * @returns Métodos relacionados à manipulação de estoque.
  */
 export default function useEstoque(){
+    const dispatch = useDispatch();
     const {
         dataTable: dataTableEstoque,
     } = GetData('Estoque', true) as { dataTable: EstoqueModel[] };
@@ -155,46 +158,48 @@ export default function useEstoque(){
         setEstoqueVazio: Dispatch<SetStateAction<boolean>>,
         setNmProduto: Dispatch<SetStateAction<string>>
         ) {
-            
-            values.mpFabricado?.forEach(async mp => {
-            const estoqueMP = dataTableEstoque.find(estoque => estoque.nmProduto === mp.nmProduto);
-            if(estoqueMP?.quantidade === 0) {
-                setNmProduto(estoqueMP.nmProduto)
-                setOpenDialog(true);
-                setEstoqueVazio(true);
-                return new Error('Estoque Vazio')
-            }
-            if (estoqueMP) {
-                let qntdUsadaProducao = values.quantidade * mp.quantidade;
-                const listVersaoComQntd: Versao[] = [...estoqueMP.versaos];
-                const versoesOrdenadas = estoqueMP.versaos.sort((a, b) => a.versao - b.versao);
-
-                versoesOrdenadas.forEach(versao => {
-                    if (qntdUsadaProducao > 0) {
-                        const qntdMinima = Math.min(qntdUsadaProducao, versao.vrQntd)
-                        const novaQuantidade = estoqueMP.quantidade - qntdMinima;
-                        const novaQntdPorVersao = versao.vrQntd - qntdMinima
-                        if (novaQuantidade > 0) {
-                            versao.vrQntd = novaQntdPorVersao;
-                        } else {
-                            versao.vrQntd = 0
-                        }
-
-                        estoqueMP.quantidade = parseFloat(novaQuantidade.toFixed(2))
-                        qntdUsadaProducao -= qntdMinima;
+            if(!values.mpFabricado) return;
+            for (const mp of values.mpFabricado) {
+                const estoqueMP = dataTableEstoque.find(estoque => estoque.nmProduto === mp.nmProduto);
+                if (estoqueMP) {
+                    if(estoqueMP.quantidade !== 0) {
+                        let qntdUsadaProducao = values.quantidade * mp.quantidade;
+                        const listVersaoComQntd: Versao[] = [...estoqueMP.versaos];
+                        const versoesOrdenadas = estoqueMP.versaos.sort((a, b) => a.versao - b.versao);
+    
+                        versoesOrdenadas.forEach(versao => {
+                            if (qntdUsadaProducao > 0) {
+                                const qntdMinima = Math.min(qntdUsadaProducao, versao.vrQntd)
+                                const novaQuantidade = estoqueMP.quantidade - qntdMinima;
+                                const novaQntdPorVersao = versao.vrQntd - qntdMinima
+                                if (novaQuantidade > 0) {
+                                    versao.vrQntd = novaQntdPorVersao;
+                                } else {
+                                    versao.vrQntd = 0
+                                }
+    
+                                estoqueMP.quantidade = parseFloat(novaQuantidade.toFixed(2))
+                                qntdUsadaProducao -= qntdMinima;
+                            }
+                        })
+                        await updateRemovedStock({
+                            nmProduto: estoqueMP.nmProduto,
+                            cdProduto: estoqueMP.cdProduto,
+                            quantidade: estoqueMP.quantidade,
+                            tpProduto: estoqueMP.tpProduto,
+                            qntMinima: estoqueMP.qntMinima,
+                            versaos: listVersaoComQntd,
+                        });
+                    } else {
+                        dispatch(setLoading(false))
+                        setNmProduto(estoqueMP.nmProduto)
+                        setOpenDialog(true);
+                        setEstoqueVazio(true);
+                        throw new Error('estoque Vazio');
                     }
-                })
-                await updateRemovedStock({
-                    nmProduto: estoqueMP.nmProduto,
-                    cdProduto: estoqueMP.cdProduto,
-                    quantidade: estoqueMP.quantidade,
-                    tpProduto: estoqueMP.tpProduto,
-                    qntMinima: estoqueMP.qntMinima,
-                    versaos: listVersaoComQntd,
-                });
+                }
             }
-        })
-    }
+        }
 
     /**
      * Atualiza o estoque.

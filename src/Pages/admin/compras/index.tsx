@@ -168,6 +168,22 @@ function AtualizarEstoque() {
                 const newDataTable = dataTable.filter(row => row.id !== selected.id);
                 setDataTable(newDataTable);
             });
+            const versoesValidas = dataTableEstoque.find(stock => stock.nmProduto === selected.nmProduto)
+            if (versoesValidas) {
+                const refIdEstoque: string = versoesValidas.id ?? ''
+                const refTable = doc(db, "Estoque", refIdEstoque);
+                const versoes = versoesValidas.versaos.filter(versao => versao.versao !== selected.nrOrdem)
+                const totalQuantity = versoes.reduce((accumulator, versao) => accumulator + versao.vrQntd, 0);
+
+                await updateDoc(refTable, {
+                    nmProduto: selected.nmProduto,
+                    cdProduto: selected.cdProduto,
+                    quantidade: totalQuantity,
+                    tpProduto: selected.tpProduto,
+                    qntMinima: selected.qntMinima,
+                    versaos: versoes
+                })
+            }
         }
         setSelected(undefined)
     }
@@ -427,7 +443,6 @@ function AtualizarEstoque() {
             dispatch(setLoading(false))
             setSubmitForm(false);
             setTimeout(() => { setSubmitForm(undefined) }, 3000);
-            console.error("Erro durante o processamento:", error);
             return;
         }
 

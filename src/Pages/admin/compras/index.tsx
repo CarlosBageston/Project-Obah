@@ -239,7 +239,7 @@ function AtualizarEstoque() {
                                 } else {
                                     setOpenDialog(true);
                                     setNmProduto(item.nmProduto)
-                                    setProdutosProcessados(new Set(produtosProcessados.add(item.nmProduto)))
+                                    setProdutosProcessados(new Set(produtosProcessados.add(valuesUpdate.nmProduto)))
                                     throw new Error("Produto não encontrado");
                                 }
                             } else {

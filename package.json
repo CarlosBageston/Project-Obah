@@ -4,7 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "copy .env.prod .env && vite",
+    "devtest": "copy .env.dev .env && vite",
     "build": "tsc && vite build",
     "preview": "vite preview"
   },

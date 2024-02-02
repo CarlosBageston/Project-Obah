@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styled, { css } from "styled-components";
 
 interface Props {
@@ -22,32 +22,34 @@ export const RotatingImage: React.FC<Props> = ({
     alt,
     width = 150,
 }) => {
-    const [changeImage, setChangeImage] = useState<boolean>();
-    const [rotateImage, setRotateImage] = useState<boolean>();
+    const [changeImage, setChangeImage] = useState<boolean | undefined>();
+    const [rotateImage, setRotateImage] = useState<boolean | undefined>();
 
-    const handleMouseEnter = () => {
-        setChangeImage(true);
-        setTimeout(() => {
-            setRotateImage(true);
-        }, 200);
-    };
+    useEffect(() => {
+        const handleInterval = () => {
+            setChangeImage(true);
+            setTimeout(() => {
+                setRotateImage(true);
+            }, 1000);
 
-    const handleMouseLeave = () => {
-        setChangeImage(false);
-        setTimeout(() => {
-            setRotateImage(false);
-        }, 200);
-        setTimeout(() => {
-            setChangeImage(undefined);
-            setRotateImage(undefined);
-        }, 250);
-    };
+            setTimeout(() => {
+                setChangeImage(false);
+                setTimeout(() => {
+                    setRotateImage(false);
+                }, 1000);
+                setTimeout(() => {
+                    setChangeImage(undefined);
+                    setRotateImage(undefined);
+                }, 2000);
+            }, 5000);
+        };
+        const intervalId = setInterval(handleInterval, 12000);
+
+        return () => clearInterval(intervalId);
+    }, []);
 
     return (
-        <ContainerImageSingle
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-        >
+        <ContainerImageSingle>
             <Image
                 rotateImage={rotateImage}
                 changeImage={changeImage}
@@ -80,25 +82,25 @@ ${({ changeImage }) =>
         changeImage &&
         css`
 transform: rotateY(90deg);
-transition: transform 0.2s linear;
+transition: transform 1s linear;
 `}
 ${({ rotateImage }) =>
         rotateImage &&
         css`
 transform: rotateY(0deg);
-transition: transform 0.2s linear 0.2s;
+transition: transform 1s1 linear;
 `}
 ${({ changeImage }) =>
         changeImage === false &&
         css`
 transform: rotateY(90deg);
-transition: transform 0.2s linear;
+transition: transform 1s linear;
 `}
 ${({ rotateImage }) =>
         rotateImage === false &&
         css`
 transform: rotateY(0deg);
-transition: transform 0.2s linear 0.2s;
+transition: transform 1s linear ;
 `}
 
 @media (max-width: 700px) {

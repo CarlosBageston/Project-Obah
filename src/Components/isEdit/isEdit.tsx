@@ -16,7 +16,8 @@ import {
     StyledAiOutlineClose,
     StyledIoMdAdd,
     DivIsAdding,
-    StyledMdDone
+    StyledMdDone,
+    Error
 } from "./style";
 import { Autocomplete, Stack, TextField } from "@mui/material";
 import SituacaoProduto from "../../enumeration/situacaoProduto";
@@ -68,21 +69,31 @@ function IsEdit({ selected, handleEditRow, inputsConfig, isEdit, products, setSe
     const [filterTpProdutoFabricado, setFilterTpProdutoFabricado] = useState<any>()
     const [filterTpProdutoComprado, setFilterTpProdutoComprado] = useState<any>()
     const [newProduct, setNewProduct] = useState<any>()
+    const [error, setError] = useState<string>('')
 
     const { NumberFormatForBrazilianCurrency, formatCurrencyRealTime } = useFormatCurrency();
+
 
     useEffect(() => {
         if (dataSelected) {
             if (editingScreen === 'Cliente') {
-                const filterFabricado = dataSelected.filter((item: ProdutosModel) => item.tpProduto === SituacaoProduto.FABRICADO || item.stEntrega)
+                const filterFabricado: ProdutosModel[] = dataSelected.filter((item: ProdutosModel) => item.tpProduto === SituacaoProduto.FABRICADO || item.stEntrega)
                 setFilterTpProdutoFabricado(filterFabricado)
             } else {
+                const filter = dataSelected.filter((data: ProdutosModel) => data.nmProduto.includes('Balde 10 Litros'))
                 const filterComprado = dataSelected.filter((item: any) => item.tpProduto === SituacaoProduto.COMPRADO)
-                setFilterTpProdutoComprado(filterComprado)
+                if (filter.length > 0) {
+                    const objetoEncontrado = filter[0];
+                    objetoEncontrado.tpProduto = SituacaoProduto.COMPRADO;
+
+                    const newFilterComprado = [...filterComprado, objetoEncontrado]
+                    setFilterTpProdutoComprado(newFilterComprado)
+                } else {
+                    setFilterTpProdutoComprado([...filterComprado])
+                }
             }
         }
     }, [dataSelected])
-
     useEffect(() => {
         if (isEdit) {
             const formattedData = { ...selected };
@@ -95,10 +106,16 @@ function IsEdit({ selected, handleEditRow, inputsConfig, isEdit, products, setSe
                     formattedData[propertyName] = NumberFormatForBrazilianCurrency(value);
                 }
             });
-
+            if (editingScreen === 'Cliente') {
+                const produto = formattedData.produtos.map((produto: ProdutosModel) => {
+                    produto.vlVendaProduto = NumberFormatForBrazilianCurrency(produto.vlVendaProduto) as unknown as number
+                })
+                setSelected(produto)
+            }
             setSelected(formattedData);
         }
     }, [isEdit]);
+
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>, propertyName: string, type: 'string' | 'number', isCurrency: boolean | undefined) => {
         const { value } = e.target;
@@ -145,7 +162,6 @@ function IsEdit({ selected, handleEditRow, inputsConfig, isEdit, products, setSe
             produtos: updatedProdutos || [],
         } as ClienteModel | undefined));
     }
-
     const handleChangeProduct = (e: ChangeEvent<HTMLInputElement>, selected: any, index: number) => {
         const newMps = [...selected.mpFabricado];
         newMps[index].quantidade = e.target.value;
@@ -155,18 +171,58 @@ function IsEdit({ selected, handleEditRow, inputsConfig, isEdit, products, setSe
         } as ProdutosModel | undefined));
     }
 
-    //essa e a logica para adicionar novo produto na tela de Cliente usando o isEdit.
-    const handleChangeProdutoAdding = (e: React.SyntheticEvent<Element, Event>, value: any) => {
-        const newValue = { nmProduto: value.nmProduto, quantidade: undefined }
-        setNewProduct(newValue)
-    }
-    function addingNewProduct() {
-        setSelected((prevSelected: ProdutosModel | undefined) => ({
-            ...prevSelected,
-            mpFabricado: [...(prevSelected?.mpFabricado || []), newProduct],
-        } as ProdutosModel | undefined));
+    function handleEventEdit() {
+        if (editingScreen === 'Cliente') {
+            const isValid = selected.produtos.some((product: ProdutosModel) => !product.vlVendaProduto)
+            if (isValid) {
+                setError("Valor do Produto não preenchido")
+            } else {
+                handleEditRow();
+                setError('')
+                setIsAdding(false);
+            }
+        } else {
+            const isValid = selected.mpFabricado.some((product: any) => !product.quantidade)
+            if (isValid) {
+                setError("Valor do Produto não preenchido")
+            } else {
+                handleEditRow();
+                setError('')
+                setIsAdding(false);
+            }
+        }
     }
 
+    //essa e a logica para adicionar novo produto na tela de Cliente usando o isEdit.
+    const handleChangeProdutoAdding = (e: React.SyntheticEvent<Element, Event>, value: any) => {
+        if (editingScreen === 'Cliente') {
+            const encontrado: ProdutosModel = dataSelected.find((product: ProdutosModel) => product.nmProduto === value.nmProduto)
+            if (encontrado) {
+                const newValue = { ...encontrado, vlVendaProduto: undefined }
+                setNewProduct(newValue)
+            }
+        } else {
+            const newValue = { nmProduto: value.nmProduto, quantidade: undefined }
+            setNewProduct(newValue)
+        }
+    }
+    function addingNewProduct() {
+        if (editingScreen === 'Cliente') {
+            if (selected.produtos.find((product: ProdutosModel) => product.nmProduto === newProduct.nmProduto)) return setError('Produto já existe na lista')
+            setSelected((prevSelected: ClienteModel | undefined) => ({
+                ...prevSelected,
+                produtos: [...(prevSelected?.produtos || []), newProduct],
+            } as ClienteModel | undefined));
+            setError('')
+        } else {
+            if (selected.mpFabricado.find((product: ProdutosModel) => product.nmProduto === newProduct.nmProduto)) return setError('Produto já existe na lista')
+            setSelected((prevSelected: ProdutosModel | undefined) => ({
+                ...prevSelected,
+                mpFabricado: [...(prevSelected?.mpFabricado || []), newProduct],
+            } as ProdutosModel | undefined));
+            setError('')
+        }
+    }
     return (
         <>
             {isEdit && (
@@ -175,7 +231,7 @@ function IsEdit({ selected, handleEditRow, inputsConfig, isEdit, products, setSe
                     <ContainerFlutuante >
                         <BoxClose>
                             <DivClose
-                                onClick={() => setIsEdit(false)}
+                                onClick={() => { setIsEdit(false); setIsAdding(false); setError('') }}
                             >
                                 <StyledAiOutlineClose />
                             </DivClose>
@@ -216,7 +272,7 @@ function IsEdit({ selected, handleEditRow, inputsConfig, isEdit, products, setSe
                         </BoxTop>
                         <DivIsAdding>
                             {isAdding ? (
-                                <div>
+                                <div style={{ height: '5rem' }}>
                                     <div style={{ width: '16rem' }}>
                                         <Stack spacing={3} sx={{ width: 250 }}>
                                             <Autocomplete
@@ -228,17 +284,18 @@ function IsEdit({ selected, handleEditRow, inputsConfig, isEdit, products, setSe
                                                     <TextField
                                                         {...params}
                                                         variant="standard"
-                                                        label="Selecione MP necessaria para fabricar"
-                                                        placeholder="matéria-prima"
+                                                        label={editingScreen === 'Cliente' ? "Selecione os Prdutos vendidos a esse cliente" : "Selecione MP necessaria para fabricar"}
+                                                        placeholder={editingScreen === 'Cliente' ? "Produtos" : "matéria-prima"}
                                                     />
                                                 )}
                                             />
                                         </Stack>
                                     </div>
+                                    <Error>{error ? error : ''}</Error>
                                 </div>
                             ) : (
                                 <div>
-                                    <p>adicionar uma nova matéria-prima</p>
+                                    {editingScreen === 'Cliente' ? <p>adicionar um novo produto</p> : <p>adicionar uma nova matéria-prima</p>}
                                 </div>
                             )}
                             {!isAdding &&
@@ -279,7 +336,7 @@ function IsEdit({ selected, handleEditRow, inputsConfig, isEdit, products, setSe
                         </ContianerMP>
                         <div>
                             <ButtonStyled
-                                onClick={handleEditRow}>
+                                onClick={handleEventEdit}>
                                 Concluído
                             </ButtonStyled>
                         </div>

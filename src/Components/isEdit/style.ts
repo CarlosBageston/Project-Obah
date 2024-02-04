@@ -233,7 +233,6 @@ cursor: pointer;
 width: 40px;
 height: 40px;
 padding: 6px;
-margin-top: 20px;
 
 &:hover{
   background-color: #00000006;
@@ -247,4 +246,9 @@ display: flex;
 align-items: center;
 width: 600px;
 justify-content: center;
+`;
+
+export const Error = styled.div`
+color: red;
+font-weight: 600;
 `;

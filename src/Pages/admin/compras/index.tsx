@@ -191,38 +191,30 @@ function AtualizarEstoque() {
     // Este método recalcula os preços dos produtos para um cliente específico, com base nos valores fornecidos e nas compras registradas.
     function recalculateProductPricesClient(valuesUpdate: ComprasModel, clienteEncontrado: ClienteModel[]) {
         dataTableCliente.forEach(cliente => {
-            // Filtrar produtos do cliente que contêm a matéria-prima (MP) em questão
-            const produtosComMPEncontrada = cliente.produtos.filter(produto =>
-                produto.mpFabricado.some(mp => mp.nmProduto === valuesUpdate.nmProduto)
-            );
-
-            if (produtosComMPEncontrada.length > 0) {
-                let result = 0.0;
-                // Iterar pelos produtos do cliente que contêm a MP em questão
-                const produtosAtualizados = produtosComMPEncontrada.map(produto => {
-                    produto.mpFabricado.forEach(item => {
-                        // Verificar se é a MP em questão
-                        if (item.nmProduto !== valuesUpdate.nmProduto) {
-                            const encontrado = dataTable.find(compra => compra.nmProduto === item.nmProduto);
-                            if (encontrado) {
-                                const totalAtualizado = calculateTotalValue(item, encontrado);
-                                result += totalAtualizado;
-                            }
-                        } else {
-                            const totalAtualizado = calculateTotalValue(item, valuesUpdate);
+            let result = 0.0;
+            // Iterar pelos produtos do cliente que contêm a MP em questão
+            const produtosAtualizados = cliente.produtos.map(produto => {
+                produto.mpFabricado.forEach(item => {
+                    // Verificar se é a MP em questão
+                    if (item.nmProduto !== valuesUpdate.nmProduto) {
+                        const encontrado = dataTable.find(compra => compra.nmProduto === item.nmProduto);
+                        if (encontrado) {
+                            const totalAtualizado = calculateTotalValue(item, encontrado);
                             result += totalAtualizado;
                         }
-                    });
-                    // Atualizar o valor no produto do cliente
-                    const productUpdate = { ...produto, vlUnitario: parseFloat(result.toFixed(2)) }
-                    result = 0.0
-                    return productUpdate;
+                    } else {
+                        const totalAtualizado = calculateTotalValue(item, valuesUpdate);
+                        result += totalAtualizado;
+                    }
                 });
-
-                // Construir um novo objeto cliente com produtos atualizados
-                const clienteAtualizado: ClienteModel = { ...cliente, produtos: produtosAtualizados };
-                clienteEncontrado.push(clienteAtualizado);
-            }
+                // Atualizar o valor no produto do cliente
+                const productUpdate = { ...produto, vlUnitario: parseFloat(result.toFixed(2)) }
+                result = 0.0
+                return productUpdate;
+            });
+            // Construir um novo objeto cliente com produtos atualizados
+            const clienteAtualizado: ClienteModel = { ...cliente, produtos: produtosAtualizados };
+            clienteEncontrado.push(clienteAtualizado);
         });
     }
     function foundProducts(item: ComprasModel) {
@@ -439,7 +431,6 @@ function AtualizarEstoque() {
                     return;
                 }
             }
-
             dispatch(setLoading(false))
             setSubmitForm(false);
             setTimeout(() => { setSubmitForm(undefined) }, 3000);

@@ -31,6 +31,7 @@ import {
     Icon,
     Box
 } from './style';
+import { Tooltip } from '@mui/material';
 
 
 
@@ -120,6 +121,7 @@ export default function MenuLateral() {
 
     const handleClick = () => {
         setOpenSubOpcao(!openSubOpcao);
+        setOpen(true);
     };
     const handleDrawerOpen = () => {
         setOpen(true);
@@ -137,64 +139,96 @@ export default function MenuLateral() {
             <List>
                 <Link to="/dashboard" style={{ textDecoration: 'none', color: 'white' }}>
                     <StyledListItemButton>
-                        <ListItemIcon>
-                            <Image src={dashboard} alt="Dashboard" width={32} />
-                        </ListItemIcon>
+                        <Tooltip
+                            title={"Dashboard"}
+                        >
+                            <ListItemIcon>
+                                <Image src={dashboard} alt="Dashboard" width={32} />
+                            </ListItemIcon>
+                        </Tooltip>
                         <StyledListItemText primary="Dashboard" />
                     </StyledListItemButton>
                 </Link>
                 <Link to="/atualizar-estoque" style={{ textDecoration: 'none', color: 'white' }}>
                     <StyledListItemButton>
-                        <ListItemIcon>
-                            <Image src={compra} alt="Atualizar Estoque" width={30} />
-                        </ListItemIcon>
+                        <Tooltip
+                            title={"Atualizar Estoque"}
+                        >
+                            <ListItemIcon>
+                                <Image src={compra} alt="Atualizar Estoque" width={30} />
+                            </ListItemIcon>
+                        </Tooltip>
                         <StyledListItemText primary="Atualizar Estoque" />
                     </StyledListItemButton>
                 </Link>
                 <Link to="/cadastro-produto" style={{ textDecoration: 'none', color: 'white' }}>
                     <StyledListItemButton>
-                        <ListItemIcon>
-                            <Image src={produto} alt="Cadastro Produto" width={30} />
-                        </ListItemIcon>
+                        <Tooltip
+                            title={"Cadastro Produto"}
+                        >
+                            <ListItemIcon>
+                                <Image src={produto} alt="Cadastro Produto" width={30} />
+                            </ListItemIcon>
+                        </Tooltip>
                         <StyledListItemText primary="Cadastro Produto" />
                     </StyledListItemButton>
                 </Link>
                 <Link to="/cadastro-cliente" style={{ textDecoration: 'none', color: 'white' }}>
                     <StyledListItemButton>
-                        <ListItemIcon>
-                            <Image src={cliente} alt="cadastro cliente" width={30} />
-                        </ListItemIcon>
+                        <Tooltip
+                            title={"Cadastro Cliente"}
+                        >
+                            <ListItemIcon>
+                                <Image src={cliente} alt="cadastro cliente" width={30} />
+                            </ListItemIcon>
+                        </Tooltip>
                         <StyledListItemText primary="Cadastro Cliente" />
                     </StyledListItemButton>
                 </Link>
                 <Link to="/vendas" style={{ textDecoration: 'none', color: 'white' }}>
                     <StyledListItemButton>
-                        <ListItemIcon>
-                            <Image src={vendas} alt="Painel de venda" width={30} />
-                        </ListItemIcon>
+                        <Tooltip
+                            title={"Painel de venda"}
+                        >
+                            <ListItemIcon>
+                                <Image src={vendas} alt="Painel de venda" width={30} />
+                            </ListItemIcon>
+                        </Tooltip>
                         <StyledListItemText primary="Painel de venda" />
                     </StyledListItemButton>
                 </Link>
                 <Link to="/entregas" style={{ textDecoration: 'none', color: 'white' }}>
                     <StyledListItemButton>
-                        <ListItemIcon>
-                            <Image src={entrega} alt="Entregas" width={30} />
-                        </ListItemIcon>
+                        <Tooltip
+                            title={"Entregas"}
+                        >
+                            <ListItemIcon>
+                                <Image src={entrega} alt="Entregas" width={30} />
+                            </ListItemIcon>
+                        </Tooltip>
                         <StyledListItemText primary="Entregas" />
                     </StyledListItemButton>
                 </Link>
                 <Link to="/estoque" style={{ textDecoration: 'none', color: 'white' }}>
                     <StyledListItemButton>
-                        <ListItemIcon>
-                            <Image src={estoque} alt="Estoque" width={30} />
-                        </ListItemIcon>
+                        <Tooltip
+                            title={"Estoque"}
+                        >
+                            <ListItemIcon>
+                                <Image src={estoque} alt="Estoque" width={30} />
+                            </ListItemIcon>
+                        </Tooltip>
                         <StyledListItemText primary="Estoque" />
                     </StyledListItemButton>
                 </Link>
                 <StyledListItemButton onClick={handleClick}>
-                    <ListItemIcon>
-                        <Image src={gestao} alt="Gestão" width={30} />
-                    </ListItemIcon>
+                    <Tooltip
+                        title={"Gestão"}
+                    >
+                        <ListItemIcon>
+                            <Image src={gestao} alt="Gestão" width={30} />
+                        </ListItemIcon>
+                    </Tooltip>
                     <StyledListItemText primary="Gestão" />
                     <Icon opensubopcao={openSubOpcao.toString()} />
                 </StyledListItemButton>

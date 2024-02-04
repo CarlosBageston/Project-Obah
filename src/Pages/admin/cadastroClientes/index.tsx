@@ -282,6 +282,7 @@ function CadastroCliente() {
                     products={selected ? selected.produtos : []}
                     setSelected={setSelected}
                     setIsEdit={setIsEdit}
+                    newData={produtosDataTable}
                 />
 
                 {/*Tabela */}

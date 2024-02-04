@@ -6,7 +6,6 @@ import { TitleDefault } from "../../Pages/admin/cadastroClientes/style";
 import SituacaoProduto from "../../enumeration/situacaoProduto";
 import { BoxClose, ButtonStyled, ContainerFlutuante, ContianerMP, DivClose, DivLineMP, Paragrafo, StyledAiOutlineClose } from "../isEdit/style";
 import ProdutosModel from "../../Pages/admin/cadastroProdutos/model/produtos";
-import GetData from "../../firebase/getData";
 import useFormatCurrency from "../../hooks/formatCurrency";
 
 interface IsAddingProps {
@@ -44,18 +43,14 @@ interface IsAddingProps {
 function IsAdding({ data, isAdding, setFieldValue, setIsVisibleTpProduto, products, addingScreen, errors, touched }: IsAddingProps) {
     const [filterTpProdutoFabricado, setFilterTpProdutoFabricado] = useState<any>()
     const [filterTpProdutoComprado, setFilterTpProdutoComprado] = useState<any>()
-    const {
-        dataTable,
-    } = GetData('Produtos', true) as { dataTable: ProdutosModel[] };
 
     const { formatCurrencyRealTime } = useFormatCurrency();
-
     useEffect(() => {
         if (addingScreen === 'Cliente') {
             const filterFabricado = data.filter((item: ProdutosModel) => item.tpProduto === SituacaoProduto.FABRICADO || item.stEntrega)
             setFilterTpProdutoFabricado(filterFabricado)
         } else {
-            const filter = dataTable.filter(data => data.nmProduto.includes('Balde 10 Litros'))
+            const filter = data.filter((dados: ProdutosModel) => dados.nmProduto.includes('Balde 10 Litros'))
             const filterComprado = data.filter((item: any) => item.tpProduto === SituacaoProduto.COMPRADO)
             if (filter.length > 0) {
                 const objetoEncontrado = filter[0];
@@ -67,7 +62,7 @@ function IsAdding({ data, isAdding, setFieldValue, setIsVisibleTpProduto, produc
                 setFilterTpProdutoComprado([...filterComprado])
             }
         }
-    }, [data, dataTable])
+    }, [data])
 
 
     //essa e a logica da tela de Cliente

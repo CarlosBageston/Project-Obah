@@ -19,7 +19,7 @@ export interface ProdutoEscaniado{
 
 interface VendaModel {
     dtProduto: string | null,
-    vlLucroTotal?: number,
+    vlLucroTotal: number,
     vlTotal: number ,
     vlRecebido: number,
     vlTroco: number ,

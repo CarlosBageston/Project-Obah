@@ -84,11 +84,8 @@ function CadastroCliente() {
             bairroCliente: Yup.string().required('Campo obrigatório'),
             cidadeCliente: Yup.string().required('Campo obrigatório'),
             produtos: Yup.array().test("array vazio", 'Obrigatório pelo menos 1 produto', function (value) {
-                if ((!value || value.length === 0)) {
-                    return false;
-                } else {
-                    return true;
-                }
+                if ((!value || value.length === 0)) return false;
+                return true;
             }).nullable()
         }),
         onSubmit: hundleSubmitForm,
@@ -99,7 +96,9 @@ function CadastroCliente() {
         if (selected) {
             const refID: string = selected.id ?? '';
             const refTable = doc(db, "Clientes", refID);
-
+            selected.produtos.forEach(product => {
+                product.vlVendaProduto = convertToNumber(product.vlVendaProduto.toString())
+            })
             if (JSON.stringify(selected) !== JSON.stringify(initialValues)) {
                 await updateDoc(refTable, { ...selected })
                     .then(() => {

@@ -70,13 +70,14 @@ export default function useEstoque(){
      */
     async function removedStockEntrega(clienteCurrent: ClienteModel | undefined, quantidades:{ [key: string]: number }) {
         if (!clienteCurrent) return;
+        const updatedQuantidades: { [key: string]: number } = { ...quantidades };
         clienteCurrent.produtos.forEach(async produto => {
             const estoqueMP = dataTableEstoque.find(estoque => estoque.nmProduto === produto.nmProduto);
             if (estoqueMP) {
                 const listVersaoComQntd: Versao[] = [...estoqueMP.versaos];
                 const versoesOrdenadas = estoqueMP.versaos.sort((a, b) => a.versao - b.versao);
                 versoesOrdenadas.forEach(versao => {
-                    if (quantidades[produto.nmProduto] > 0) {
+                    if (updatedQuantidades[produto.nmProduto] > 0) {
                         const qntdMinima = Math.min(quantidades[produto.nmProduto], versao.vrQntd)
                         const novaQuantidade = estoqueMP.quantidade - qntdMinima;
                         const novaQntdPorVersao = versao.vrQntd - qntdMinima
@@ -87,7 +88,7 @@ export default function useEstoque(){
                         }
 
                         estoqueMP.quantidade = parseFloat(novaQuantidade.toFixed(2))
-                        quantidades[produto.nmProduto] -= qntdMinima;
+                        updatedQuantidades[produto.nmProduto] -= qntdMinima;
                     }
                 })
                 await updateRemovedStock({

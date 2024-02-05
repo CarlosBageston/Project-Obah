@@ -30,8 +30,8 @@ export default function ChartBarVertical() {
             return mesItem === mes;
         });
         const quantidade = dadosFiltrado.length
-        const valorTotal = dadosFiltrado.reduce((total, item) => total + item.vlTotal!, 0)
-        const valorLucro = dadosFiltrado.reduce((total, item) => total + Number(item.vlLucroTotal), 0)
+        const valorTotal = dadosFiltrado.reduce((total, item) => total + item.vlTotal, 0)
+        const valorLucro = dadosFiltrado.reduce((total, item) => total + item.vlLucroTotal, 0)
         return {
             mes,
             quantidade,

@@ -48,8 +48,8 @@ import useFormatCurrency from '../../../hooks/formatCurrency';
 
 
 const objClean: EntregaModel = {
-    vlLucro: '',
-    vlEntrega: '',
+    vlLucro: 0,
+    vlEntrega: 0,
     dtEntrega: '',
     quantidades: [],
 }
@@ -66,7 +66,7 @@ function Entregas() {
     const dispatch = useDispatch();
     const { loading } = useSelector((state: State) => state.user);
 
-    const { NumberFormatForBrazilianCurrency } = useFormatCurrency();
+    const { NumberFormatForBrazilianCurrency, convertToNumber } = useFormatCurrency();
     const { removedStockEntrega } = useEstoque();
 
     const initialValues: EntregaModel = ({ ...objClean });
@@ -109,8 +109,8 @@ function Entregas() {
 
     //limpa os inputs
     function cleanState() {
-        setFieldValue('vlLucro', '')
-        setFieldValue('vlEntrega', '')
+        setFieldValue('vlLucro', 0)
+        setFieldValue('vlEntrega', 0)
         setFieldValue('dtEntrega', '')
         setFieldValue('quantidades', [])
         setFieldValue('cliente.nmCliente', '')
@@ -121,10 +121,12 @@ function Entregas() {
     //enviando formulario
     async function hundleSubmitForm() {
         dispatch(setLoading(true))
+        const valuesUpdate = { ...values, quantidades: quantidades };
         removedStockEntrega(clienteCurrent, quantidades)
+        valuesUpdate.vlEntrega = convertToNumber(valuesUpdate.vlEntrega.toString())
+        valuesUpdate.vlLucro = convertToNumber(valuesUpdate.vlLucro.toString())
         await addDoc(collection(db, "Entregas"), {
-            ...values,
-            quantidades: quantidades
+            ...valuesUpdate
         })
             .then(() => {
                 dispatch(setLoading(false))
@@ -185,12 +187,10 @@ function Entregas() {
 
         // Formatar total da entrega
         if (sum === 0 && sumLucro === 0) return
-        const formattedSum = sum.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-        setFieldValue('vlEntrega', formattedSum);
+        setFieldValue('vlEntrega', NumberFormatForBrazilianCurrency(sum));
 
         // Formatar lucro
-        const formattedSumLucro = sumLucro.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-        setFieldValue('vlLucro', formattedSumLucro);
+        setFieldValue('vlLucro', NumberFormatForBrazilianCurrency(sumLucro));
     }, [quantidades]);
 
     useEffect(() => {
@@ -241,7 +241,7 @@ function Entregas() {
                             label="Valor Total"
                             name="vlEntrega"
                             onBlur={handleBlur}
-                            value={values.vlEntrega && `R$ ${values.vlEntrega}`}
+                            value={values.vlEntrega !== 0 ? values.vlEntrega : ''}
                             onChange={e => setFieldValue(e.target.name, e.target.value)}
                             error={touched.vlEntrega && errors.vlEntrega ? errors.vlEntrega : ''}
                             style={{ color: '#333333d3', opacity: 1, borderBottom: '2px solid #c7c6f3', backgroundColor: '#e0e0e04f' }}
@@ -255,7 +255,7 @@ function Entregas() {
                             label="Lucro"
                             name="vlLucro"
                             onBlur={handleBlur}
-                            value={values.vlLucro && `R$ ${values.vlLucro}`}
+                            value={values.vlLucro !== 0 ? values.vlLucro : ''}
                             raisedLabel={values.vlLucro ? true : false}
                             onChange={e => setFieldValue(e.target.name, e.target.value)}
                             error={touched.vlLucro && errors.vlLucro ? errors.vlLucro : ''}

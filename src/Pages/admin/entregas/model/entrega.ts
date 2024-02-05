@@ -7,8 +7,8 @@ import ClienteModel from "../../cadastroClientes/model/cliente";
 */
 export interface EntregaModel {
     id?: string,
-    vlEntrega: string,
-    vlLucro: string,
+    vlEntrega: number,
+    vlLucro: number,
     cliente?: ClienteModel,
     dtEntrega: string;
     quantidades: []

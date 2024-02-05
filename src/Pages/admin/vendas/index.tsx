@@ -57,7 +57,8 @@ const objClean: VendaModel = {
     dtProduto: '',
     vlRecebido: 0,
     vlTroco: 0,
-    produtoEscaniado: []
+    produtoEscaniado: [],
+    vlLucroTotal: 0
 }
 function Vendas() {
     const [key, setKey] = useState<number>(0);

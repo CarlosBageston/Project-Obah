@@ -47,13 +47,12 @@ export function NotaFiscal({ values, clienteCurrent, setShouldShow }: Props) {
             <Box>
                 <div style={{ padding: 16 }} ref={ref}>
                     <div>
-                        <Title>SORVETERIA OBAH LTDA</Title>
+                        <Title>SORVETERIA OBAH</Title>
                         <p>R. Uruguai, 115 - Santa Luzia, Dois Vizinhos - PR, 85660-000</p>
                         <DivSubHeader>
                             <div>
-                                <p>CNPJ: 88.060.864/0001-40</p>
-                                <p>IE: 940.82689-63</p>
-                                <p>IM: 08641569</p>
+                                <p>CNPJ: 52.193.214/0001-25</p>
+                                <p>IE: Isento</p>
                             </div>
                             <div>
                                 <p>Data e Hora da venda</p>

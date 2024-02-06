@@ -132,7 +132,7 @@ function Dashboard() {
                 <Title>Dashboard Sorveteria Obah!</Title>
             </div>
             <DivPadLock>
-                <StyledGiPadlockInternal onClick={() => { setFreeScreen(false); setIsLocked(true); console.log('clicou ') }} />
+                <StyledGiPadlockInternal onClick={() => { setFreeScreen(false); setIsLocked(true) }} />
             </DivPadLock>
             <Container>
                 <BlockedInformation isVisible={freeScreen} onClick={togglePadlock}>

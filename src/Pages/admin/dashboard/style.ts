@@ -107,12 +107,12 @@ align-items: center;
 justify-content: center;
 `;
 
-export const StyledGiPadlock = styled(GiPadlock)`
+export const StyledGiPadlock = styled(GiPadlock)<{isLocked: boolean}>`
 width: 150px;
 height: 150px;
 color: #fff;
+display: ${props => props.isLocked ? 'block' : 'none'};
 transition: transform 0.3s;
-
 &:hover{
   transform: rotate(-10deg);
   cursor: pointer;
@@ -134,10 +134,10 @@ z-index: 9999;
 }
 `;
 
-export const ContainerPassword = styled.div`
+export const ContainerPassword = styled.div<{isLocked: boolean}>`
 width: 400px;
 height: 400px;
-display: flex;
+display: ${props => props.isLocked ? 'none' : 'flex'};
 align-items: center;
 flex-direction: column;
 z-index: 9999;
@@ -190,10 +190,15 @@ justify-content: flex-end;
 margin-top: 2rem;
 `;
 
-export const StyledGiPadlockInternal = styled(StyledGiPadlock)`
+export const StyledGiPadlockInternal = styled(GiPadlock)`
 width: 50px;
 height: 50px;
 position: absolute;
 z-index: 0;
 color: #000;
+transition: transform 0.3s;
+&:hover{
+  transform: rotate(-10deg);
+  cursor: pointer;
+}
 `;

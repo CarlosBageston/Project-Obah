@@ -5,7 +5,7 @@ import GetData from "../../../firebase/getData";
 import ChartLine from "../../../Components/graficos/Line";
 import ChartBarVertical from "../../../Components/graficos/BarVertical";
 import ChartBarHorizontal from "../../../Components/graficos/BarHorizontal";
-import { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
     Box,
     Title,
@@ -41,6 +41,7 @@ function Dashboard() {
     const { dataHorizontal, optionsHotizontal } = ChartBarHorizontal()
     const [isLocked, setIsLocked] = useState<boolean>(true);
     const [freeScreen, setFreeScreen] = useState<boolean>(false);
+    const refInput = useRef<HTMLInputElement>(null);
     const initialValues: DashboardModel = {
         error: '',
         password: '',
@@ -120,7 +121,11 @@ function Dashboard() {
             authenticateDashboard()
         }
     }
-
+    useEffect(() => {
+        if (!isLocked && refInput.current) {
+            refInput.current.focus();
+        }
+    }, [isLocked]);
     return (
         <Box>
             <div>
@@ -131,34 +136,30 @@ function Dashboard() {
             </DivPadLock>
             <Container>
                 <BlockedInformation isVisible={freeScreen} onClick={togglePadlock}>
-                    {isLocked ? (
-                        <StyledGiPadlock />
-                    ) : (
-                        <>
-                            <ContainerPassword>
-                                <TitlePassword>Digite a senha para desbloquear as informações</TitlePassword>
-                                <Input
-                                    onKeyDown={onKeyPress}
-                                    type="password"
-                                    id="password"
-                                    name="password"
-                                    placeholder='Senha'
-                                    value={values.password}
-                                    onChange={e => { setFieldValue('password', e.target.value) }}
-                                />
-                                <Error>{values.error}</Error>
-                                <Button
-                                    onClick={authenticateDashboard}
-                                >
-                                    Acessar
-                                    <div className="arrow-wrapper">
-                                        <div className="arrow"></div>
-                                    </div>
-                                </Button>
+                    <StyledGiPadlock isLocked={isLocked} />
+                    <ContainerPassword isLocked={isLocked}>
+                        <TitlePassword>Digite a senha para desbloquear as informações</TitlePassword>
+                        <Input
+                            onKeyDown={onKeyPress}
+                            type="password"
+                            id="password"
+                            name="password"
+                            placeholder='Senha'
+                            value={values.password}
+                            ref={refInput}
+                            onChange={e => { setFieldValue('password', e.target.value) }}
+                        />
+                        <Error>{values.error}</Error>
+                        <Button
+                            onClick={authenticateDashboard}
+                        >
+                            Acessar
+                            <div className="arrow-wrapper">
+                                <div className="arrow"></div>
+                            </div>
+                        </Button>
 
-                            </ContainerPassword>
-                        </>
-                    )}
+                    </ContainerPassword>
                 </BlockedInformation>
                 <ContainerGrafic>
                     <DivGraficHortizontal>

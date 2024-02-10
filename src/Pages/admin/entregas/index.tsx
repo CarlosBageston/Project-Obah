@@ -321,6 +321,7 @@ function Entregas() {
                     </ContainerTableCliente>
                     {shouldShow &&
                         <NotaFiscal
+                            quantidades={quantidades}
                             values={values}
                             clienteCurrent={clienteCurrent as ClienteModel}
                             setShouldShow={setShouldShow}

@@ -8,18 +8,21 @@ import { TableContainer, Table, TableHead, TableRow, TableCell, TableBody } from
 
 
 import { BoxClose, StyledAiOutlineClose } from "../isEdit/style";
-import { Box, DivSubHeader, Title, TotalValue, DivClosePrint, ContainerFlutuantePrint } from "./style";
+import { Box, DivSubHeader, Title, TotalValue, DivClosePrint, ContainerFlutuantePrint, TextLabel } from "./style";
+import useFormatCurrency from "../../hooks/formatCurrency";
 
 interface Props {
     values: EntregaModel,
     clienteCurrent: ClienteModel,
     setShouldShow: React.Dispatch<React.SetStateAction<boolean>>
+    quantidades: { [key: string]: number }
 }
 
-export function NotaFiscal({ values, clienteCurrent, setShouldShow }: Props) {
+export function NotaFiscal({ values, clienteCurrent, setShouldShow, quantidades }: Props) {
     const [horaAtual, setHoraAtual] = useState('');
 
     const ref = useRef<HTMLDivElement>(null);
+    const { NumberFormatForBrazilianCurrency } = useFormatCurrency();
 
     useEffect(() => {
         const data = new Date();
@@ -48,30 +51,30 @@ export function NotaFiscal({ values, clienteCurrent, setShouldShow }: Props) {
                 <div style={{ padding: 16 }} ref={ref}>
                     <div>
                         <Title>SORVETERIA OBAH</Title>
-                        <p>R. Uruguai, 115 - Santa Luzia, Dois Vizinhos - PR, 85660-000</p>
+                        <TextLabel>R. Uruguai, 115 - Santa Luzia, Dois Vizinhos - PR, 85660-000</TextLabel>
                         <DivSubHeader>
                             <div>
-                                <p>CNPJ: 52.193.214/0001-25</p>
-                                <p>IE: Isento</p>
+                                <TextLabel>CNPJ: 52.193.214/0001-25</TextLabel>
+                                <TextLabel>IE: Isento</TextLabel>
                             </div>
                             <div>
-                                <p>Data e Hora da venda</p>
-                                <p>{values.dtEntrega}</p>
-                                <p>{horaAtual}</p>
+                                <TextLabel>Data e Hora da venda</TextLabel>
+                                <TextLabel>{values.dtEntrega}</TextLabel>
+                                <TextLabel>{horaAtual}</TextLabel>
                             </div>
                         </DivSubHeader>
                     </div>
                     <hr style={{ border: "1px dashed #b0b0b0" }} />
                     <div style={{ margin: "1rem 0 1rem 0" }}>
-                        <h1>CUPOM FISCAL</h1>
                         <TableContainer>
                             <Table >
                                 <TableHead>
                                     <TableRow>
                                         <TableCell>ITEM</TableCell>
-                                        {/* <TableCell>CÓD.</TableCell> */}
                                         <TableCell>DESC.</TableCell>
-                                        <TableCell align="right">VALOR</TableCell>
+                                        <TableCell>QNTD</TableCell>
+                                        <TableCell>V UN</TableCell>
+                                        <TableCell>V Total</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
@@ -82,7 +85,13 @@ export function NotaFiscal({ values, clienteCurrent, setShouldShow }: Props) {
                                                 <TableRow key={produto.cdProduto}>
                                                     <TableCell>{formatIndex(index + 1)}</TableCell>
                                                     <TableCell component="th" scope="row">{produto.nmProduto}</TableCell>
-                                                    <TableCell align="right"> {
+                                                    <TableCell component="th" scope="row">
+                                                        {quantidades[produto.nmProduto] ?? 0}
+                                                    </TableCell>
+                                                    <TableCell component="th" scope="row">
+                                                        {NumberFormatForBrazilianCurrency(produto.vlVendaProduto)}
+                                                    </TableCell>
+                                                    <TableCell component="th" scope="row"> {
                                                         Number(produto.valorItem) % 1 === 0
                                                             ? `R$ ${produto.valorItem?.toFixed(0)},00`
                                                             : ` R$ ${produto.valorItem?.toFixed(2).replace('.', ',')}`}

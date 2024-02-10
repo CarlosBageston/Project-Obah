@@ -15,6 +15,8 @@ export const DivSubHeader = styled.div`
 display: flex;
 justify-content: space-between;
 margin: 1rem 0 1rem 0;
+flex-direction: column;
+height: 10rem;
 `;
 
 export const Title = styled.h1`
@@ -28,4 +30,9 @@ font-weight: bold;
 
 export const DivClosePrint = styled(DivClose)`
 top: -28px;
+`;
+
+export const TextLabel = styled.p`
+font-weight: bold;
+font-size: 22px;
 `;

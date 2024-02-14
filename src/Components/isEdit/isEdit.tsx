@@ -214,6 +214,7 @@ function IsEdit({ selected, handleEditRow, inputsConfig, isEdit, products, setSe
                 produtos: [...(prevSelected?.produtos || []), newProduct],
             } as ClienteModel | undefined));
             setError('')
+            setNewProduct(undefined)
         } else {
             if (selected.mpFabricado.find((product: ProdutosModel) => product.nmProduto === newProduct.nmProduto)) return setError('Produto já existe na lista')
             setSelected((prevSelected: ProdutosModel | undefined) => ({
@@ -221,6 +222,12 @@ function IsEdit({ selected, handleEditRow, inputsConfig, isEdit, products, setSe
                 mpFabricado: [...(prevSelected?.mpFabricado || []), newProduct],
             } as ProdutosModel | undefined));
             setError('')
+            setNewProduct(undefined)
+        }
+    }
+    function onKeyPressProductAdding(e: React.KeyboardEvent<HTMLDivElement>) {
+        if (e.key === "Enter" && newProduct) {
+            addingNewProduct()
         }
     }
     return (
@@ -280,6 +287,7 @@ function IsEdit({ selected, handleEditRow, inputsConfig, isEdit, products, setSe
                                                 options={editingScreen === 'Cliente' ? filterTpProdutoFabricado : filterTpProdutoComprado}
                                                 getOptionLabel={(item: any) => item.nmProduto}
                                                 onChange={(e, value) => { handleChangeProdutoAdding(e, value) }}
+                                                onKeyDown={e => onKeyPressProductAdding(e)}
                                                 renderInput={(params) => (
                                                     <TextField
                                                         {...params}

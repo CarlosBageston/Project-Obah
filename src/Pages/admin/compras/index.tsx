@@ -20,7 +20,7 @@ import DashboardCompras from '../dashboard/model/dashboardCompra';
 import { State, setLoading } from '../../../store/reducer/reducer';
 import SituacaoProduto from "../../../enumeration/situacaoProduto";
 import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
-import { Autocomplete, AutocompleteChangeReason, FormControl, InputLabel, MenuItem, Select, TextField } from "@mui/material";
+import { Autocomplete, AutocompleteChangeReason, Checkbox, FormControl, FormControlLabel, InputLabel, MenuItem, Select, TextField } from "@mui/material";
 const IsEdit = lazy(() => import('../../../Components/isEdit/isEdit'));
 
 import {
@@ -127,9 +127,13 @@ function AtualizarEstoque() {
             dtCompra: Yup.string().required('Campo obrigatório'),
             cxProduto: Yup.number().transform((value) => (isNaN(value) ? undefined : value)).optional().nullable(),
             tpProduto: Yup.number().transform((value) => (isNaN(value) ? undefined : value)).required('Campo obrigatório'),
-            quantidade: Yup.number().transform((value) => (isNaN(value) ? undefined : value)).required('Campo obrigatório').test('vlVendaProduto', 'Campo Obrigatório', (value) => {
-                return value > 0;
-            }),
+            quantidade: Yup.number()
+                .transform((value) => (isNaN(value) ? undefined : value))
+                .test('stEstoqueInfinito', 'Campo obrigatório', function (value, context) {
+                    const { parent } = context;
+                    if (parent.stEstoqueInfinito) return true;
+                    return value !== undefined && value > 0;
+                }),
             qntMinima: Yup.number().required('Campo obrigatório').typeError('Campo obrigatório'),
             nrOrdem: Yup.number().optional().nullable()
         }),
@@ -229,12 +233,13 @@ function AtualizarEstoque() {
         }
         return encontrado
     }
-    // Este método recalcula os preços dos produtos com base nos valores fornecidos e nos registros de compras.
+    // metodo que recalcula os valor dos produtos que estão sendo atualizado o estoque.
+    //Exemplo: atualizando o chocolate, a moreninha tem em sua composição o chocolate, então se mudou o preço do chocolate,
+    //ira mudar o preço da moreninha em consequencia, pois isso precisa recalcular novamente.
     function recalculateProduct(valuesUpdate: ComprasModel, produtosEncontrado: ProdutosModel[]) {
         produtoDataTable.forEach(produto => {
             if (produto.mpFabricado.some(mp => mp.nmProduto === valuesUpdate.nmProduto)) {
                 let soma = 0.0;
-
                 // Recalcule a soma dos totalPago após a atualização
                 try {
                     produto.mpFabricado.forEach(item => {
@@ -391,6 +396,20 @@ function AtualizarEstoque() {
         })
     }
 
+    //função que chama os metodos de recalcular produtos e clientes.
+    function recalculate(valuesUpdate: ComprasModel) {
+        const produtosEncontrado: ProdutosModel[] = [];
+        const produtoAtualizados: ProdutosModel[] = [];
+        const clienteEncontrado: ClienteModel[] = [];
+        recalculateProductPricesClient(valuesUpdate, clienteEncontrado);
+
+        recalculateProduct(valuesUpdate, produtosEncontrado);
+
+        recalculateProductFound(produtosEncontrado, produtoAtualizados);
+
+        updateValue(clienteEncontrado, "Clientes")
+        updateValue(produtosEncontrado, "Produtos")
+    }
     //enviando formulario
     async function handleSubmitForm() {
         dispatch(setLoading(true))
@@ -403,24 +422,28 @@ function AtualizarEstoque() {
         };
         try {
             if (valuesUpdate.tpProduto === SituacaoProduto.COMPRADO) {
-                const produtosEncontrado: ProdutosModel[] = [];
-                const produtoAtualizados: ProdutosModel[] = [];
-                const clienteEncontrado: ClienteModel[] = [];
-                recalculateProductPricesClient(valuesUpdate, clienteEncontrado);
-
-                recalculateProduct(valuesUpdate, produtosEncontrado);
-
-                recalculateProductFound(produtosEncontrado, produtoAtualizados);
-
-                updateValue(clienteEncontrado, "Clientes")
-                updateValue(produtosEncontrado, "Produtos")
+                const product = foundProducts(valuesUpdate);
+                //se o produto existir em compras verifique se precisa recalcular, caso não existe o produto, é necessario recalcular.
+                if (product) {
+                    const needUpdate = product?.vlUnitario !== valuesUpdate.vlUnitario
+                    if (needUpdate) {
+                        recalculate(valuesUpdate)
+                    }
+                } else {
+                    recalculate(valuesUpdate)
+                }
                 createStock(valuesUpdate)
                 if (valuesUpdate.totalPago) {
                     calculateValueTotal(valuesUpdate.totalPago, valuesUpdate.dtCompra)
                 }
             }
             if (values.tpProduto === SituacaoProduto.FABRICADO) {
-                await removedStockCompras(valuesUpdate, setOpenDialog, setEstoqueVazio, setNmProduto)
+                if (valuesUpdate.stEstoqueInfinito) {
+                    const infiniteStock = Number.MAX_SAFE_INTEGER
+                    valuesUpdate.quantidade = infiniteStock
+                } else {
+                    await removedStockCompras(valuesUpdate, setOpenDialog, setEstoqueVazio, setNmProduto)
+                }
                 createStock(valuesUpdate)
             }
         } catch (error) {
@@ -534,10 +557,13 @@ function AtualizarEstoque() {
             if (newValue.tpProduto === SituacaoProduto.FABRICADO) {
                 setFieldValue('mpFabricado', newValue.mpFabricado)
             }
+            if (newValue.stEstoqueInfinito) {
+                setFieldValue("stEstoqueInfinito", newValue.stEstoqueInfinito)
+            }
         }
     }
 
-    useEffect(() => { cleanState() }, [values.tpProduto])
+    useEffect(() => { cleanState(); setFieldValue("stEstoqueInfinito", false) }, [values.tpProduto])
 
     return (
         <Box>
@@ -675,8 +701,10 @@ function AtualizarEstoque() {
                         label="Quantidade"
                         onBlur={handleBlur}
                         name="quantidade"
-                        value={values.quantidade || ''}
+                        value={values.stEstoqueInfinito ? '\u221E' : values.quantidade || ''}
                         maxLength={10}
+                        disabled={values.stEstoqueInfinito}
+                        raisedLabel={values.stEstoqueInfinito}
                         onKeyPress={e => onKeyPressHandleSubmit(e, handleSubmit)}
                         onChange={e => setFieldValue(e.target.name, parseFloat(e.target.value))}
                         error={touched.quantidade && errors.quantidade ? errors.quantidade : ''}
@@ -710,6 +738,18 @@ function AtualizarEstoque() {
                     raisedLabel={values.qntMinima ? true : false}
                     onKeyPress={e => onKeyPressHandleSubmit(e, handleSubmit)}
                 />
+                {values.tpProduto === SituacaoProduto.FABRICADO ?
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                checked={values.stEstoqueInfinito}
+                                onChange={(e) => setFieldValue("stEstoqueInfinito", e.target.checked)}
+                            />
+                        }
+                        label="Estoque infinito?"
+                    />
+                    : null
+                }
             </div>
             {/* Editar Estoque */}
             <IsEdit

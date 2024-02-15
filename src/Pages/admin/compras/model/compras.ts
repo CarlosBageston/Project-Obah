@@ -21,5 +21,6 @@ interface ComprasModel {
     qntMinima: number | null,
     nrOrdem?: number
     mpFabricado?: ComprasModel[]
+    stEstoqueInfinito?: boolean
 }
 export default ComprasModel

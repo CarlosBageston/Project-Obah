@@ -316,9 +316,9 @@ function Vendas() {
                             name="quantidadeVenda"
                             value={multiplica}
                             style={{ fontSize: 14 }}
-                            styleDiv={{ marginTop: 4, }}
-                            styleLabel={{ fontSize: 16, }}
-                            onChange={e => setMultiplica(parseFloat(e.target.value))}
+                            styleDiv={{ marginTop: 4 }}
+                            styleLabel={{ fontSize: 16 }}
+                            onChange={(e) => setMultiplica(isNaN(parseFloat(e.target.value)) ? undefined : parseFloat(e.target.value))}
                             error={''}
                             inputRef={inputRef}
                             onKeyPress={handleMultiplicaKeyPress}

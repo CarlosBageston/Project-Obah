@@ -19,7 +19,7 @@ flex-direction: column;
 height: 10rem;
 `;
 
-export const Title = styled.h1`
+export const Title = styled.h3`
 text-align: center;
 `;
 

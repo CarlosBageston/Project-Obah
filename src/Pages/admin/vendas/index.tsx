@@ -145,7 +145,8 @@ function Vendas() {
 
     //buscando por nome do produto no banco e multiplicando valor caso necessario
     const handleMultiplicaKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') {
+        const isBarcodeNumeric = !isNaN(Number(barcode));
+        if (e.key === 'Enter' && !isBarcodeNumeric) {
             const produtoEncontrado = dataTableProduto.find((p) => p.nmProduto.toLowerCase() === barcode.toLowerCase());
             if (multiplica) {
                 if (produtoEncontrado) {
@@ -226,7 +227,6 @@ function Vendas() {
     //envia os valor pro banco
     async function handleSubmitForm() {
         dispatch(setLoading(true))
-        removedStockVenda(values.produtoEscaniado)
         const valuesUpdate: VendaModel = {
             ...values,
             vlRecebido: convertToNumber(values.vlRecebido.toString())
@@ -237,6 +237,7 @@ function Vendas() {
             dispatch(setLoading(false))
             setSubmitForm(true);
             setTimeout(() => { setSubmitForm(undefined) }, 3000)
+            removedStockVenda(values.produtoEscaniado)
         }).catch(() => {
             dispatch(setLoading(false))
             setSubmitForm(false);
@@ -440,7 +441,7 @@ function Vendas() {
                                     </ContainerDescricao>
                                     {values.produtoEscaniado.map((produto, index) => (
                                         <ContainerPreco key={index}>
-                                            <TitlePreco>
+                                            <TitlePreco style={{ width: '15rem' }}>
                                                 <DivIcon onClick={() => removedProdutoEscaneado(index)}>
                                                     <IoMdClose color={'red'} />
                                                 </DivIcon>
@@ -448,7 +449,7 @@ function Vendas() {
                                                     <p>{produto.nmProduto}</p>
                                                 </div>
                                             </TitlePreco>
-                                            <TitlePreco>
+                                            <TitlePreco style={{ justifyContent: 'center', marginLeft: '-8rem' }}>
                                                 <div>
                                                     <p>{produto.quantidadeVenda}</p>
                                                 </div>

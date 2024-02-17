@@ -435,16 +435,22 @@ function Vendas() {
                                 <>
                                     <ContainerDescricao>
                                         <TitleNota>Descrição do Produto</TitleNota>
+                                        <TitleNota>Quantidade</TitleNota>
                                         <TitleNota>Valor do Produto</TitleNota>
                                     </ContainerDescricao>
                                     {values.produtoEscaniado.map((produto, index) => (
                                         <ContainerPreco key={index}>
                                             <TitlePreco>
                                                 <DivIcon onClick={() => removedProdutoEscaneado(index)}>
-                                                    <IoMdClose />
+                                                    <IoMdClose color={'red'} />
                                                 </DivIcon>
                                                 <div>
                                                     <p>{produto.nmProduto}</p>
+                                                </div>
+                                            </TitlePreco>
+                                            <TitlePreco>
+                                                <div>
+                                                    <p>{produto.quantidadeVenda}</p>
                                                 </div>
                                             </TitlePreco>
                                             <TitlePreco>{produto.vlTotalMult ? NumberFormatForBrazilianCurrency(produto.vlTotalMult) : ''}</TitlePreco>

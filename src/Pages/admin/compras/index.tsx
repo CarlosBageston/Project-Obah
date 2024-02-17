@@ -221,11 +221,11 @@ function AtualizarEstoque() {
             clienteEncontrado.push(clienteAtualizado);
         });
     }
-    function foundProducts(item: ComprasModel) {
+    function foundProductsLastNrOrdem(nmProduto: string) {
         let versao = 0;
         let encontrado: ComprasModel | null = null;
         for (const compra of dataTable) {
-            if (compra.nrOrdem === undefined || compra.nmProduto !== item.nmProduto) continue;
+            if (compra.nrOrdem === undefined || compra.nmProduto !== nmProduto) continue;
             if (compra.nrOrdem >= versao) {
                 versao = compra.nrOrdem;
                 encontrado = compra;
@@ -245,7 +245,7 @@ function AtualizarEstoque() {
                     produto.mpFabricado.forEach(item => {
                         if (!produtosProcessados.has(item.nmProduto)) {
                             if (item.nmProduto !== valuesUpdate.nmProduto) {
-                                const encontrado = foundProducts(item)
+                                const encontrado = foundProductsLastNrOrdem(item.nmProduto)
                                 if (encontrado) {
                                     const totalAtualizado = calculateTotalValue(item, encontrado)
                                     soma += totalAtualizado
@@ -276,7 +276,7 @@ function AtualizarEstoque() {
         produtosEncontrado.forEach(items => {
             let updateValueProduct: ComprasModel = objClean;
             try {
-                const foundProduct = dataTable.find(produto => produto.nmProduto === items.nmProduto)
+                const foundProduct = foundProductsLastNrOrdem(items.nmProduto)
                 if (foundProduct) {
                     updateValueProduct = { ...foundProduct, vlUnitario: items.vlUnitario };
                 } else {
@@ -296,7 +296,7 @@ function AtualizarEstoque() {
                             const totalAtualizado = calculateTotalValue(item, updateValueProduct as ComprasModel)
                             soma += totalAtualizado
                         } else {
-                            const encontrado = foundProducts(item)
+                            const encontrado = foundProductsLastNrOrdem(item.nmProduto)
                             const totalAtualizado = calculateTotalValue(item, encontrado as ComprasModel)
                             soma += totalAtualizado
                         }
@@ -422,7 +422,7 @@ function AtualizarEstoque() {
         };
         try {
             if (valuesUpdate.tpProduto === SituacaoProduto.COMPRADO) {
-                const product = foundProducts(valuesUpdate);
+                const product = foundProductsLastNrOrdem(valuesUpdate.nmProduto);
                 //se o produto existir em compras verifique se precisa recalcular, caso não existe o produto, é necessario recalcular.
                 if (product) {
                     const needUpdate = product?.vlUnitario !== valuesUpdate.vlUnitario

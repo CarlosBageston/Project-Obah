@@ -1,10 +1,9 @@
 import Button from "../button";
 import { format } from "date-fns";
-import ReactToPrint from "react-to-print";
 import { useEffect, useRef, useState } from "react";
 import { EntregaModel } from "../../Pages/admin/entregas/model/entrega";
 import ClienteModel from "../../Pages/admin/cadastroClientes/model/cliente";
-import { TableContainer, Table, TableHead, TableRow, TableCell, TableBody } from "@mui/material";
+import { Table, TableHead, TableRow, TableCell, TableBody } from "@mui/material";
 
 
 import { BoxClose, StyledAiOutlineClose } from "../isEdit/style";
@@ -34,7 +33,19 @@ export function NotaFiscal({ values, clienteCurrent, setShouldShow, quantidades 
         return index.toString().padStart(3, '0');
     }
 
+    const handlePrint = () => {
+        if (ref.current) {
+            const printWindow = window.open('', '_blank');
+            if (printWindow) {
+                printWindow.document.write('<html><head><title>Nota Fiscal</title></head><body>');
+                printWindow.document.write(ref.current.innerHTML);
+                printWindow.document.write('</body></html>');
+                printWindow.document.close();
+                printWindow.print();
+            }
 
+        }
+    };
     return (
         <ContainerFlutuantePrint>
             <BoxClose>
@@ -64,62 +75,54 @@ export function NotaFiscal({ values, clienteCurrent, setShouldShow, quantidades 
                             </div>
                         </DivSubHeader>
                     </div>
-                    <hr style={{ border: "1px dashed #b0b0b0" }} />
+                    <hr style={{ border: "1px dashed #000000" }} />
                     <div style={{ margin: "1rem 0 1rem 0" }}>
-                        <TableContainer>
-                            <Table >
-                                <TableHead>
-                                    <TableRow>
-                                        <TableCell>ITEM</TableCell>
-                                        <TableCell>DESC.</TableCell>
-                                        <TableCell>QNTD</TableCell>
-                                        <TableCell>V UN</TableCell>
-                                        <TableCell>V Total</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {clienteCurrent.produtos
-                                        .filter(produto => produto.valorItem !== 0)
-                                        .map((produto, index) => (
-                                            <>
-                                                <TableRow key={produto.cdProduto}>
-                                                    <TableCell>{formatIndex(index + 1)}</TableCell>
-                                                    <TableCell component="th" scope="row">{produto.nmProduto}</TableCell>
-                                                    <TableCell component="th" scope="row">
-                                                        {quantidades[produto.nmProduto] ?? 0}
-                                                    </TableCell>
-                                                    <TableCell component="th" scope="row">
-                                                        {NumberFormatForBrazilianCurrency(produto.vlVendaProduto)}
-                                                    </TableCell>
-                                                    <TableCell component="th" scope="row"> {
-                                                        Number(produto.valorItem) % 1 === 0
-                                                            ? `R$ ${produto.valorItem?.toFixed(0)},00`
-                                                            : ` R$ ${produto.valorItem?.toFixed(2).replace('.', ',')}`}
-                                                    </TableCell>
-                                                </TableRow>
-                                            </>
-                                        ))}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
+                        <Table >
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell style={{ fontSize: 13 }}>ITEM</TableCell>
+                                    <TableCell style={{ fontSize: 13 }}>DESC.</TableCell>
+                                    <TableCell style={{ fontSize: 13 }}>QNTD</TableCell>
+                                    <TableCell style={{ fontSize: 13 }}>V UN</TableCell>
+                                    <TableCell style={{ fontSize: 13 }}>V Total</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {clienteCurrent.produtos
+                                    .filter(produto => produto.valorItem !== 0)
+                                    .map((produto, index) => (
+                                        <>
+                                            <TableRow key={produto.cdProduto}>
+                                                <TableCell style={{ fontSize: 13 }}>{formatIndex(index + 1)}</TableCell>
+                                                <TableCell style={{ fontSize: 13 }}>{produto.nmProduto}</TableCell>
+                                                <TableCell style={{ fontSize: 13 }}>
+                                                    {quantidades[produto.nmProduto] ?? 0}
+                                                </TableCell>
+                                                <TableCell style={{ fontSize: 13 }}>
+                                                    {NumberFormatForBrazilianCurrency(produto.vlVendaProduto)}
+                                                </TableCell>
+                                                <TableCell style={{ fontSize: 12 }}> {
+                                                    Number(produto.valorItem) % 1 === 0
+                                                        ? `R$ ${produto.valorItem?.toFixed(0)},00`
+                                                        : ` R$ ${produto.valorItem?.toFixed(2).replace('.', ',')}`}
+                                                </TableCell>
+                                            </TableRow>
+                                        </>
+                                    ))}
+                            </TableBody>
+                        </Table>
                     </div>
-                    <hr style={{ border: "1px dashed #b0b0b0" }} />
+                    <hr style={{ border: "1px dashed #000000" }} />
                     <div style={{ margin: "1rem 0 1rem 0" }}>
-                        <TotalValue>VALOR TOTAL R$ {values.vlEntrega}</TotalValue>
+                        <TotalValue>VALOR TOTAL {values.vlEntrega}</TotalValue>
                     </div>
                 </div>
             </Box>
             <div>
-                <ReactToPrint
-                    trigger={() =>
-                        <Button
-                            type='button'
-                            disabled={values.dtEntrega === ""}
-                            style={{ display: 'flex', alignItems: 'center', marginBottom: 24 }}
-                            label={"Confirmar"}
-                        />
-                    }
-                    content={() => ref.current}
+                <Button
+                    label={"Confirmar"}
+                    type="button"
+                    onClick={handlePrint}
                 />
             </div>
         </ContainerFlutuantePrint>

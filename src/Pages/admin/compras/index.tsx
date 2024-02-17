@@ -407,8 +407,8 @@ function AtualizarEstoque() {
 
         recalculateProductFound(produtosEncontrado, produtoAtualizados);
 
-        // updateValue(clienteEncontrado, "Clientes")
-        // updateValue(produtosEncontrado, "Produtos")
+        updateValue(clienteEncontrado, "Clientes")
+        updateValue(produtosEncontrado, "Produtos")
     }
     //enviando formulario
     async function handleSubmitForm() {
@@ -432,10 +432,10 @@ function AtualizarEstoque() {
                 } else {
                     recalculate(valuesUpdate)
                 }
-                // createStock(valuesUpdate)
-                // if (valuesUpdate.totalPago) {
-                //     calculateValueTotal(valuesUpdate.totalPago, valuesUpdate.dtCompra)
-                // }
+                createStock(valuesUpdate)
+                if (valuesUpdate.totalPago) {
+                    calculateValueTotal(valuesUpdate.totalPago, valuesUpdate.dtCompra)
+                }
             }
             if (values.tpProduto === SituacaoProduto.FABRICADO) {
                 if (valuesUpdate.stEstoqueInfinito) {
@@ -460,24 +460,24 @@ function AtualizarEstoque() {
             return;
         }
 
-        // await addDoc(collection(db, "Compras"), {
-        //     ...valuesUpdate
-        // })
-        //     .then(() => {
-        //         dispatch(setLoading(false))
-        //         setSubmitForm(true)
-        //         setTimeout(() => { setSubmitForm(undefined) }, 3000)
-        //         setDataTable([...dataTable, valuesUpdate])
-        //     })
-        //     .catch(() => {
-        //         dispatch(setLoading(false))
-        //         setSubmitForm(false)
-        //         setTimeout(() => { setSubmitForm(undefined) }, 3000)
-        //     });
-        // resetForm()
-        // cleanState()
-        // setSelectAutoComplete(false);
-        // setRecarregueDashboard(true)
+        await addDoc(collection(db, "Compras"), {
+            ...valuesUpdate
+        })
+            .then(() => {
+                dispatch(setLoading(false))
+                setSubmitForm(true)
+                setTimeout(() => { setSubmitForm(undefined) }, 3000)
+                setDataTable([...dataTable, valuesUpdate])
+            })
+            .catch(() => {
+                dispatch(setLoading(false))
+                setSubmitForm(false)
+                setTimeout(() => { setSubmitForm(undefined) }, 3000)
+            });
+        resetForm()
+        cleanState()
+        setSelectAutoComplete(false);
+        setRecarregueDashboard(true)
     }
     const handleOKClick = () => {
         setOpenDialog(false);

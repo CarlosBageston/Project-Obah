@@ -1,13 +1,13 @@
-import { deleteDoc, doc, updateDoc } from "firebase/firestore";
-import EstoqueModel, { Versao } from "../Pages/admin/estoque/model/estoque";
-import GetData from "../firebase/getData";
-import ComprasModel from "../Pages/admin/compras/model/compras";
 import { db } from "../firebase";
-import ClienteModel from "../Pages/admin/cadastroClientes/model/cliente";
-import { ProdutoEscaniado } from "../Pages/admin/vendas/model/vendas";
-import { Dispatch, SetStateAction } from "react";
+import GetData from "../firebase/getData";
 import { useDispatch } from "react-redux";
+import { Dispatch, SetStateAction } from "react";
 import { setLoading } from "../store/reducer/reducer";
+import { deleteDoc, doc, updateDoc } from "firebase/firestore";
+import ComprasModel from "../Pages/admin/compras/model/compras";
+import { ProdutoEscaniado } from "../Pages/admin/vendas/model/vendas";
+import ClienteModel from "../Pages/admin/cadastroClientes/model/cliente";
+import EstoqueModel, { Versao } from "../Pages/admin/estoque/model/estoque";
 
 /**
  * Hook personalizado para manipulação de estoque.
@@ -113,6 +113,11 @@ export default function useEstoque(){
     async function removedStockVenda(produtoEscaniado: ProdutoEscaniado[]) {
         if (!produtoEscaniado) return;
         produtoEscaniado.forEach(async produto => {
+            const foundProduct = dataTableCompras.find(product => product.nmProduto === produto.nmProduto);
+            if(foundProduct && foundProduct?.stEstoqueInfinito){
+                const newProduct = {...foundProduct, quantidade: produto.quantidadeVenda}
+                removedStockCompras(newProduct, () => false, () => false,() => '');
+            }
             const estoqueProduto = dataTableEstoque.find(estoque => estoque.nmProduto === produto.nmProduto);
             if (estoqueProduto) {
                 const listVersaoComQntd: Versao[] = [...estoqueProduto.versaos];

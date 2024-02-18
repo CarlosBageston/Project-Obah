@@ -249,16 +249,17 @@ function Vendas() {
     function addProduct(cdProduto: string, quantidade: number | undefined, isTaca: boolean) {
         const produtoEncontrado = dataTableProduto.find((p) => p.cdProduto === cdProduto);
         if (produtoEncontrado) {
+            const { mpFabricado, ...rest } = produtoEncontrado;
             let novoProduto: ProdutoEscaniado;
             if (!isTaca) {
-                const valorPago = produtoEncontrado.vlUnitario;
-                const totalLucro = produtoEncontrado.vlVendaProduto - valorPago;
-                novoProduto = { ...produtoEncontrado, quantidadeVenda: 1, vlLucro: totalLucro, vlTotalMult: produtoEncontrado.vlVendaProduto };
+                const valorPago = rest.vlUnitario;
+                const totalLucro = rest.vlVendaProduto - valorPago;
+                novoProduto = { ...rest, quantidadeVenda: 1, vlLucro: totalLucro, vlTotalMult: rest.vlVendaProduto };
                 adicionarProdutoAoArray(values, novoProduto)
             } else {
                 if (quantidade) {
-                    const valorTotal = quantidade * produtoEncontrado?.vlVendaProduto;
-                    novoProduto = { ...produtoEncontrado, vlVendaProduto: valorTotal, quantidadeVenda: quantidade, vlTotalMult: valorTotal };
+                    const valorTotal = quantidade * rest?.vlVendaProduto;
+                    novoProduto = { ...rest, vlVendaProduto: valorTotal, quantidadeVenda: quantidade, vlTotalMult: valorTotal };
                     adicionarProdutoAoArray(values, novoProduto)
                     setQntBolas(undefined);
                     setIsValidQntBolas(false)

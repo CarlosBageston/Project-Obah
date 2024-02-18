@@ -249,7 +249,7 @@ function CadastroProduto() {
                                 label="Selecione..."
                                 labelId="standard-label"
                                 onChange={e => setFieldValue(e.target.name, e.target.value)}
-                                value={values.tpProduto}
+                                value={values.tpProduto ?? ''}
                                 style={{ borderBottom: '1px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                             >
                                 <MenuItem

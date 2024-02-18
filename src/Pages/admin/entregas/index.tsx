@@ -325,13 +325,14 @@ function Entregas() {
                             values={values}
                             clienteCurrent={clienteCurrent as ClienteModel}
                             setShouldShow={setShouldShow}
+                            handleSubmit={handleSubmit}
                         />}
                     <DivButtons>
                         <Button
                             label={<AiTwotonePrinter size={30} />}
                             type='button'
                             style={{ margin: '0rem 0px 2rem 0px', height: '4rem', width: '5rem' }}
-                            disabled={values.dtEntrega === ""}
+                            disabled={values.dtEntrega.length < 10}
                             onClick={() => setShouldShow(true)}
                         />
                         <Button

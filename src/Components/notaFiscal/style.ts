@@ -36,3 +36,12 @@ export const TextLabel = styled.p`
 font-weight: bold;
 font-size: 22px;
 `;
+export const BoxButtonPrint = styled.div`
+margin: 1rem 0 2rem 0;
+`;
+export const BoxButtonDialog = styled.div`
+display: flex;
+padding: 1rem 1rem;
+justify-content: space-between;
+width: 37rem;
+`;

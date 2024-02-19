@@ -19,7 +19,7 @@ import FormAlert from "../../../Components/FormAlert/formAlert";
 import DashboardCompras from '../dashboard/model/dashboardCompra';
 import { State, setLoading } from '../../../store/reducer/reducer';
 import SituacaoProduto from "../../../enumeration/situacaoProduto";
-import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { addDoc, arrayUnion, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { Autocomplete, AutocompleteChangeReason, Checkbox, FormControl, FormControlLabel, InputLabel, MenuItem, Select, TextField } from "@mui/material";
 const IsEdit = lazy(() => import('../../../Components/isEdit/isEdit'));
 
@@ -264,7 +264,6 @@ function AtualizarEstoque() {
                 } catch (error) {
                     throw new Error("Produto não encontrado no estoque");
                 }
-                produto.nrOrdem += 1
                 const newProduto = { ...produto, vlUnitario: parseFloat(soma.toFixed(2)) }
                 produtosEncontrado.push(newProduto);
             }
@@ -338,11 +337,9 @@ function AtualizarEstoque() {
                 cdProduto: valuesUpdate.cdProduto,
                 tpProduto: valuesUpdate.tpProduto,
                 qntMinima: valuesUpdate.qntMinima,
+                stEstoqueInfinito: valuesUpdate.stEstoqueInfinito,
                 quantidade: novaQuantidade,
-                versaos: [
-                    ...estoqueExistente.versaos,
-                    { versao: valuesUpdate.nrOrdem, vrQntd: quantidadeTotal }
-                ]
+                versaos: arrayUnion({ versao: valuesUpdate.nrOrdem, vrQntd: quantidadeTotal })
             })
         } else {
             const quantidadeTotal = calculateQuantity(valuesUpdate)
@@ -351,6 +348,7 @@ function AtualizarEstoque() {
                 cdProduto: valuesUpdate.cdProduto,
                 tpProduto: valuesUpdate.tpProduto,
                 qntMinima: valuesUpdate.qntMinima,
+                stEstoqueInfinito: valuesUpdate.stEstoqueInfinito,
                 quantidade: quantidadeTotal,
                 versaos: [
                     { versao: valuesUpdate.nrOrdem, vrQntd: quantidadeTotal }

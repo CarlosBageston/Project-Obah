@@ -39,18 +39,13 @@ export function useUniqueNames(
      * @returns Lista dos últimos produtos correspondentes aos nomes únicos.
      */
     function lastProduct(filterUniqueNames: (ComprasModel)[], names: string[]) {
-        const maxProductsByUniqueNames = names.map((uniqueName: string) => {
+        return names.map((uniqueName: string) => {
             const filteredProducts = filterUniqueNames
                 .filter((prod) => prod.nmProduto === uniqueName && prod.nrOrdem !== undefined)
                 .sort((a, b) => (a.nrOrdem || 0) - (b.nrOrdem || 0));
 
-            if (filteredProducts.length > 0) {
-                return filteredProducts[filteredProducts.length - 1];
-            } else {
-                return null;
-            }
+            return filteredProducts.length > 0 ? filteredProducts[filteredProducts.length - 1] : null;
         });
-        return maxProductsByUniqueNames;
     }
 
     function createCompraModel(
@@ -85,6 +80,7 @@ export function useUniqueNames(
     
         return { ...defaultProps };
     }
+
     /**
      * Realiza a busca de produtos na base de dados com base no tipo de produto e outras condições.
      * 
@@ -99,6 +95,8 @@ export function useUniqueNames(
                     databaseCompras.push(newCompra)
                 }
             })
+            //itera tabela de produto verificando a tabela de compras, caso algum nome de produto nao tenha na tabela de compras
+            //ele cria um novo objeto e seta na tabela de compras, para que assim nao falte nenhum produto.
             dataTableProduto.forEach(produto => {
                 const matchingCompra = dataTable.find(compra => compra.nmProduto === produto.nmProduto);
                 if (!matchingCompra && produto.tpProduto === SituacaoProduto.COMPRADO) {
@@ -107,7 +105,7 @@ export function useUniqueNames(
                         produto.nmProduto, 
                         SituacaoProduto.COMPRADO,
                         undefined, 
-                        produto.nrOrdem,
+                        0,
                         produto.vlUnitario, 
                         produto.mpFabricado
                         )
@@ -121,17 +119,20 @@ export function useUniqueNames(
         
             dataTableProduto.forEach(produto => {
                 if(produto.tpProduto === SituacaoProduto.COMPRADO) return;
-                const matchingCompra = dataTable.find(compra => compra.nmProduto === produto.nmProduto);
-                if (matchingCompra ) {
-                    const newCompra = {...matchingCompra, mpFabricado: produto.mpFabricado}
-                    arrayCompras.push(newCompra);
+                const matchingCompra = dataTable.filter(compra => compra.nmProduto === produto.nmProduto);
+                if (matchingCompra.length !== 0) {
+                    const updatedCompras = matchingCompra.map(matchingCompra => ({
+                        ...matchingCompra,
+                        mpFabricado: produto.mpFabricado,
+                    }));
+                    arrayCompras.push(...updatedCompras);
                 } else {
                     const newCompra: ComprasModel = createCompraModel(
                         produto.cdProduto, 
                         produto.nmProduto, 
                         SituacaoProduto.FABRICADO,
                         undefined, 
-                        produto.nrOrdem,
+                        0,
                         produto.vlUnitario, 
                         produto.mpFabricado
                         )
@@ -145,22 +146,12 @@ export function useUniqueNames(
     }
 
     useEffect(() => {
-        if (optionTpProduto === SituacaoProduto.COMPRADO ) {
-            const filterUniqueNames = databaseSearch();
-            if(filterUniqueNames){
-                const uniqueNames: string[] = Array.from(new Set(filterUniqueNames.map((nome: ComprasModel) => nome.nmProduto)));
-                const maxProductsByUniqueNames = lastProduct(filterUniqueNames, uniqueNames);
-                setUniqueNames(maxProductsByUniqueNames);
-            }
-        } else {
-            const filterUniqueNames = databaseSearch()
-            if(filterUniqueNames){
-                const uniqueNames = Array.from(new Set(filterUniqueNames.map((nome: ComprasModel) => nome.nmProduto)));
-                const maxProductsByUniqueNames = lastProduct(filterUniqueNames, uniqueNames);
-                setUniqueNames(maxProductsByUniqueNames);
-            }
+        const filterUniqueNames = databaseSearch();
+        if(filterUniqueNames){
+            const uniqueNames: string[] = Array.from(new Set(filterUniqueNames.map((nome: ComprasModel) => nome.nmProduto)));
+            const maxProductsByUniqueNames = lastProduct(filterUniqueNames, uniqueNames);
+            setUniqueNames(maxProductsByUniqueNames);
         }
-        
     }, [tpProduto, isEdit, optionTpProduto]);
     return uniqueNames;
 }

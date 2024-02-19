@@ -40,8 +40,7 @@ const objClean: ProdutoModel = {
     vlVendaProduto: 0,
     tpProduto: null,
     stEntrega: false,
-    mpFabricado: [],
-    nrOrdem: 0
+    mpFabricado: []
 }
 
 function CadastroProduto() {
@@ -109,8 +108,7 @@ function CadastroProduto() {
             vlVendaProduto: 0,
             tpProduto: null,
             stEntrega: false,
-            mpFabricado: [],
-            nrOrdem: 0
+            mpFabricado: []
         })
         setKey(Math.random());
     }
@@ -123,15 +121,14 @@ function CadastroProduto() {
     //enviando formulario
     async function handleSubmitForm() {
         dispatch(setLoading(true))
-        const valuesUpdate = { ...values, nrOrdem: 0 };
-        valuesUpdate.vlVendaProduto = convertToNumber(valuesUpdate.vlVendaProduto.toString())
-        valuesUpdate.vlUnitario = convertToNumber(valuesUpdate.vlUnitario.toString())
-        valuesUpdate.mpFabricado.forEach(mp => {
+        values.vlVendaProduto = convertToNumber(values.vlVendaProduto.toString())
+        values.vlUnitario = convertToNumber(values.vlUnitario.toString())
+        values.mpFabricado.forEach(mp => {
             const quantidade = mp.quantidade ? parseFloat(mp.quantidade.toString().replace(',', '.')) : 0;
             return mp.quantidade = quantidade;
         });
         await addDoc(collection(db, "Produtos"), {
-            ...valuesUpdate
+            ...values
         })
             .then(() => {
                 dispatch(setLoading(false))

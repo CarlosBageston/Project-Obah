@@ -58,7 +58,7 @@ function Estoque() {
                         columns={[
                             { label: 'Código', name: 'cdProduto' },
                             { label: 'Nome', name: 'nmProduto' },
-                            { label: 'Quantidade', name: 'quantidade' },
+                            { label: 'Quantidade', name: 'quantidade', isInfinite: true },
                             { label: 'Status', name: 'stEstoque' },
                         ]}
                         data={dataTableFabricado}
@@ -86,7 +86,7 @@ function Estoque() {
                         columns={[
                             { label: 'Código', name: 'cdProduto' },
                             { label: 'Nome', name: 'nmProduto' },
-                            { label: 'Quantidade', name: 'quantidade' },
+                            { label: 'Quantidade', name: 'quantidade', isInfinite: true },
                             { label: 'Status', name: 'stEstoque' },
                         ]}
                         data={dataTableComprado}

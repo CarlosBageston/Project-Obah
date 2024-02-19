@@ -18,7 +18,6 @@ interface ProdutosModel {
     tpProduto: SituacaoProduto | null,
     stEntrega?: boolean,
     mpFabricado: ComprasModel[]
-    valorItem?: number,
-    nrOrdem: number
+    valorItem?: number
 }
 export default ProdutosModel

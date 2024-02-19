@@ -17,7 +17,7 @@ interface EstoqueModel {
     stEstoque?: 'Bom' | 'Comprar',
     qntMinima: number,
     versaos: Versao[]
-
+    stEstoqueInfinito?: boolean
 }
 
 export interface Versao {

@@ -16,6 +16,7 @@ type TableColumn = {
     name: string;
     label: string;
     isCurrency?: boolean
+    isInfinite?: boolean
 };
 
 type TableProps = {
@@ -104,9 +105,10 @@ const GenericTable = ({ columns, data, isLoading, error, styleDiv, onSelectedRow
                                     >
                                         {columns.map((column) => (
                                             <StyledTableCell key={column.name}>
-                                                {column.isCurrency // ta errado isso aqui, ta formatando errado.
+                                                {column.isCurrency
                                                     ? NumberFormatForBrazilianCurrency(column.name.split('.').reduce((obj, key) => obj?.[key], row))
-                                                    : column.name.split('.').reduce((obj, key) => obj?.[key], row)
+                                                    : column.isInfinite && row.stEstoqueInfinito ? '∞'
+                                                        : column.name.split('.').reduce((obj, key) => obj?.[key], row)
                                                 }
                                             </StyledTableCell>
                                         ))}

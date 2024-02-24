@@ -109,12 +109,12 @@ export function NotaFiscal({ values, clienteCurrent, setShouldShow, quantidades,
                                                             {quantidades[produto.nmProduto] ?? 0}
                                                         </TableCell>
                                                         <TableCell style={{ fontSize: 13 }}>
-                                                            {NumberFormatForBrazilianCurrency(produto.vlVendaProduto)}
+                                                            {NumberFormatForBrazilianCurrency(produto.vlVendaProduto).replace('R$', '')}
                                                         </TableCell>
                                                         <TableCell style={{ fontSize: 12 }}> {
                                                             Number(produto.valorItem) % 1 === 0
-                                                                ? `R$ ${produto.valorItem?.toFixed(0)},00`
-                                                                : ` R$ ${produto.valorItem?.toFixed(2).replace('.', ',')}`}
+                                                                ? `${produto.valorItem?.toFixed(0)},00`
+                                                                : `${produto.valorItem?.toFixed(2).replace('.', ',')}`}
                                                         </TableCell>
                                                     </TableRow>
                                                 </>

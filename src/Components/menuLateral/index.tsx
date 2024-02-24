@@ -149,18 +149,6 @@ export default function MenuLateral() {
                         <StyledListItemText primary="Dashboard" />
                     </StyledListItemButton>
                 </Link>
-                <Link to="/atualizar-estoque" style={{ textDecoration: 'none', color: 'white' }}>
-                    <StyledListItemButton>
-                        <Tooltip
-                            title={"Atualizar Estoque"}
-                        >
-                            <ListItemIcon>
-                                <Image src={compra} alt="Atualizar Estoque" width={30} />
-                            </ListItemIcon>
-                        </Tooltip>
-                        <StyledListItemText primary="Atualizar Estoque" />
-                    </StyledListItemButton>
-                </Link>
                 <Link to="/cadastro-produto" style={{ textDecoration: 'none', color: 'white' }}>
                     <StyledListItemButton>
                         <Tooltip
@@ -171,6 +159,18 @@ export default function MenuLateral() {
                             </ListItemIcon>
                         </Tooltip>
                         <StyledListItemText primary="Cadastro Produto" />
+                    </StyledListItemButton>
+                </Link>
+                <Link to="/atualizar-estoque" style={{ textDecoration: 'none', color: 'white' }}>
+                    <StyledListItemButton>
+                        <Tooltip
+                            title={"Atualizar Estoque"}
+                        >
+                            <ListItemIcon>
+                                <Image src={compra} alt="Atualizar Estoque" width={30} />
+                            </ListItemIcon>
+                        </Tooltip>
+                        <StyledListItemText primary="Atualizar Estoque" />
                     </StyledListItemButton>
                 </Link>
                 <Link to="/cadastro-cliente" style={{ textDecoration: 'none', color: 'white' }}>

@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { BiSearchAlt } from 'react-icons/bi'
 import { CgPlayListSearch } from 'react-icons/cg'
 import { FormControl, Autocomplete, TextField, AutocompleteChangeReason } from '@mui/material';
 import { ContainerFilter, ContainerInput, StyledButton, ButtonFilter, ContainerButton } from './style'
+import ClienteModel from '../../Pages/admin/cadastroClientes/model/cliente';
+import ProdutosModel from '../../Pages/admin/cadastroProdutos/model/produtos';
 
 interface Props {
     data: any[],
@@ -31,6 +33,11 @@ const FiltroGeneric = ({ data, setFilteredData, type, carregarDados }: Props) =>
     const [valueproduct, setValueproduct] = useState<any>();
     const [showInput, setShowInput] = useState<boolean>(false);
     const [search, setSearch] = useState<boolean>(false);
+
+
+    /**
+     * Função para  atraso nas operações, configurando o estado de pesquisa e a exibição do input.
+     */
     function handleAtraso() {
         setTimeout(() => {
             setSearch(true);
@@ -39,38 +46,55 @@ const FiltroGeneric = ({ data, setFilteredData, type, carregarDados }: Props) =>
             }, 400);
         }, 200);
     }
+    /**
+     * Função para chamar a filtragem com base no tipo especificado (cliente ou produto).
+     */
     function callFilter() {
         carregarDados(false)
-        if (type === 'cliente') {
-            filterByCliente(valueClient)
-        } else {
-            filterByProduto(valueproduct)
+        filterByClienteOrProduto(valueClient, valueproduct)
+    }
+    /**
+     * Função chamada ao pressionar a tecla Enter no input, realiza a filtragem conforme o tipo especificado.
+     * @param e - Evento de teclado associado à entrada de texto.
+     */
+    function onKeyPressCallFilter(e: React.KeyboardEvent<HTMLInputElement>) {
+        if (e.key === 'Enter') {
+            carregarDados(false)
+            filterByClienteOrProduto(valueClient, valueproduct)
         }
 
     }
 
-    useEffect(() => {
+    /**
+      * Filtra os dados com base no cliente ou produto fornecido e atualiza o estado dos dados filtrados.
+      *
+      * @param clientes - Objeto contendo informações do cliente para filtragem.
+      * @param produtos - Objeto contendo informações do produto para filtragem.
+      */
+    const filterByClienteOrProduto = (clientes: ClienteModel, produtos: ProdutosModel) => {
+        if (type === 'cliente') {
+            if (clientes && clientes.nmCliente) {
+                const clienteEncontrado = data.filter(cliente => cliente.nmCliente === clientes.nmCliente)
+                setFilteredData(clienteEncontrado)
+            }
+        } else {
+            if (produtos && produtos.nmProduto) {
+                const produtosEncontrados = data.filter((produto) => produto.nmProduto === produtos.nmProduto);
+                setFilteredData(produtosEncontrados)
+            }
+        }
+    };
 
-    }, [data])
-    //quando o tipo de filtro for cliente, ele chama essa função 
-    const filterByCliente = (clientes: any) => {
-        if (clientes || clientes.nmCliente) {
-            const clienteEncontrado = data.filter(cliente => cliente.nmCliente === clientes.nmCliente)
-            setFilteredData(clienteEncontrado)
-        }
-    };
-    const filterByProduto = (produtos: any) => {
-        if (produtos || produtos.nmProduto) {
-            const produtosEncontrados = data.filter((produto) => produto.nmProduto === produtos.nmProduto);
-            setFilteredData(produtosEncontrados)
-        }
-    };
+    /**
+     * Cancela a filtragem, restaurando os dados originais e redefinindo os valores relacionados.
+     */
     const cancelFiltered = () => {
         setFilteredData(data);
         carregarDados(true)
         setValueproduct([])
         setValueClient('')
     };
+
     function handleAutoComplete(newValue: any, reason: AutocompleteChangeReason) {
         if (reason === 'clear' || reason === 'removeOption') {
             cancelFiltered()
@@ -94,6 +118,7 @@ const FiltroGeneric = ({ data, setFilteredData, type, carregarDados }: Props) =>
                 renderInput={(params) => (
                     <TextField
                         {...params}
+                        onKeyDown={onKeyPressCallFilter}
                         variant="standard"
                         label="Filtro"
                         placeholder="Selecione..."
@@ -111,6 +136,7 @@ const FiltroGeneric = ({ data, setFilteredData, type, carregarDados }: Props) =>
                 renderInput={(params) => (
                     <TextField
                         {...params}
+                        onKeyDown={onKeyPressCallFilter}
                         variant="standard"
                         label="Filtro"
                         placeholder="Selecione..."

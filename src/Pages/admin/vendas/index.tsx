@@ -97,13 +97,27 @@ function Vendas() {
         onSubmit: handleSubmitForm,
     });
 
-    //intervalo para que mostre as horas em tempo real
+    /**
+     * atualizar a data em tempo real.
+     * 
+     * atualiza o valor do campo 'dtProduto' no formulário com a data e hora atuais 
+     * sempre que há uma mudança no valor de 'vlRecebido'.
+     */
     useEffect(() => {
         const data = new Date();
         const dataFormatada = format(data, 'dd/MM/yyyy HH:mm');
         setFieldValue('dtProduto', dataFormatada);
     }, [values.vlRecebido]);
 
+
+    /**
+     * Função para calcular totais com base nos valores fornecidos.
+     * 
+     * @param vlVendaProduto - Valor de venda do produto.
+     * @param quantidade - Quantidade do produto.
+     * @param vlUnitario - Valor unitário do produto.
+     * @returns Objeto contendo os valores calculados: valorTotal e formatTotalLucro.
+     */
     function calcularTotais(vlVendaProduto: number, quantidade: number, vlUnitario: number) {
         const valorTotal = quantidade * vlVendaProduto;
         const total = vlVendaProduto - vlUnitario;
@@ -113,11 +127,23 @@ function Vendas() {
         return { valorTotal, formatTotalLucro };
     }
 
+    /**
+     * Função para adicionar um produto ao array 'produtoEscaniado'.
+     * 
+     * @param values - Valores do formulário.
+     * @param novoProduto - Novo produto a ser adicionado.
+     */
     function adicionarProdutoAoArray(values: VendaModel, novoProduto: ProdutoEscaniado) {
         const novoArrayProdutos = [...values.produtoEscaniado, novoProduto];
         setFieldValue('produtoEscaniado', novoArrayProdutos);
     }
-    //lendo codigo de barras em tempo real, fazendo busca no banco e multiplicando valor caso necessario
+
+    /**
+     * ler código de barras em tempo real, buscar no banco e multiplicar o valor, se necessário.
+     * 
+     * verifica se o código de barras é numérico, busca o produto correspondente no banco de dados e realiza 
+     * operações como multiplicação do valor de venda, adicionando o produto escaniado ao array 'produtoEscaniado'.
+     */
     useEffect(() => {
         const isBarcodeNumeric = !isNaN(Number(barcode));
         const produtoEncontrado = dataTableProduto.find((p) => p.cdProduto === barcode);
@@ -143,7 +169,11 @@ function Vendas() {
     }, [barcode]);
 
 
-    //buscando por nome do produto no banco e multiplicando valor caso necessario
+    /**
+     * Função chamada ao pressionar Tecla.
+     * 
+     * @param e - Evento de teclado.
+     */
     const handleMultiplicaKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
         const isBarcodeNumeric = !isNaN(Number(barcode));
         if (e.key === 'Enter' && !isBarcodeNumeric) {
@@ -178,7 +208,9 @@ function Vendas() {
         }
     };
 
-    //function clear state
+    /**
+     * Função para limpar o estado do formulário.
+     */
     function clearState() {
         setFieldValue('vlTotal', null),
             setFieldValue('dtProduto', ''),
@@ -190,7 +222,9 @@ function Vendas() {
             setIsValidQntBolas(false)
     }
 
-    //busca o valor de todos os produtos adicionados e soma todos eles
+    /**
+     * calcular o valor total e o lucro total de todos os produtos adicionados.
+     */
     useEffect(() => {
         //calculando todos os valores de total de venda
         const precoFiltrado = values.produtoEscaniado.map(scanner => scanner.vlTotalMult);
@@ -216,7 +250,9 @@ function Vendas() {
         setFieldValue('vlLucroTotal', precoTotalLucro);
     }, [values.produtoEscaniado]);
 
-    //faz o calculo do troco
+    /**
+     * calcular o troco com base no valor recebido.
+     */
     useEffect(() => {
         const vlRecebido = convertToNumber(values.vlRecebido.toString())
         const troco = vlRecebido - values.vlTotal
@@ -224,7 +260,9 @@ function Vendas() {
     }, [values.vlRecebido, values.vlTroco])
 
 
-    //envia os valor pro banco
+    /**
+     * Função para enviar os valores para o banco de dados.
+     */
     async function handleSubmitForm() {
         dispatch(setLoading(true))
         const valuesUpdate: VendaModel = {
@@ -246,6 +284,14 @@ function Vendas() {
         clearState();
         resetForm()
     }
+
+    /**
+     * adiciona um produto com base no código de barras, quantidade e se é uma taça.
+     * 
+     * @param cdProduto - Código do produto.
+     * @param quantidade - Quantidade do produto.
+     * @param isTaca - Indica se é uma taça.
+     */
     function addProduct(cdProduto: string, quantidade: number | undefined, isTaca: boolean) {
         const produtoEncontrado = dataTableProduto.find((p) => p.cdProduto === cdProduto);
         if (produtoEncontrado) {
@@ -271,13 +317,18 @@ function Vendas() {
         }
     }
 
+    /**
+     * Função chamada ao mudar o valor do input de código de barras.
+     * 
+     * @param e - Evento de mudança.
+     */
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const codigoDeBarras = e.currentTarget.value;
         setBarcode(codigoDeBarras);
 
-        // Realize a busca no banco de dados
         const resultados = dataTableProduto.filter(
-            cod => cod.nmProduto.toLowerCase().includes(codigoDeBarras.toLowerCase())
+            cod => cod.nmProduto.toLowerCase().includes(codigoDeBarras.toLowerCase()) &&
+                (cod.stMateriaPrima === undefined || cod.stMateriaPrima === false)
         );
 
         if (resultados.length > 0) {
@@ -288,11 +339,23 @@ function Vendas() {
             setProductSuggestion([]);
         }
     };
+
+    /**
+     * Função para selecionar uma sugestão de produto.
+     * 
+     * @param produto - Produto selecionado.
+     */
     const selectSuggestion = (produto: ProdutosModel) => {
         setBarcode(produto.nmProduto);
         setProductSuggestion([]);
         setShowSuggestion(false);
     };
+
+    /**
+     * Função para manipular a mudança no input de quantidade para taça Sundae.
+     * 
+     * @param e - Evento de mudança.
+     */
     function handleChangeTacaSundae(e: React.ChangeEvent<HTMLInputElement>) {
         const inputValue = parseFloat(e.target.value);
         if (!isNaN(inputValue) && inputValue !== 0) {
@@ -302,6 +365,12 @@ function Vendas() {
             setKey(Math.random())
         }
     }
+
+    /**
+     * Função para remover um produto do array 'produtoEscaniado'.
+     * 
+     * @param index - Índice do produto a ser removido.
+     */
     function removedProdutoEscaneado(index: number) {
         const remove = values.produtoEscaniado.filter((product, i) => i !== index)
         setFieldValue('produtoEscaniado', remove);

@@ -45,6 +45,7 @@ import { BoxTitleDefault } from "../estoque/style";
 //hooks
 import useEstoque from '../../../hooks/useEstoque';
 import useFormatCurrency from '../../../hooks/formatCurrency';
+import ProdutosModel from '../cadastroProdutos/model/produtos';
 
 
 const objClean: EntregaModel = {
@@ -81,6 +82,10 @@ function Entregas() {
         setDataTable: setDataTableEntregas,
         loading: isLoading
     } = GetData('Entregas', recarregue) as { dataTable: EntregaModel[], setDataTable: (data: EntregaModel[]) => void, loading: boolean };
+
+    const {
+        dataTable: produtoDataTable,
+    } = GetData('Produtos', recarregue) as { dataTable: ProdutosModel[] };
 
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<EntregaModel>({
         validateOnBlur: true,
@@ -150,11 +155,14 @@ function Entregas() {
         } else {
             cleanState()
             const clienteSelecionado = value;
-            const clienteEncontrado = dataTableCliente.find(cliente => cliente.nmCliente === clienteSelecionado.nmCliente)
-            if (clienteEncontrado) {
-                setClienteCurrent(clienteEncontrado)
-                setFieldValue('cliente.nmCliente', clienteSelecionado.nmCliente)
-            }
+            clienteSelecionado.produtos.forEach((prodClient: ProdutosModel) => {
+                const foundProduct = produtoDataTable.find(prod => prod.nmProduto === prodClient.nmProduto)
+                if (foundProduct) {
+                    prodClient.vlUnitario = foundProduct.vlUnitario
+                }
+            })
+            setClienteCurrent(clienteSelecionado)
+            setFieldValue('cliente.nmCliente', clienteSelecionado.nmCliente)
         }
     }
 

@@ -1,14 +1,11 @@
-
 import SituacaoProduto from "../../../../enumeration/situacaoProduto"
 import ComprasModel from "../../compras/model/compras"
 
 /**
- * Modelo de Entrega
+ * Modelo de Produto
 *
 * @author Carlos Bageston
 */
-
-
 interface ProdutosModel {
     id?: string,
     nmProduto: string,
@@ -19,5 +16,7 @@ interface ProdutosModel {
     stEntrega?: boolean,
     mpFabricado: ComprasModel[]
     valorItem?: number
+    stMateriaPrima?: boolean
+    kgProduto: number
 }
 export default ProdutosModel

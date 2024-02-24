@@ -73,8 +73,7 @@ text-align: center;
 
 export const DivSituacaoProduto = styled.div`
 display: flex;
-justify-content: space-between;
-width: 27rem;
+width: 100%;
 margin-top: 8px;
 `;
 

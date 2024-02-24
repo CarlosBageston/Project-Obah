@@ -48,7 +48,6 @@ export default function useHandleInputKeyPress() {
                 const nextIndex = (selectedSuggestionIndex + 1) % productSuggestion.length;
                 setSelectedSuggestionIndex(nextIndex);
             }
-            console.log(selectedSuggestionIndex)
         } else if (e.key === 'Enter') {
             if (productSuggestion.length > 0 && selectedSuggestionIndex !== null) {
                 selectSuggestion(productSuggestion[selectedSuggestionIndex]);

@@ -1,12 +1,9 @@
 import SituacaoProduto from "../../../../enumeration/situacaoProduto"
 /**
- * Modelo de Entrega
+ * Modelo de Compras/ Atualização de estoque
 *
 * @author Carlos Bageston
 */
-
-
-
 interface ComprasModel {
     id?: string,
     dtCompra: Date | null,
@@ -16,11 +13,10 @@ interface ComprasModel {
     quantidade: number,
     totalPago: number | null,
     tpProduto: SituacaoProduto | null,
-    cxProduto: number | null,
-    kgProduto: number | null,
     qntMinima: number | null,
     nrOrdem?: number
     mpFabricado?: ComprasModel[]
     stEstoqueInfinito?: boolean
+    stMateriaPrima?: boolean
 }
 export default ComprasModel

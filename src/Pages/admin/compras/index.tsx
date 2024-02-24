@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import * as Yup from 'yup';
 import moment from 'moment';
+import { isEqual } from 'lodash';
 import { useFormik } from 'formik';
 import { db } from "../../../firebase";
 import ComprasModel from "./model/compras";
@@ -36,9 +38,9 @@ import { BoxTitleDefault } from "../estoque/style";
 import useEstoque from '../../../hooks/useEstoque';
 import { useUniqueNames } from '../../../hooks/useUniqueName';
 import useFormatCurrency from '../../../hooks/formatCurrency';
-import AlertDialog from '../../../Components/FormAlert/dialogForm';
 import useHandleInputKeyPress from '../../../hooks/useHandleInputKeyPress';
 import { calculateTotalValue } from '../../../hooks/useCalculateTotalValue';
+import CompraHistoricoModel from './model/comprahistoricoModel';
 
 
 const objClean: ComprasModel = {
@@ -49,8 +51,6 @@ const objClean: ComprasModel = {
     quantidade: 0,
     totalPago: null,
     tpProduto: null,
-    cxProduto: null,
-    kgProduto: null,
     qntMinima: null,
     nrOrdem: undefined
 }
@@ -64,10 +64,6 @@ function AtualizarEstoque() {
     const [selectAutoComplete, setSelectAutoComplete] = useState<boolean>(false);
     const [selected, setSelected] = useState<ComprasModel | undefined>();
     const [isEdit, setIsEdit] = useState<boolean>(false);
-    const [openDialog, setOpenDialog] = useState<boolean>(false);
-    const [estoqueVazio, setEstoqueVazio] = useState<boolean>(false);
-    const [nmProduto, setNmProduto] = useState<string>('');
-    const [produtosProcessados, setProdutosProcessados] = useState(new Set<string>());
     const dispatch = useDispatch();
     const { loading } = useSelector((state: State) => state.user);
 
@@ -79,12 +75,10 @@ function AtualizarEstoque() {
         { label: 'Nome Do Produto', propertyName: 'nmProduto' },
         { label: 'Código do Produto', propertyName: 'cdProduto' },
         { label: 'Data', propertyName: 'dtCompra' },
-        { label: 'Valor Unitário', propertyName: 'vlUnitario', isCurrency: true },
+        { label: 'Valor Unitário', propertyName: 'vlUnitario', isCurrency: true, isDisable: true },
         { label: 'Quantidade', propertyName: 'quantidade', type: 'number' },
-        { label: 'Valor Total', propertyName: 'totalPago', isCurrency: true, isDisable: true },
+        { label: 'Valor Total', propertyName: 'totalPago', isCurrency: true },
         { label: 'Quant. mínima em estoque', propertyName: 'qntMinima', type: 'number' },
-        { label: 'Quantidade na Caixa', propertyName: 'cxProduto', type: 'number' },
-        { label: 'Quantidade KG', propertyName: 'kgProduto', type: 'number' },
     ];
     //Realizando busca no banco de dados
     const {
@@ -98,12 +92,7 @@ function AtualizarEstoque() {
     };
     const {
         dataTable: produtoDataTable,
-    } = GetData('Produtos', recarregue) as {
-        dataTable: ProdutosModel[],
-    };
-    const {
-        dataTable: dataTableCliente,
-    } = GetData('Clientes', recarregue) as { dataTable: ClienteModel[] };
+    } = GetData('Produtos', recarregue) as { dataTable: ProdutosModel[] };
 
     const {
         dataTable: dataTableEstoque,
@@ -112,6 +101,10 @@ function AtualizarEstoque() {
     const {
         dataTable: dataTableDashboard,
     } = GetData('Dados Dashboard', recarregueDashboard) as { dataTable: DashboardCompras[] };
+
+    const {
+        dataTable: dataTableCompraHistorico,
+    } = GetData('Compra Historico', recarregue) as { dataTable: CompraHistoricoModel[] };
 
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<ComprasModel>({
         validateOnBlur: true,
@@ -125,7 +118,6 @@ function AtualizarEstoque() {
                 return parseFloat(numericValue) > 0;
             }),
             dtCompra: Yup.string().required('Campo obrigatório'),
-            cxProduto: Yup.number().transform((value) => (isNaN(value) ? undefined : value)).optional().nullable(),
             tpProduto: Yup.number().transform((value) => (isNaN(value) ? undefined : value)).required('Campo obrigatório'),
             quantidade: Yup.number()
                 .transform((value) => (isNaN(value) ? undefined : value))
@@ -140,7 +132,9 @@ function AtualizarEstoque() {
         onSubmit: handleSubmitForm,
     });
 
-    //Limpa formulario
+    /**
+     * Limpa o estado do formulário, resetando os valores e estados relacionados.
+     */
     function cleanState() {
         setInitialValues({
             cdProduto: '',
@@ -150,8 +144,6 @@ function AtualizarEstoque() {
             quantidade: 0,
             totalPago: null,
             tpProduto: null,
-            cxProduto: null,
-            kgProduto: null,
             qntMinima: null,
             nrOrdem: undefined
         })
@@ -159,12 +151,14 @@ function AtualizarEstoque() {
         setFieldValue('cdProduto', '');
         setFieldValue('vlUnitario', '');
         setFieldValue('qntMinima', '');
-        setFieldValue('cxProduto', '');
-        setFieldValue('kgProduto', '');
+        setFieldValue('dtCompra', null);
         setKey(Math.random());
     }
 
-    //deleta uma linha da tabela e do banco de dados
+    /**
+     * Deleta uma linha da tabela e do banco de dados.
+     * Deleta Da Tabela de Estoque a quantidade e a versao de acordo com o item selecionado
+     */
     async function handleDeleteRow() {
         if (selected) {
             const refID: string = selected.id ?? '';
@@ -192,118 +186,87 @@ function AtualizarEstoque() {
         setSelected(undefined)
     }
 
-    // Este método recalcula os preços dos produtos para um cliente específico, com base nos valores fornecidos e nas compras registradas.
-    function recalculateProductPricesClient(valuesUpdate: ComprasModel, clienteEncontrado: ClienteModel[]) {
-        dataTableCliente.forEach(cliente => {
-            let result = 0.0;
-            // Iterar pelos produtos do cliente que contêm a MP em questão
-            const produtosAtualizados = cliente.produtos.map(produto => {
-                produto.mpFabricado.forEach(item => {
-                    // Verificar se é a MP em questão
-                    if (item.nmProduto !== valuesUpdate.nmProduto) {
-                        const encontrado = dataTable.find(compra => compra.nmProduto === item.nmProduto);
-                        if (encontrado) {
-                            const totalAtualizado = calculateTotalValue(item, encontrado);
-                            result += totalAtualizado;
-                        }
-                    } else {
-                        const totalAtualizado = calculateTotalValue(item, valuesUpdate);
-                        result += totalAtualizado;
-                    }
-                });
-                // Atualizar o valor no produto do cliente
-                const productUpdate = { ...produto, vlUnitario: parseFloat(result.toFixed(2)) }
-                result = 0.0
-                return productUpdate;
-            });
-            // Construir um novo objeto cliente com produtos atualizados
-            const clienteAtualizado: ClienteModel = { ...cliente, produtos: produtosAtualizados };
-            clienteEncontrado.push(clienteAtualizado);
-        });
+    /**
+     * Retorna o histórico de compra de um produto encontrado.
+     * 
+     * @param nmProduto - Nome do produto.
+     * @returns O histórico de compra do produto.
+     */
+    function foundProducts(nmProduto: string): CompraHistoricoModel {
+        const foundProduct: CompraHistoricoModel = dataTableCompraHistorico.find(history => history.nmProduto === nmProduto) as CompraHistoricoModel;
+        return foundProduct;
     }
-    function foundProductsLastNrOrdem(nmProduto: string) {
-        let versao = 0;
-        let encontrado: ComprasModel | null = null;
-        for (const compra of dataTable) {
-            if (compra.nrOrdem === undefined || compra.nmProduto !== nmProduto) continue;
-            if (compra.nrOrdem >= versao) {
-                versao = compra.nrOrdem;
-                encontrado = compra;
-            }
-        }
-        return encontrado
-    }
-    // metodo que recalcula os valor dos produtos que estão sendo atualizado o estoque.
-    //Exemplo: atualizando o chocolate, a moreninha tem em sua composição o chocolate, então se mudou o preço do chocolate,
-    //ira mudar o preço da moreninha em consequencia, pois isso precisa recalcular novamente.
+
+
+    /**
+     * Recalcula os valores dos produtos que estão sendo atualizados no estoque.
+     * 
+     * Exemplo: atualizando o chocolate, a moreninha tem em sua composição o chocolate, então se mudou o preço do chocolate,
+     * ira mudar o preço da moreninha em consequencia, pois isso precisa recalcular novamente.
+     * @param valuesUpdate - Valores atualizados.
+     * @param produtosEncontrado - Array onde os produtos encontrados serão armazenados.
+     */
     function recalculateProduct(valuesUpdate: ComprasModel, produtosEncontrado: ProdutosModel[]) {
         produtoDataTable.forEach(produto => {
             if (produto.mpFabricado.some(mp => mp.nmProduto === valuesUpdate.nmProduto)) {
                 let soma = 0.0;
                 // Recalcule a soma dos totalPago após a atualização
-                try {
-                    produto.mpFabricado.forEach(item => {
-                        if (!produtosProcessados.has(item.nmProduto)) {
-                            if (item.nmProduto !== valuesUpdate.nmProduto) {
-                                const encontrado = foundProductsLastNrOrdem(item.nmProduto)
-                                if (encontrado) {
-                                    const totalAtualizado = calculateTotalValue(item, encontrado)
-                                    soma += totalAtualizado
-                                } else {
-                                    setOpenDialog(true);
-                                    setNmProduto(item.nmProduto)
-                                    setProdutosProcessados(new Set(produtosProcessados.add(valuesUpdate.nmProduto)))
-                                    throw new Error("Produto não encontrado");
-                                }
-                            } else {
-                                const totalAtualizado = calculateTotalValue(item, valuesUpdate)
-                                soma += totalAtualizado
-                            }
-                        }
-                    });
-                } catch (error) {
-                    throw new Error("Produto não encontrado no estoque");
-                }
+                produto.mpFabricado.forEach(item => {
+                    const foundProduct = foundProducts(item.nmProduto)
+                    if (item.nmProduto !== valuesUpdate.nmProduto) {
+                        foundKgProduto(foundProduct)
+                        const totalAtualizado = calculateTotalValue(item, foundProduct)
+                        soma += totalAtualizado
+                    } else {
+                        const totalAtualizado = calculateTotalValue(item, valuesUpdate)
+                        soma += totalAtualizado
+                    }
+                });
                 const newProduto = { ...produto, vlUnitario: parseFloat(soma.toFixed(2)) }
                 produtosEncontrado.push(newProduto);
             }
         });
     }
 
-    // Este método recalcula os preços dos produtos encontrados com base nos registros de compras.
-    function recalculateProductFound(produtosEncontrado: ProdutosModel[], produtoAtualizados: ProdutosModel[]) {
+    function foundKgProduto(foundProduct: CompraHistoricoModel) {
+        const clonedProduct = { ...foundProduct };
+        if (clonedProduct.kgProduto && clonedProduct.kgProduto !== 1) {
+            const vlUnitario = clonedProduct.vlUnitario / clonedProduct.kgProduto;
+            clonedProduct.vlUnitario = vlUnitario;
+        }
+        return clonedProduct;
+    }
+    /**
+     * Recalcula os preços dos produtos encontrados com base nos registros de compras.
+     * 
+     * Produtos que são encontrados na função recalculateProduct são recalculados aqui nesse metodo
+     * pois la eles atualizam o valor do produto, porem esse produto se relaciona com outros produtos que precisam ser 
+     * recalculados
+     * @param produtosEncontrado - Array de produtos encontrados.
+     * @param produtoAtualizados - Array onde os produtos atualizados serão armazenados.
+     */
+    function recalculateProductFound(produtosEncontrado: ProdutosModel[]) {
+        const produtoAtualizados: ProdutosModel[] = []
         produtosEncontrado.forEach(items => {
-            let updateValueProduct: ComprasModel = objClean;
-            try {
-                const foundProduct = foundProductsLastNrOrdem(items.nmProduto)
-                if (foundProduct) {
-                    updateValueProduct = { ...foundProduct, vlUnitario: items.vlUnitario };
-                } else {
-                    throw new Error("Produto não encontrado");
-                }
-            } catch (error) {
-                setOpenDialog(true);
-                setNmProduto(items.nmProduto)
-                throw error;
-            }
+            const foundProduct = foundProducts(items.nmProduto)
+            const foundProductUpdate = foundKgProduto(foundProduct)
+            if (!produtoAtualizados.includes(items)) produtoAtualizados.push(items)
             produtoDataTable.forEach(produto => {
                 if (produto.mpFabricado.some(mp => mp.nmProduto.includes(items.nmProduto))) {
                     let soma = 0.0;
                     // Recalcule a soma dos totalPago após a atualização
                     produto.mpFabricado.forEach(item => {
                         if (item.nmProduto.includes(items.nmProduto)) {
-                            const totalAtualizado = calculateTotalValue(item, updateValueProduct as ComprasModel)
+                            const totalAtualizado = calculateTotalValue(item, foundProductUpdate as ComprasModel)
                             soma += totalAtualizado
                         } else {
-                            const encontrado = foundProductsLastNrOrdem(item.nmProduto)
+                            const encontrado = foundProducts(item.nmProduto)
                             const totalAtualizado = calculateTotalValue(item, encontrado as ComprasModel)
                             soma += totalAtualizado
                         }
                     });
                     const newProduto = { ...produto, vlUnitario: parseFloat(soma.toFixed(2)) }
                     produtoAtualizados.push(newProduto);
-                } else {
-                    produtoAtualizados.push(items)
                 }
             });
         })
@@ -311,18 +274,11 @@ function AtualizarEstoque() {
         produtosEncontrado.push(...produtoAtualizados);
     }
 
-    function calculateQuantity(values: ComprasModel) {
-        let quantidadeTotal: number = 0;
-        if (values.cxProduto) {
-            quantidadeTotal = values.quantidade * values.cxProduto;
-        } else if (values.kgProduto) {
-            quantidadeTotal = values.quantidade * values.kgProduto;
-        } else {
-            quantidadeTotal = values.quantidade
-        }
-        return quantidadeTotal;
-    }
-
+    /**
+     * Cria ou atualiza o estoque com base nos valores fornecidos.
+     * 
+     * @param valuesUpdate - Valores atualizados.
+     */
     async function createStock(valuesUpdate: ComprasModel) {
         const estoqueExistente = dataTableEstoque.find(
             estoque => estoque.nmProduto === valuesUpdate.nmProduto
@@ -330,8 +286,7 @@ function AtualizarEstoque() {
         if (estoqueExistente) {
             const refID: string = estoqueExistente.id ?? '';
             const refTable = doc(db, "Estoque", refID);
-            const quantidadeTotal = calculateQuantity(valuesUpdate)
-            const novaQuantidade = quantidadeTotal + estoqueExistente.quantidade;
+            const novaQuantidade = valuesUpdate.quantidade + estoqueExistente.quantidade;
             await updateDoc(refTable, {
                 nmProduto: valuesUpdate.nmProduto,
                 cdProduto: valuesUpdate.cdProduto,
@@ -339,24 +294,29 @@ function AtualizarEstoque() {
                 qntMinima: valuesUpdate.qntMinima,
                 stEstoqueInfinito: valuesUpdate.stEstoqueInfinito,
                 quantidade: novaQuantidade,
-                versaos: arrayUnion({ versao: valuesUpdate.nrOrdem, vrQntd: quantidadeTotal })
+                versaos: arrayUnion({ versao: valuesUpdate.nrOrdem, vrQntd: valuesUpdate.quantidade })
             })
         } else {
-            const quantidadeTotal = calculateQuantity(valuesUpdate)
             await addDoc(collection(db, "Estoque"), {
                 nmProduto: valuesUpdate.nmProduto,
                 cdProduto: valuesUpdate.cdProduto,
                 tpProduto: valuesUpdate.tpProduto,
                 qntMinima: valuesUpdate.qntMinima,
                 stEstoqueInfinito: valuesUpdate.stEstoqueInfinito,
-                quantidade: quantidadeTotal,
+                quantidade: valuesUpdate.quantidade,
                 versaos: [
-                    { versao: valuesUpdate.nrOrdem, vrQntd: quantidadeTotal }
+                    { versao: valuesUpdate.nrOrdem, vrQntd: valuesUpdate.quantidade }
                 ]
             })
         }
     }
 
+    /**
+     * Calcula o valor total da compra e atualiza o dashboard com base nos valores fornecidos.
+     * 
+     * @param valueCurrent - Valor total da compra.
+     * @param dateBuy - Data da compra.
+     */
     async function calculateValueTotal(valueCurrent: number, dateBuy: Date | null) {
         let sumValue: number = 0
         const mesAtual = moment(dateBuy, "DD/MM/YYYY").format("DD/MM/YYYY");
@@ -386,7 +346,42 @@ function AtualizarEstoque() {
         setRecarregueDashboard(false)
     }
 
-    async function updateValue(valuesUpdate: any[], nameCollection: string) {
+    /**
+     * Salva um Historico de Compras para que essa tabela tenha todos os produtos salvos e com valores atualizados.
+     * @param valuesUpdate objeto que ta sendo atualizado o estoque
+     */
+    async function savePurchaseHistory(valuesUpdate: ComprasModel) {
+        const history = dataTableCompraHistorico.find(history => history.nmProduto === valuesUpdate.nmProduto)
+        const filteredValuesUpdate: Partial<CompraHistoricoModel> = {
+            nmProduto: valuesUpdate.nmProduto,
+            cdProduto: valuesUpdate.cdProduto,
+            vlUnitario: valuesUpdate.vlUnitario,
+            mpFabricado: valuesUpdate.mpFabricado ? valuesUpdate.mpFabricado : [],
+            qntMinima: valuesUpdate.qntMinima ? valuesUpdate.qntMinima : null,
+            tpProduto: valuesUpdate.tpProduto,
+            quantidade: valuesUpdate.quantidade
+        };
+
+        if (history) {
+            const refID: string = history.id ?? '';
+            const refTable = doc(db, "Compra Historico", refID);
+
+            const { id, stMateriaPrima, kgProduto, ...historyWithoutId } = history;
+
+            if (!isEqual(filteredValuesUpdate, historyWithoutId)) {
+                await updateDoc(refTable, {
+                    ...filteredValuesUpdate
+                });
+            }
+        }
+    }
+
+    /**
+    * Atualiza os valores no banco de dados.
+    * @param valuesUpdate - Array de valores a serem atualizados.
+    * @param nameCollection - Nome da coleção no banco de dados.
+    */
+    function updateValue(valuesUpdate: ProdutosModel[], nameCollection: string) {
         valuesUpdate.forEach(async item => {
             const refID: string = item.id ?? '';
             const refTable = doc(db, nameCollection, refID);
@@ -394,21 +389,40 @@ function AtualizarEstoque() {
         })
     }
 
-    //função que chama os metodos de recalcular produtos e clientes.
+    /**
+    * Atualiza o valor unitario de compra Historico no banco de dados.
+    * @param valuesUpdate - Array de valores a serem atualizados.
+    */
+    function updateValueCompraHistorico(valuesUpdate: ProdutosModel[]) {
+        valuesUpdate.forEach(async item => {
+            const history = dataTableCompraHistorico.find(history => history.nmProduto === item.nmProduto)
+            if (!history) return;
+            const refID: string = history.id ?? '';
+            const refTable = doc(db, "Compra Historico", refID);
+            const updatedData = { vlUnitario: item.vlUnitario };
+            await updateDoc(refTable, updatedData);
+        })
+    }
+    /**
+     * Recalcula os produtos e clientes com base nos valores fornecidos.
+     * @param valuesUpdate  - Valores atualizados.
+     */
     function recalculate(valuesUpdate: ComprasModel) {
         const produtosEncontrado: ProdutosModel[] = [];
-        const produtoAtualizados: ProdutosModel[] = [];
-        const clienteEncontrado: ClienteModel[] = [];
-        recalculateProductPricesClient(valuesUpdate, clienteEncontrado);
 
         recalculateProduct(valuesUpdate, produtosEncontrado);
 
-        recalculateProductFound(produtosEncontrado, produtoAtualizados);
+        recalculateProductFound(produtosEncontrado);
 
-        updateValue(clienteEncontrado, "Clientes")
         updateValue(produtosEncontrado, "Produtos")
+        updateValueCompraHistorico(produtosEncontrado)
+
     }
-    //enviando formulario
+
+
+    /**
+     * Envia o formulário para o banco de dados. 
+     */
     async function handleSubmitForm() {
         dispatch(setLoading(true))
         const newNrOrdem = values.nrOrdem || values.nrOrdem === 0 ? values.nrOrdem + 1 : 0;
@@ -418,17 +432,23 @@ function AtualizarEstoque() {
             vlUnitario: convertToNumber(values.vlUnitario.toString()),
             totalPago: values.totalPago && convertToNumber(values.totalPago?.toString())
         };
+        savePurchaseHistory(valuesUpdate)
         try {
             if (valuesUpdate.tpProduto === SituacaoProduto.COMPRADO) {
-                const product = foundProductsLastNrOrdem(valuesUpdate.nmProduto);
-                //se o produto existir em compras verifique se precisa recalcular, caso não existe o produto, é necessario recalcular.
+                const product = foundProducts(valuesUpdate.nmProduto);
+                // se o produto existir em compras verifique se precisa recalcular, caso não existe o produto, é necessario recalcular.
                 if (product) {
                     const needUpdate = product?.vlUnitario !== valuesUpdate.vlUnitario
-                    if (needUpdate) {
-                        recalculate(valuesUpdate)
+                    if (needUpdate && product.stMateriaPrima) recalculate(valuesUpdate)
+                }
+                if (product.stMateriaPrima) {
+                    const foundProduct = produtoDataTable.find(prod => prod.nmProduto === valuesUpdate.nmProduto)
+                    if (foundProduct && foundProduct.vlUnitario !== valuesUpdate.vlUnitario) {
+                        const refID: string = foundProduct.id ?? '';
+                        const refTable = doc(db, "Produtos", refID);
+                        const updatedData = { vlUnitario: valuesUpdate.vlUnitario };
+                        await updateDoc(refTable, updatedData);
                     }
-                } else {
-                    recalculate(valuesUpdate)
                 }
                 createStock(valuesUpdate)
                 if (valuesUpdate.totalPago) {
@@ -440,18 +460,11 @@ function AtualizarEstoque() {
                     const infiniteStock = Number.MAX_SAFE_INTEGER
                     valuesUpdate.quantidade = infiniteStock
                 } else {
-                    await removedStockCompras(valuesUpdate, setOpenDialog, setEstoqueVazio, setNmProduto)
+                    await removedStockCompras(valuesUpdate)
                 }
                 createStock(valuesUpdate)
             }
         } catch (error) {
-            if (error instanceof Error) {
-                if (error.message.includes("estoque")) {
-                    dispatch(setLoading(false))
-                    setEstoqueVazio(false)
-                    return;
-                }
-            }
             dispatch(setLoading(false))
             setSubmitForm(false);
             setTimeout(() => { setSubmitForm(undefined) }, 3000);
@@ -477,32 +490,37 @@ function AtualizarEstoque() {
         setSelectAutoComplete(false);
         setRecarregueDashboard(true)
     }
-    const handleOKClick = () => {
-        setOpenDialog(false);
-    };
-    // Este useEffect é responsável por calcular e atualizar o campo 'totalPago' com base nas quantidades e valores unitários,
-    // considerando a formatação monetária, tanto para o modo de edição (isEdit e selected) quanto para o modo de criação (values).
-    // O cálculo é realizado multiplicando a quantidade pelo valor unitário, formatando o resultado e atualizando o estado correspondente.
+
+    /**
+     * Atualiza o valor pago ou valor Unitario, considerando a quantidade, valor unitário ou Total Pago.
+     */
     useEffect(() => {
         if (isEdit && selected) {
-            const multiplication = selected.quantidade * convertToNumber(selected.vlUnitario.toString())
-            if (!isNaN(multiplication)) {
+            if (!selected.totalPago) return
+            const division = convertToNumber(selected.totalPago.toString()) / selected.quantidade
+            if (!isNaN(division)) {
                 setSelected((prevSelected) => ({
                     ...prevSelected,
-                    totalPago: formatCurrency(multiplication.toString()) as unknown as number,
+                    vlUnitario: formatCurrency(division.toString()) as unknown as number,
                 } as ComprasModel | undefined));
             }
         } else {
-            const multiplication = values.quantidade * convertToNumber(values.vlUnitario.toString())
-            if (!isNaN(multiplication)) {
-                setFieldValue('totalPago', formatCurrency(multiplication.toString()))
-            } else {
-                setFieldValue('totalPago', 0)
+            if (values.tpProduto === SituacaoProduto.COMPRADO) {
+                if (!values.totalPago) return
+                const division = convertToNumber(values.totalPago.toString()) / values.quantidade
+                if (!isNaN(division)) setFieldValue('vlUnitario', formatCurrency(division.toString()))
+                else setFieldValue('vlUnitario', 0)
+            } else if (values.tpProduto === SituacaoProduto.FABRICADO) {
+                const multiplication = convertToNumber(values.vlUnitario.toString()) * values.quantidade
+                if (!isNaN(multiplication)) setFieldValue('totalPago', formatCurrency(multiplication.toString()))
+                else setFieldValue('totalPago', 0)
             }
         }
-    }, [values.quantidade, values.vlUnitario, selected?.quantidade, selected?.vlUnitario])
+    }, [values.quantidade, values.totalPago, selected?.quantidade, selected?.totalPago])
 
-    //Editando linha da tabela e do banco de dados
+    /**
+     * Edita uma linha da tabela e do banco de dados, atualizando também o estoque correspondente.
+     */
     async function handleEditRow() {
         if (selected) {
             const refID: string = selected.id ?? '';
@@ -511,7 +529,7 @@ function AtualizarEstoque() {
                 nmProduto: selected.nmProduto,
                 cdProduto: selected.cdProduto,
                 qntMinima: selected.qntMinima || 0,
-                quantidade: calculateQuantity(selected),
+                quantidade: selected.quantidade,
                 tpProduto: selected.tpProduto || 0,
                 versaos: [],
             }
@@ -536,7 +554,12 @@ function AtualizarEstoque() {
         setSelected(undefined)
     }
 
-    function handleAutoComplete(newValue: ComprasModel, reason: AutocompleteChangeReason) {
+    /**
+     * Manipula a seleção de um valor no campo de autocompletar, preenchendo os campos do formulário com os valores correspondentes.
+     * @param newValue  - Novo valor selecionado.
+     * @param reason - Razão da mudança.
+     */
+    function handleAutoComplete(newValue: ComprasModel | null, reason: AutocompleteChangeReason) {
         if (reason === 'clear' || reason === 'removeOption') {
             cleanState()
         } else if (newValue) {
@@ -546,21 +569,23 @@ function AtualizarEstoque() {
             setFieldValue('vlUnitario', formatCurrency(newValue.vlUnitario.toString()));
             setFieldValue('qntMinima', newValue.qntMinima);
             setFieldValue('nmProduto', newValue.nmProduto);
-            if (newValue.cxProduto) {
-                setFieldValue('cxProduto', newValue.cxProduto);
-            }
-            if (newValue.kgProduto) {
-                setFieldValue('kgProduto', newValue.kgProduto);
+            setFieldValue('dtCompra', moment(new Date()).format('DD/MM/YYYY'))
+            if (newValue.stMateriaPrima) {
+                setFieldValue('stMateriaPrima', newValue.stMateriaPrima)
             }
             if (newValue.tpProduto === SituacaoProduto.FABRICADO) {
                 setFieldValue('mpFabricado', newValue.mpFabricado)
             }
             if (newValue.stEstoqueInfinito) {
                 setFieldValue("stEstoqueInfinito", newValue.stEstoqueInfinito)
+            } else {
+                setFieldValue("stEstoqueInfinito", false)
             }
         }
     }
-
+    /**
+     * Atualiza o Estoque infinito para false e limpa os campos, caso ocorra mudança no tipo produto
+     */
     useEffect(() => { cleanState(); setFieldValue("stEstoqueInfinito", false) }, [values.tpProduto])
 
     return (
@@ -601,11 +626,10 @@ function AtualizarEstoque() {
                         )}
                     </FormControl>
                     <Autocomplete
-                        options={useUniqueNames(dataTable, values.tpProduto, values.tpProduto, produtoDataTable, dataTableEstoque)}
-                        getOptionLabel={(option) => option.nmProduto || ""}
+                        options={useUniqueNames(dataTableCompraHistorico, values.tpProduto, values.tpProduto, produtoDataTable)}
+                        getOptionLabel={(option: ComprasModel) => option.nmProduto || ""}
                         onChange={(e, newValue, reason) => handleAutoComplete(newValue, reason)}
                         disabled={values.tpProduto === null}
-                        freeSolo
                         renderInput={(params) => (
                             <TextField
                                 {...params}
@@ -648,10 +672,11 @@ function AtualizarEstoque() {
                         label="Data"
                         onBlur={handleBlur}
                         name="dtCompra"
-                        value={values.dtCompra!}
+                        value={values.dtCompra ?? ''}
                         maxLength={10}
                         onChange={e => setFieldValue(e.target.name, formatDate(e.target.value))}
                         error={touched.dtCompra && errors.dtCompra ? errors.dtCompra : ''}
+                        raisedLabel={values.dtCompra ? true : false}
                     />
                     <Input
                         key={`vlUnitario-${key}`}
@@ -659,7 +684,7 @@ function AtualizarEstoque() {
                         onBlur={handleBlur}
                         name="vlUnitario"
                         value={values.vlUnitario && values.vlUnitario.toString() !== 'R$ 0,00' ? values.vlUnitario : ''}
-                        disabled={values.tpProduto === SituacaoProduto.FABRICADO}
+                        disabled
                         maxLength={15}
                         onChange={e => setFieldValue(e.target.name, formatCurrencyRealTime(e.target.value))}
                         error={touched.vlUnitario && errors.vlUnitario ? errors.vlUnitario : ''}
@@ -667,33 +692,6 @@ function AtualizarEstoque() {
                     />
                 </DivInput>
                 <DivInput>
-                    <div style={{ display: 'flex' }}>
-                        <Input
-                            key={`cxProduto-${key}`}
-                            name="cxProduto"
-                            onBlur={handleBlur}
-                            label="Quantidade na Caixa ?"
-                            value={values.cxProduto ? values.cxProduto.toString().replace('.', ',') : ''}
-                            onChange={e => setFieldValue(e.target.name, parseFloat(e.target.value.replace(',', '.')))}
-                            error={touched.cxProduto && errors.cxProduto ? errors.cxProduto : ''}
-                            style={{ paddingBottom: 0 }}
-                            styleDiv={{ paddingRight: 8 }}
-                            styleLabel={{ fontSize: '0.8rem' }}
-                            raisedLabel={values.cxProduto ? true : false}
-                        />
-                        <Input
-                            key={`kgProduto-${key}`}
-                            name="kgProduto"
-                            onBlur={handleBlur}
-                            label="Quantidade KG ?"
-                            value={values.kgProduto ? values.kgProduto.toString().replace('.', ',') : ''}
-                            onChange={e => setFieldValue(e.target.name, parseFloat(e.target.value.replace(',', '.')))}
-                            error={touched.kgProduto && errors.kgProduto ? errors.kgProduto : ''}
-                            style={{ paddingBottom: 0 }}
-                            styleLabel={{ fontSize: '0.8rem' }}
-                            raisedLabel={values.kgProduto ? true : false}
-                        />
-                    </div>
                     <Input
                         key={`Quantidade-${key}`}
                         label="Quantidade"
@@ -711,10 +709,10 @@ function AtualizarEstoque() {
                         key={`totalPago-${key}`}
                         label="Valor Total"
                         onBlur={handleBlur}
-                        disabled
+                        disabled={values.tpProduto === SituacaoProduto.FABRICADO}
                         name="totalPago"
                         value={values.totalPago && values.totalPago.toString() !== 'R$ 0,00' ? values.totalPago : ''}
-                        onChange={() => { }}
+                        onChange={e => setFieldValue(e.target.name, formatCurrencyRealTime(e.target.value))}
                         maxLength={15}
                         error={''}
                         raisedLabel={values.totalPago && values.totalPago.toString() !== 'R$ 0,00' ? true : false}
@@ -770,7 +768,6 @@ function AtualizarEstoque() {
                 />
                 <FormAlert submitForm={submitForm} name={'Estoque'} styleLoadingMarginTop='-8rem' />
 
-                <AlertDialog open={openDialog} onOKClick={handleOKClick} nmProduto={nmProduto} estoqueVazio={estoqueVazio} />
             </ContainerButton>
 
             {/*Tabala */}
@@ -784,10 +781,8 @@ function AtualizarEstoque() {
                     { label: 'Código', name: 'cdProduto' },
                     { label: 'Nome', name: 'nmProduto' },
                     { label: 'Data', name: 'dtCompra' },
-                    { label: 'Valor', name: 'vlUnitario', isCurrency: true },
+                    { label: 'Valor Unitario', name: 'vlUnitario', isCurrency: true },
                     { label: 'Quantidade', name: 'quantidade' },
-                    { label: 'Quantidade na Caixa', name: 'cxProduto' },
-                    { label: 'Quantidade KG', name: 'kgProduto' },
                     { label: 'Valor Total', name: 'totalPago', isCurrency: true }
                 ]}
                 data={dataTable}

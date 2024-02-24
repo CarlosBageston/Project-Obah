@@ -22,6 +22,7 @@ import {
 import { Autocomplete, Stack, TextField } from "@mui/material";
 import SituacaoProduto from "../../enumeration/situacaoProduto";
 import useFormatCurrency from "../../hooks/formatCurrency";
+import ComprasModel from "../../Pages/admin/compras/model/compras";
 export interface InputConfig {
     label: string;
     propertyName: string;
@@ -73,7 +74,9 @@ function IsEdit({ selected, handleEditRow, inputsConfig, isEdit, products, setSe
 
     const { NumberFormatForBrazilianCurrency, formatCurrencyRealTime } = useFormatCurrency();
 
-
+    /**
+     * atualiza os filtros de produtos fabricados ou comprados conforme a tela atual.
+     */
     useEffect(() => {
         if (dataSelected) {
             if (editingScreen === 'Cliente') {
@@ -94,6 +97,10 @@ function IsEdit({ selected, handleEditRow, inputsConfig, isEdit, products, setSe
             }
         }
     }, [dataSelected])
+
+    /**
+    * formata os dados do item selecionado para edição.
+    */
     useEffect(() => {
         if (isEdit) {
             const formattedData = { ...selected };
@@ -112,11 +119,28 @@ function IsEdit({ selected, handleEditRow, inputsConfig, isEdit, products, setSe
                 })
                 setSelected(produto)
             }
+            if (editingScreen === 'Produto') {
+                const produtosAtualizados = formattedData.mpFabricado.map((produto: ComprasModel) => ({
+                    ...produto,
+                    quantidade: produto.quantidade.toString().replace('.', ','),
+                }));
+
+                setSelected((prevSelected: any) => ({
+                    ...prevSelected,
+                    mpFabricado: produtosAtualizados,
+                }));
+            }
             setSelected(formattedData);
         }
     }, [isEdit]);
 
-
+    /**
+     * Função para manipulação de eventos de alteração em inputs.
+     * @param {ChangeEvent<HTMLInputElement>} e - Evento de alteração em um input.
+     * @param {string} propertyName - Nome da propriedade associada ao input.
+     * @param {string} type - Tipo de dado do input ('string' ou 'number').
+     * @param {boolean} isCurrency - Indica se o input é do tipo moeda.
+     */
     const handleChange = (e: ChangeEvent<HTMLInputElement>, propertyName: string, type: 'string' | 'number', isCurrency: boolean | undefined) => {
         const { value } = e.target;
         if (type && type === 'number') {
@@ -134,7 +158,14 @@ function IsEdit({ selected, handleEditRow, inputsConfig, isEdit, products, setSe
             setSelected(newData);
         }
     };
-    function formatarValor(valor: string) {
+
+    /**
+     * Função para formatar um valor para o formato de moeda brasileira.
+     * @param {string} valor - Valor a ser formatado.
+     * @returns {string} - Valor formatado em moeda brasileira.
+     */
+    //TODO: Verificar se realmente é necessario esse metodo.
+    function formatarValor(valor: string): string {
         const inputText = valor.replace(/\D/g, "");
         let formattedText = "";
         if (inputText.length <= 2) {
@@ -146,6 +177,11 @@ function IsEdit({ selected, handleEditRow, inputsConfig, isEdit, products, setSe
         return inputText ? "R$ " + formattedText : "";
     }
 
+    /**
+     * Função para manipulação de eventos de alteração em inputs específicos de tela de Cliente.
+     * @param {ChangeEvent<HTMLInputElement>} e - Evento de alteração em um input.
+     * @param {number} index - Índice do produto associado ao input.
+     */
     const handleChangeCliente = (e: ChangeEvent<HTMLInputElement>, index: number) => {
         const valorFormatado = formatarValor(e.target.value);
         const updatedProdutos = products.map((produto, i) => {
@@ -162,6 +198,13 @@ function IsEdit({ selected, handleEditRow, inputsConfig, isEdit, products, setSe
             produtos: updatedProdutos || [],
         } as ClienteModel | undefined));
     }
+
+    /**
+     * Função para manipulação de eventos de alteração em inputs específicos de tela de Produto.
+     * @param {ChangeEvent<HTMLInputElement>} e - Evento de alteração em um input.
+     * @param {any} selected - Dados do item selecionado para edição.
+     * @param {number} index - Índice do produto associado ao input.
+     */
     const handleChangeProduct = (e: ChangeEvent<HTMLInputElement>, selected: any, index: number) => {
         const newMps = [...selected.mpFabricado];
         newMps[index].quantidade = e.target.value;
@@ -171,6 +214,10 @@ function IsEdit({ selected, handleEditRow, inputsConfig, isEdit, products, setSe
         } as ProdutosModel | undefined));
     }
 
+
+    /**
+     * Função para executar a edição do item selecionado.
+     */
     function handleEventEdit() {
         if (editingScreen === 'Cliente') {
             const isValid = selected.produtos.some((product: ProdutosModel) => !product.vlVendaProduto)
@@ -193,7 +240,11 @@ function IsEdit({ selected, handleEditRow, inputsConfig, isEdit, products, setSe
         }
     }
 
-    //essa e a logica para adicionar novo produto na tela de Cliente usando o isEdit.
+    /**
+     * Função para manipulação de eventos de alteração em inputs de adição de novo produto.
+     * @param {React.SyntheticEvent<Element, Event>} e - Evento sintético React.
+     * @param {any} value - Valor do novo produto selecionado.
+     */
     const handleChangeProdutoAdding = (e: React.SyntheticEvent<Element, Event>, value: any) => {
         if (editingScreen === 'Cliente') {
             const encontrado: ProdutosModel = dataSelected.find((product: ProdutosModel) => product.nmProduto === value.nmProduto)
@@ -206,6 +257,10 @@ function IsEdit({ selected, handleEditRow, inputsConfig, isEdit, products, setSe
             setNewProduct(newValue)
         }
     }
+
+    /**
+    * Função para adicionar um novo produto durante a edição.
+    */
     function addingNewProduct() {
         if (editingScreen === 'Cliente') {
             if (selected.produtos.find((product: ProdutosModel) => product.nmProduto === newProduct.nmProduto)) return setError('Produto já existe na lista')
@@ -225,6 +280,11 @@ function IsEdit({ selected, handleEditRow, inputsConfig, isEdit, products, setSe
             setNewProduct(undefined)
         }
     }
+
+    /**
+     * Função para lidar com o pressionar da tecla Enter durante a adição de novo produto.
+     * @param {React.KeyboardEvent<HTMLDivElement>} e - Evento de teclado associado à adição de novo produto.
+     */
     function onKeyPressProductAdding(e: React.KeyboardEvent<HTMLDivElement>) {
         if (e.key === "Enter" && newProduct) {
             addingNewProduct()

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import ComprasModel from '../Pages/admin/compras/model/compras';
 import SituacaoProduto from '../enumeration/situacaoProduto';
 import ProdutosModel from '../Pages/admin/cadastroProdutos/model/produtos';
-import EstoqueModel from '../Pages/admin/estoque/model/estoque';
+import CompraHistoricoModel from '../Pages/admin/compras/model/comprahistoricoModel';
 
 /**
  * Hook personalizado para obter nomes únicos com base em determinados critérios.
@@ -21,137 +21,34 @@ import EstoqueModel from '../Pages/admin/estoque/model/estoque';
  * @returns Lista de nomes únicos de produtos com base nos parâmetros fornecidos.
  */
 export function useUniqueNames(
-    dataTable: ComprasModel[], 
+    dataTable: CompraHistoricoModel[], 
     tpProduto: SituacaoProduto | null, 
     optionTpProduto: SituacaoProduto | null,
-    dataTableProduto?: ProdutosModel[],
-    dataTableEstoque?: EstoqueModel[],
+    dataTableProduto: ProdutosModel[],
     isEdit?: boolean
     ) {
-    const [uniqueNames, setUniqueNames] = useState<any[]>([]);
+    const [uniqueNames, setUniqueNames] = useState<any>([]);
 
-    /**
-     * Retorna o último produto correspondente a cada nome único.
-     *
-     * @param filterUniqueProducts - Lista de compras filtradas.
-     * @param uniqueNames - Lista de nomes únicos.
-     * 
-     * @returns Lista dos últimos produtos correspondentes aos nomes únicos.
+  /**
+     * Função para realizar a busca no banco de dados de acordo com o tipo de produto selecionado.
+     * @returns {ComprasModel[] | ProdutosModel[]} Lista de compras ou produtos do banco de dados.
      */
-    function lastProduct(filterUniqueNames: (ComprasModel)[], names: string[]) {
-        return names.map((uniqueName: string) => {
-            const filteredProducts = filterUniqueNames
-                .filter((prod) => prod.nmProduto === uniqueName && prod.nrOrdem !== undefined)
-                .sort((a, b) => (a.nrOrdem || 0) - (b.nrOrdem || 0));
-
-            return filteredProducts.length > 0 ? filteredProducts[filteredProducts.length - 1] : null;
-        });
-    }
-
-    function createCompraModel(
-        cdProduto: string,
-        nmProduto: string,
-        optionTpProduto: SituacaoProduto,
-        qntMinima?: number,
-        nrOrdem?: number,
-        vlUnitario?: number,
-        mpFabricado?: ComprasModel[]
-        ) {
-        const defaultProps: ComprasModel = {
-            cdProduto: cdProduto,
-            cxProduto: null,
-            dtCompra: null,
-            kgProduto: null,
-            nmProduto: nmProduto,
-            qntMinima: qntMinima ? qntMinima : null,
-            nrOrdem: nrOrdem ? nrOrdem : 0,
-            quantidade: 0,
-            mpFabricado: mpFabricado ? mpFabricado : undefined,
-            totalPago: null,
-            vlUnitario: vlUnitario ? vlUnitario : 0,
-            tpProduto: null
-        };
-    
+    function databaseSearch(): ComprasModel[] | ProdutosModel[] {
         if (optionTpProduto === SituacaoProduto.COMPRADO) {
-            defaultProps.tpProduto = SituacaoProduto.COMPRADO;
-        } else if (optionTpProduto === SituacaoProduto.FABRICADO) {
-            defaultProps.tpProduto = SituacaoProduto.FABRICADO;
+            const databaseCompras = dataTable.filter((produto) =>
+            (produto.tpProduto === SituacaoProduto.FABRICADO && produto.stMateriaPrima) || produto.tpProduto === SituacaoProduto.COMPRADO 
+            );
+            return databaseCompras as ComprasModel[];
+        } else {
+            const databaseProduto = dataTableProduto.filter((produto) =>
+                (produto.tpProduto === SituacaoProduto.FABRICADO && produto.stMateriaPrima) || produto.tpProduto === SituacaoProduto.FABRICADO
+            );
+            return databaseProduto || [] as ComprasModel[];
         }
-    
-        return { ...defaultProps };
-    }
-
-    /**
-     * Realiza a busca de produtos na base de dados com base no tipo de produto e outras condições.
-     * 
-     * @returns Lista de produtos encontrados com base nas condições especificadas.
-     */
-    function databaseSearch() {
-        const databaseCompras = dataTable.filter((produtos: ComprasModel) => produtos.tpProduto === SituacaoProduto.COMPRADO)
-        if(dataTableEstoque && optionTpProduto === SituacaoProduto.COMPRADO && dataTableProduto){
-            dataTableEstoque.forEach(stock => {
-                if(stock.quantidade === 0){
-                    const newCompra: ComprasModel = createCompraModel(stock.cdProduto, stock.nmProduto, stock.tpProduto, stock.qntMinima)
-                    databaseCompras.push(newCompra)
-                }
-            })
-            //itera tabela de produto verificando a tabela de compras, caso algum nome de produto nao tenha na tabela de compras
-            //ele cria um novo objeto e seta na tabela de compras, para que assim nao falte nenhum produto.
-            dataTableProduto.forEach(produto => {
-                const matchingCompra = dataTable.find(compra => compra.nmProduto === produto.nmProduto);
-                if (!matchingCompra && produto.tpProduto === SituacaoProduto.COMPRADO) {
-                    const newCompra: ComprasModel = createCompraModel(
-                        produto.cdProduto, 
-                        produto.nmProduto, 
-                        SituacaoProduto.COMPRADO,
-                        undefined, 
-                        0,
-                        produto.vlUnitario, 
-                        produto.mpFabricado
-                        )
-                    databaseCompras.push(newCompra);
-                }
-            });
-            return databaseCompras;
-        }
-        if (dataTableProduto && optionTpProduto === SituacaoProduto.FABRICADO) {
-            const arrayCompras: ComprasModel[] = [];
-        
-            dataTableProduto.forEach(produto => {
-                if(produto.tpProduto === SituacaoProduto.COMPRADO) return;
-                const matchingCompra = dataTable.filter(compra => compra.nmProduto === produto.nmProduto);
-                if (matchingCompra.length !== 0) {
-                    const updatedCompras = matchingCompra.map(matchingCompra => ({
-                        ...matchingCompra,
-                        mpFabricado: produto.mpFabricado,
-                    }));
-                    arrayCompras.push(...updatedCompras);
-                } else {
-                    const newCompra: ComprasModel = createCompraModel(
-                        produto.cdProduto, 
-                        produto.nmProduto, 
-                        SituacaoProduto.FABRICADO,
-                        undefined, 
-                        0,
-                        produto.vlUnitario, 
-                        produto.mpFabricado
-                        )
-                    arrayCompras.push(newCompra);
-                }
-            });
-        
-            return arrayCompras;
-        }
-        return databaseCompras
     }
 
     useEffect(() => {
-        const filterUniqueNames = databaseSearch();
-        if(filterUniqueNames){
-            const uniqueNames: string[] = Array.from(new Set(filterUniqueNames.map((nome: ComprasModel) => nome.nmProduto)));
-            const maxProductsByUniqueNames = lastProduct(filterUniqueNames, uniqueNames);
-            setUniqueNames(maxProductsByUniqueNames);
-        }
-    }, [tpProduto, isEdit, optionTpProduto]);
+            setUniqueNames(databaseSearch);
+    }, [tpProduto, isEdit]);
     return uniqueNames;
 }

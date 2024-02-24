@@ -1,8 +1,5 @@
 import { db } from "../firebase";
 import GetData from "../firebase/getData";
-import { useDispatch } from "react-redux";
-import { Dispatch, SetStateAction } from "react";
-import { setLoading } from "../store/reducer/reducer";
 import { deleteDoc, doc, updateDoc } from "firebase/firestore";
 import ComprasModel from "../Pages/admin/compras/model/compras";
 import { ProdutoEscaniado } from "../Pages/admin/vendas/model/vendas";
@@ -18,7 +15,6 @@ import EstoqueModel, { Versao } from "../Pages/admin/estoque/model/estoque";
  * @returns Métodos relacionados à manipulação de estoque.
  */
 export default function useEstoque(){
-    const dispatch = useDispatch();
     const {
         dataTable: dataTableEstoque,
     } = GetData('Estoque', true) as { dataTable: EstoqueModel[] };
@@ -116,7 +112,7 @@ export default function useEstoque(){
             const foundProduct = dataTableCompras.find(product => product.nmProduto === produto.nmProduto);
             if(foundProduct && foundProduct?.stEstoqueInfinito){
                 const newProduct = {...foundProduct, quantidade: produto.quantidadeVenda}
-                removedStockCompras(newProduct, () => false, () => false,() => '');
+                removedStockCompras(newProduct);
             }
             const estoqueProduto = dataTableEstoque.find(estoque => estoque.nmProduto === produto.nmProduto);
             if (estoqueProduto) {
@@ -154,15 +150,9 @@ export default function useEstoque(){
      * Atualiza o estoque removendo a quantidade utilizada em uma compra.
      *
      * @param {ComprasModel} values - Dados da compra.
-     * @param {Dispatch<SetStateAction<boolean>>} setOpenDialog - Função para abrir o diálogo.
-     * @param {Dispatch<SetStateAction<boolean>>} setEstoqueVazio - Função para sinalizar estoque vazio.
-     * @param {Dispatch<SetStateAction<string>>} setNmProduto - Função para definir o nome do produto.
      */
     async function removedStockCompras(
         values: ComprasModel, 
-        setOpenDialog: Dispatch<SetStateAction<boolean>>, 
-        setEstoqueVazio: Dispatch<SetStateAction<boolean>>,
-        setNmProduto: Dispatch<SetStateAction<string>>
         ) {
             if(!values.mpFabricado) return;
             for (const mp of values.mpFabricado) {
@@ -196,13 +186,7 @@ export default function useEstoque(){
                             qntMinima: estoqueMP.qntMinima,
                             versaos: listVersaoComQntd,
                         });
-                    } else {
-                        dispatch(setLoading(false))
-                        setNmProduto(estoqueMP.nmProduto)
-                        setOpenDialog(true);
-                        setEstoqueVazio(true);
-                        throw new Error('estoque Vazio');
-                    }
+                    } 
                 }
             }
         }

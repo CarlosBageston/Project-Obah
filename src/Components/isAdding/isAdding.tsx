@@ -1,12 +1,13 @@
 import Input from "../input";
 import { useEffect, useState } from 'react'
 import { FormikErrors, FormikTouched } from "formik";
-import { Autocomplete, Stack, TextField } from '@mui/material';
-import { TitleDefault } from "../../Pages/admin/cadastroClientes/style";
-import SituacaoProduto from "../../enumeration/situacaoProduto";
-import { BoxClose, ButtonStyled, ContainerFlutuante, ContianerMP, DivClose, DivLineMP, Paragrafo, StyledAiOutlineClose } from "../isEdit/style";
-import ProdutosModel from "../../Pages/admin/cadastroProdutos/model/produtos";
 import useFormatCurrency from "../../hooks/formatCurrency";
+import { Autocomplete, Stack, TextField } from '@mui/material';
+import SituacaoProduto from "../../enumeration/situacaoProduto";
+import { TitleDefault } from "../../Pages/admin/cadastroClientes/style";
+import ProdutosModel from "../../Pages/admin/cadastroProdutos/model/produtos";
+import CompraHistoricoModel from "../../Pages/admin/compras/model/comprahistoricoModel";
+import { BoxClose, ButtonStyled, ContainerFlutuante, ContianerMP, DivClose, DivLineMP, Paragrafo, StyledAiOutlineClose } from "../isEdit/style";
 
 interface IsAddingProps {
     isAdding: boolean;
@@ -45,27 +46,29 @@ function IsAdding({ data, isAdding, setFieldValue, setIsVisibleTpProduto, produc
     const [filterTpProdutoComprado, setFilterTpProdutoComprado] = useState<any>()
 
     const { formatCurrencyRealTime } = useFormatCurrency();
+
+    /**
+     * atualiza os filtros de produtos fabricados ou comprados conforme a tela atual.
+     */
     useEffect(() => {
         if (addingScreen === 'Cliente') {
             const filterFabricado = data.filter((item: ProdutosModel) => item.tpProduto === SituacaoProduto.FABRICADO || item.stEntrega)
             setFilterTpProdutoFabricado(filterFabricado)
         } else {
-            const filter = data.filter((dados: ProdutosModel) => dados.nmProduto.includes('Balde 10 Litros'))
-            const filterComprado = data.filter((item: any) => item.tpProduto === SituacaoProduto.COMPRADO)
-            if (filter.length > 0) {
-                const objetoEncontrado = filter[0];
-                objetoEncontrado.tpProduto = SituacaoProduto.COMPRADO;
-
-                const newFilterComprado = [...filterComprado, objetoEncontrado]
-                setFilterTpProdutoComprado(newFilterComprado)
-            } else {
-                setFilterTpProdutoComprado([...filterComprado])
-            }
+            const filterComprado = data.filter((item: CompraHistoricoModel) =>
+                (item.tpProduto === SituacaoProduto.COMPRADO || item.tpProduto === SituacaoProduto.FABRICADO) &&
+                item.stMateriaPrima
+            );
+            setFilterTpProdutoComprado([...filterComprado])
         }
     }, [data])
 
 
-    //essa e a logica da tela de Cliente
+    /**
+     * Lógica de manipulação de eventos para a seleção de produtos em telas de Cliente.
+     * @param {React.SyntheticEvent<Element, Event>} e - Evento sintético React.
+     * @param {ProdutosModel[]} value - Lista de produtos selecionados.
+     */
     const handleChangeCliente = (e: React.SyntheticEvent<Element, Event>, value: ProdutosModel[]) => {
         value.forEach(produto => {
             produto.vlVendaProduto = 0
@@ -73,7 +76,11 @@ function IsAdding({ data, isAdding, setFieldValue, setIsVisibleTpProduto, produc
         setFieldValue('produtos', value);
     }
 
-    //essa e a logica da tela de produto
+    /**
+     * Lógica de manipulação de eventos para a seleção de produtos em telas de Produto.
+     * @param {React.SyntheticEvent<Element, Event>} e - Evento sintético React.
+     * @param {any[]} value - Lista de produtos selecionados.
+     */
     const handleChangeProduto = (e: React.SyntheticEvent<Element, Event>, value: any[]) => {
         setFieldValue('mpFabricado',
             value.map((mp) => ({
@@ -82,14 +89,23 @@ function IsAdding({ data, isAdding, setFieldValue, setIsVisibleTpProduto, produc
         )
     }
 
-    //essa e a logica da tela de produto
+    /**
+     * Lógica de manipulação de eventos para a alteração da quantidade de matéria-prima associada a um produto.
+     * @param {React.ChangeEvent<HTMLInputElement>} e - Evento de mudança de input React.
+     * @param {any} mp - Matéria-prima associada a um produto.
+     */
     const handleChangeMpProduto = (e: React.ChangeEvent<HTMLInputElement>, mp: any) => {
         const newMpFabricado = [...products];
         const index = newMpFabricado.findIndex((item) => item.nmProduto === mp.nmProduto);
-        newMpFabricado[index].quantidade = e.target.value.replace(',', '.');
+        newMpFabricado[index].quantidade = e.target.value.replace('.', ',');
         setFieldValue("mpFabricado", newMpFabricado);
     }
-    //essa e a logica da tela de Cliente
+
+    /**
+     * Lógica de manipulação de eventos para a alteração do valor de venda de um produto em telas de Cliente.
+     * @param {React.ChangeEvent<HTMLInputElement>} e - Evento de mudança de input React.
+     * @param {any} produto - Produto associado à operação de adição.
+     */
     const handleChangeProdutoCliente = (e: React.ChangeEvent<HTMLInputElement>, produto: any) => {
         const newMpFabricado = [...products];
         const index = newMpFabricado.findIndex((item) => item.nmProduto === produto.nmProduto);
@@ -97,9 +113,11 @@ function IsAdding({ data, isAdding, setFieldValue, setIsVisibleTpProduto, produc
         setFieldValue("produtos", newMpFabricado);
     }
 
+    /**
+     * Função para fechar a janela de adição, revertendo alterações e controlando a visibilidade do tipo de produto.
+     */
     const windowClose = () => {
         if (addingScreen === 'Produto') {
-            //essa e a logica da tela de produto
             setFieldValue("mpFabricado", '');
             setIsVisibleTpProduto(false)
             setFieldValue("tpProduto", null);

@@ -41,6 +41,7 @@ import useFormatCurrency from '../../../hooks/formatCurrency';
 import useHandleInputKeyPress from '../../../hooks/useHandleInputKeyPress';
 import { calculateTotalValue } from '../../../hooks/useCalculateTotalValue';
 import CompraHistoricoModel from './model/comprahistoricoModel';
+import { foundKgProduto } from '../../../hooks/useFoundProductKg';
 
 
 const objClean: ComprasModel = {
@@ -228,14 +229,6 @@ function AtualizarEstoque() {
         });
     }
 
-    function foundKgProduto(foundProduct: CompraHistoricoModel) {
-        const clonedProduct = { ...foundProduct };
-        if (clonedProduct.kgProduto && clonedProduct.kgProduto !== 1) {
-            const vlUnitario = clonedProduct.vlUnitario / clonedProduct.kgProduto;
-            clonedProduct.vlUnitario = vlUnitario;
-        }
-        return clonedProduct;
-    }
     /**
      * Recalcula os preços dos produtos encontrados com base nos registros de compras.
      * 

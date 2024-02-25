@@ -156,7 +156,7 @@ function Entregas() {
             cleanState()
             const clienteSelecionado = value;
             clienteSelecionado.produtos.forEach((prodClient: ProdutosModel) => {
-                const foundProduct = produtoDataTable.find(prod => prod.nmProduto === prodClient.nmProduto)
+                const foundProduct = produtoDataTable.find(prod => prod.nmProduto.toLowerCase().trim() === prodClient.nmProduto.toLowerCase().trim())
                 if (foundProduct) {
                     prodClient.vlUnitario = foundProduct.vlUnitario
                 }

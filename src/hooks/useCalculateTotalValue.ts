@@ -2,6 +2,7 @@ import CompraHistoricoModel from "../Pages/admin/compras/model/comprahistoricoMo
 import ComprasModel from "../Pages/admin/compras/model/compras";
 import SituacaoProduto from "../enumeration/situacaoProduto";
 import useFormatCurrency from "./formatCurrency";
+import { foundKgProduto } from "./useFoundProductKg";
 
 const { convertToNumber } = useFormatCurrency();
 
@@ -47,7 +48,8 @@ export function calculateTotalValue(mpList: ComprasModel[] | ComprasModel, compr
         for (const mp of mpList) {
             const produtoEncontrado = comprasDataTable.find(produto => produto.nmProduto === mp.nmProduto);
             if (produtoEncontrado) {
-                soma += calcularValorParaProduto(mp, produtoEncontrado);
+                const foundProduct = foundKgProduto(produtoEncontrado)
+                soma += calcularValorParaProduto(mp, foundProduct);
             }
         }
     } else if (!Array.isArray(comprasDataTable) && !Array.isArray(mpList)) {
@@ -55,7 +57,6 @@ export function calculateTotalValue(mpList: ComprasModel[] | ComprasModel, compr
     }
     return soma;
 }
-
 /**
  * Calcula o valor total para um único produto com base na quantidade e no valor unitário.
  * @param {ComprasModel} mp - Produto a ser calculado.

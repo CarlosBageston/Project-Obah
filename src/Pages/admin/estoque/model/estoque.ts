@@ -14,7 +14,7 @@ interface EstoqueModel {
     cdProduto: string,
     quantidade: number,
     tpProduto: SituacaoProduto,
-    stEstoque?: 'Bom' | 'Comprar',
+    stEstoque?: 'Bom' | 'Comprar' | 'Fabricar',
     qntMinima: number,
     versaos: Versao[]
     stEstoqueInfinito?: boolean

@@ -354,7 +354,6 @@ function AtualizarEstoque() {
             mpFabricado: valuesUpdate.mpFabricado ? valuesUpdate.mpFabricado : [],
             qntMinima: valuesUpdate.qntMinima ? valuesUpdate.qntMinima : null,
             tpProduto: valuesUpdate.tpProduto,
-            quantidade: valuesUpdate.quantidade,
             nrOrdem: valuesUpdate?.nrOrdem
         };
 

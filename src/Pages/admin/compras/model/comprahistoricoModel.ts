@@ -5,7 +5,8 @@ import ComprasModel from "./compras";
 interface OmittedAttributes {
     dtCompra: Date | null;
     stEstoqueInfinito?: boolean;
-    totalPago?: number | null
+    totalPago?: number | null;
+    quantidade: number;
 }
 
 // Crie um novo tipo que estende ComprasModel e omite os atributos indesejados
@@ -14,7 +15,6 @@ type CompraHistoricoModel = Omit<ComprasModel, keyof OmittedAttributes> & {
     nmProduto: string;
     cdProduto: string;
     vlUnitario: number;
-    quantidade: number;
     mpFabricado?: ComprasModel[];
     qntMinima: number | null;
     tpProduto: SituacaoProduto | null;

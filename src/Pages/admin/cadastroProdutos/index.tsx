@@ -156,7 +156,6 @@ function CadastroProduto() {
             mpFabricado: valuesUpdate.mpFabricado ? valuesUpdate.mpFabricado : [],
             qntMinima: null,
             tpProduto: valuesUpdate.tpProduto,
-            quantidade: 0,
             stMateriaPrima: valuesUpdate.stMateriaPrima,
             kgProduto: valuesUpdate.kgProduto,
             nrOrdem: 1
@@ -485,8 +484,6 @@ function CadastroProduto() {
                     if (selected) {
                         setIsEdit(true)
                         setInitialValues(selected)
-                    } else {
-                        return
                     }
                 }}
                 onDelete={() => setOpenDelete(true)}

@@ -106,7 +106,9 @@ const GenericTable = ({ columns, data, isLoading, error, styleDiv, onSelectedRow
                                         {columns.map((column) => (
                                             <StyledTableCell key={column.name}>
                                                 {column.isCurrency
-                                                    ? NumberFormatForBrazilianCurrency(column.name.split('.').reduce((obj, key) => obj?.[key], row))
+                                                    ? (column.name.split('.').reduce((obj, key) => obj?.[key], row) != null
+                                                        ? NumberFormatForBrazilianCurrency(column.name.split('.').reduce((obj, key) => obj?.[key], row))
+                                                        : '-')
                                                     : column.isInfinite && row.stEstoqueInfinito ? '∞'
                                                         : column.name.split('.').reduce((obj, key) => obj?.[key], row)
                                                 }

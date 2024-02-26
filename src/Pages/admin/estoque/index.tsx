@@ -3,6 +3,7 @@ import GetData from "../../../firebase/getData";
 import React, { useState, useEffect } from "react";
 import GenericTable from "../../../Components/table";
 import FiltroGeneric from "../../../Components/filtro";
+import SituacaoProduto from "../../../enumeration/situacaoProduto";
 import {
     Box,
     Title,
@@ -12,7 +13,6 @@ import {
     TitleTableDefault,
     BoxTitleFilterDefault,
 } from './style';
-import SituacaoProduto from "../../../enumeration/situacaoProduto";
 
 function Estoque() {
     const [recarregue, setRecarregue] = useState<boolean>(true);
@@ -26,7 +26,12 @@ function Estoque() {
 
     useEffect(() => {
         const atualizadoEstoque = estoqueDataTable.map(estoque => {
-            estoque.stEstoque = estoque.qntMinima > estoque.quantidade ? 'Comprar' : 'Bom';
+            estoque.stEstoque =
+                estoque.qntMinima > estoque.quantidade
+                    ? estoque.tpProduto === SituacaoProduto.FABRICADO
+                        ? 'Fabricar'
+                        : 'Comprar'
+                    : 'Bom';
             return { ...estoque };
         });
 

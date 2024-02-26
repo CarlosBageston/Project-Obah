@@ -37,7 +37,7 @@ export function calculateTotalValue(mpList: ComprasModel[] | ComprasModel, compr
     if (Array.isArray(comprasDataTable) && Array.isArray(mpList)) {
         comprasDataTable.forEach(compra => {
             if(compra.tpProduto === SituacaoProduto.FABRICADO || !compra.stMateriaPrima) return;
-            if(!compra.vlUnitario || compra.quantidade === 0){
+            if(!compra.vlUnitario){
                 produtosSemQuantidade.push(compra.nmProduto)
             }
         })

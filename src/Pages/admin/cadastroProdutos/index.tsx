@@ -8,6 +8,7 @@ import GetData from "../../../firebase/getData";
 import { FormikTouched, useFormik } from 'formik';
 import { useState, useEffect, lazy } from "react";
 import { BoxTitleDefault } from "../estoque/style";
+import EstoqueModel from '../estoque/model/estoque';
 import ComprasModel from '../compras/model/compras';
 import GenericTable from "../../../Components/table";
 import FiltroGeneric from "../../../Components/filtro";
@@ -16,6 +17,7 @@ import FormAlert from "../../../Components/FormAlert/formAlert";
 import { InputConfig } from "../../../Components/isEdit/isEdit";
 import { State, setLoading } from '../../../store/reducer/reducer';
 import SituacaoProduto from "../../../enumeration/situacaoProduto";
+import ModalDelete from '../../../Components/FormAlert/modalDelete';
 import CompraHistoricoModel from '../compras/model/comprahistoricoModel';
 import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { Checkbox, FormControl, FormControlLabel, InputLabel, MenuItem, Select, } from "@mui/material";
@@ -33,12 +35,11 @@ import {
 } from './style';
 
 //hooks
+import { useNavigate } from 'react-router-dom';
 import { useUniqueNames } from '../../../hooks/useUniqueName';
 import useFormatCurrency from '../../../hooks/formatCurrency';
-import { ProdutosSemQuantidadeError, calculateTotalValue } from '../../../hooks/useCalculateTotalValue';
 import AlertDialog from '../../../Components/FormAlert/dialogForm';
-import { useNavigate } from 'react-router-dom';
-import EstoqueModel from '../estoque/model/estoque';
+import { ProdutosSemQuantidadeError, calculateTotalValue } from '../../../hooks/useCalculateTotalValue';
 
 const objClean: ProdutoModel = {
     cdProduto: '',
@@ -54,20 +55,19 @@ const objClean: ProdutoModel = {
 
 function CadastroProduto() {
     const [key, setKey] = useState<number>(0);
+    const [error, setError] = useState<string>();
     const [isEdit, setIsEdit] = useState<boolean>(false);
     const [recarregue, setRecarregue] = useState<boolean>(true);
+    const [openDelete, setOpenDelete] = useState<boolean>(false);
     const [selected, setSelected] = useState<ProdutoModel | undefined>();
     const [isVisibleTpProuto, setIsVisibleTpProduto] = useState<boolean>(false);
     const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
     const [initialValues, setInitialValues] = useState<ProdutoModel>({ ...objClean });
-    const [error, setError] = useState<string>();
+
+    const history = useNavigate();
     const dispatch = useDispatch();
     const { loading } = useSelector((state: State) => state.user);
-    const history = useNavigate();
-
     const { convertToNumber, formatCurrency, formatCurrencyRealTime } = useFormatCurrency();
-
-
 
     //realizando busca no banco de dados
     const {
@@ -158,7 +158,8 @@ function CadastroProduto() {
             tpProduto: valuesUpdate.tpProduto,
             quantidade: 0,
             stMateriaPrima: valuesUpdate.stMateriaPrima,
-            kgProduto: valuesUpdate.kgProduto
+            kgProduto: valuesUpdate.kgProduto,
+            nrOrdem: 1
         }
         await addDoc(collection(db, "Compra Historico"), {
             ...filteredValuesUpdate
@@ -205,6 +206,7 @@ function CadastroProduto() {
      * Após a exclusão, atualiza o estado da tabela.
      */
     async function handleDeleteRow() {
+        setOpenDelete(false)
         if (selected) {
             const refID: string = selected.id ?? '';
             await deleteDoc(doc(db, "Produtos", refID)).then(() => {
@@ -447,6 +449,7 @@ function CadastroProduto() {
                 setIsEdit={setIsEdit}
                 newData={useUniqueNames(dataTableCompraHistorico, values.tpProduto, SituacaoProduto.COMPRADO, dataTable, isEdit)}
             />
+            <ModalDelete open={openDelete} onDeleteClick={handleDeleteRow} onCancelClick={() => setOpenDelete(false)} />
             <AlertDialog open={error ? true : false} nmProduto={error} onOKClick={() => { setError(undefined); history('/atualizar-estoque') }} />
             <ContainerButton>
                 <Button
@@ -486,7 +489,7 @@ function CadastroProduto() {
                         return
                     }
                 }}
-                onDelete={handleDeleteRow}
+                onDelete={() => setOpenDelete(true)}
             />
         </Box>
     );

@@ -23,6 +23,7 @@ import { Autocomplete, Stack, TextField } from "@mui/material";
 import SituacaoProduto from "../../enumeration/situacaoProduto";
 import useFormatCurrency from "../../hooks/formatCurrency";
 import ComprasModel from "../../Pages/admin/compras/model/compras";
+import CompraHistoricoModel from "../../Pages/admin/compras/model/comprahistoricoModel";
 export interface InputConfig {
     label: string;
     propertyName: string;
@@ -83,17 +84,11 @@ function IsEdit({ selected, handleEditRow, inputsConfig, isEdit, products, setSe
                 const filterFabricado: ProdutosModel[] = dataSelected.filter((item: ProdutosModel) => item.tpProduto === SituacaoProduto.FABRICADO || item.stEntrega)
                 setFilterTpProdutoFabricado(filterFabricado)
             } else {
-                const filter = dataSelected.filter((data: ProdutosModel) => data.nmProduto.includes('Balde 10 Litros'))
-                const filterComprado = dataSelected.filter((item: any) => item.tpProduto === SituacaoProduto.COMPRADO)
-                if (filter.length > 0) {
-                    const objetoEncontrado = filter[0];
-                    objetoEncontrado.tpProduto = SituacaoProduto.COMPRADO;
-
-                    const newFilterComprado = [...filterComprado, objetoEncontrado]
-                    setFilterTpProdutoComprado(newFilterComprado)
-                } else {
-                    setFilterTpProdutoComprado([...filterComprado])
-                }
+                const filterComprado = dataSelected.filter((item: CompraHistoricoModel) =>
+                    (item.tpProduto === SituacaoProduto.COMPRADO || item.tpProduto === SituacaoProduto.FABRICADO) &&
+                    item.stMateriaPrima
+                );
+                setFilterTpProdutoComprado([...filterComprado])
             }
         }
     }, [dataSelected])
@@ -160,30 +155,12 @@ function IsEdit({ selected, handleEditRow, inputsConfig, isEdit, products, setSe
     };
 
     /**
-     * Função para formatar um valor para o formato de moeda brasileira.
-     * @param {string} valor - Valor a ser formatado.
-     * @returns {string} - Valor formatado em moeda brasileira.
-     */
-    //TODO: Verificar se realmente é necessario esse metodo.
-    function formatarValor(valor: string): string {
-        const inputText = valor.replace(/\D/g, "");
-        let formattedText = "";
-        if (inputText.length <= 2) {
-            formattedText = inputText;
-        } else {
-            const regex = /^(\d*)(\d{2})$/;
-            formattedText = inputText.replace(regex, '$1,$2');
-        }
-        return inputText ? "R$ " + formattedText : "";
-    }
-
-    /**
      * Função para manipulação de eventos de alteração em inputs específicos de tela de Cliente.
      * @param {ChangeEvent<HTMLInputElement>} e - Evento de alteração em um input.
      * @param {number} index - Índice do produto associado ao input.
      */
     const handleChangeCliente = (e: ChangeEvent<HTMLInputElement>, index: number) => {
-        const valorFormatado = formatarValor(e.target.value);
+        const valorFormatado = formatCurrencyRealTime(e.target.value);
         const updatedProdutos = products.map((produto, i) => {
             if (i === index) {
                 return {

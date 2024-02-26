@@ -13,14 +13,15 @@ import EstoqueModel from '../estoque/model/estoque';
 import GenericTable from "../../../Components/table";
 import { useDispatch, useSelector } from 'react-redux';
 import FiltroGeneric from "../../../Components/filtro";
-import ClienteModel from '../cadastroClientes/model/cliente';
 import formatDate from "../../../Components/masks/formatDate";
 import ProdutosModel from "../cadastroProdutos/model/produtos";
+import CompraHistoricoModel from './model/comprahistoricoModel';
 import { InputConfig } from "../../../Components/isEdit/isEdit";
 import FormAlert from "../../../Components/FormAlert/formAlert";
 import DashboardCompras from '../dashboard/model/dashboardCompra';
 import { State, setLoading } from '../../../store/reducer/reducer';
 import SituacaoProduto from "../../../enumeration/situacaoProduto";
+import ModalDelete from '../../../Components/FormAlert/modalDelete';
 import { addDoc, arrayUnion, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { Autocomplete, AutocompleteChangeReason, Checkbox, FormControl, FormControlLabel, InputLabel, MenuItem, Select, TextField } from "@mui/material";
 const IsEdit = lazy(() => import('../../../Components/isEdit/isEdit'));
@@ -40,7 +41,6 @@ import { useUniqueNames } from '../../../hooks/useUniqueName';
 import useFormatCurrency from '../../../hooks/formatCurrency';
 import useHandleInputKeyPress from '../../../hooks/useHandleInputKeyPress';
 import { calculateTotalValue } from '../../../hooks/useCalculateTotalValue';
-import CompraHistoricoModel from './model/comprahistoricoModel';
 import { foundKgProduto } from '../../../hooks/useFoundProductKg';
 
 
@@ -58,16 +58,17 @@ const objClean: ComprasModel = {
 
 function AtualizarEstoque() {
     const [key, setKey] = useState<number>(0);
-    const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
-    const [initialValues, setInitialValues] = useState<ComprasModel>({ ...objClean });
-    const [recarregue, setRecarregue] = useState<boolean>(true);
-    const [recarregueDashboard, setRecarregueDashboard] = useState<boolean>(true);
-    const [selectAutoComplete, setSelectAutoComplete] = useState<boolean>(false);
-    const [selected, setSelected] = useState<ComprasModel | undefined>();
     const [isEdit, setIsEdit] = useState<boolean>(false);
+    const [recarregue, setRecarregue] = useState<boolean>(true);
+    const [openDelete, setOpenDelete] = useState<boolean>(false);
+    const [selected, setSelected] = useState<ComprasModel | undefined>();
+    const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
+    const [selectAutoComplete, setSelectAutoComplete] = useState<boolean>(false);
+    const [recarregueDashboard, setRecarregueDashboard] = useState<boolean>(true);
+    const [initialValues, setInitialValues] = useState<ComprasModel>({ ...objClean });
+
     const dispatch = useDispatch();
     const { loading } = useSelector((state: State) => state.user);
-
     const { convertToNumber, formatCurrency, formatCurrencyRealTime } = useFormatCurrency();
     const { removedStockCompras, updateStock } = useEstoque();
     const { onKeyPressHandleSubmit } = useHandleInputKeyPress();
@@ -161,6 +162,7 @@ function AtualizarEstoque() {
      * Deleta Da Tabela de Estoque a quantidade e a versao de acordo com o item selecionado
      */
     async function handleDeleteRow() {
+        setOpenDelete(false)
         if (selected) {
             const refID: string = selected.id ?? '';
             await deleteDoc(doc(db, "Compras", refID)).then(() => {
@@ -352,7 +354,8 @@ function AtualizarEstoque() {
             mpFabricado: valuesUpdate.mpFabricado ? valuesUpdate.mpFabricado : [],
             qntMinima: valuesUpdate.qntMinima ? valuesUpdate.qntMinima : null,
             tpProduto: valuesUpdate.tpProduto,
-            quantidade: valuesUpdate.quantidade
+            quantidade: valuesUpdate.quantidade,
+            nrOrdem: valuesUpdate?.nrOrdem
         };
 
         if (history) {
@@ -429,12 +432,13 @@ function AtualizarEstoque() {
         try {
             if (valuesUpdate.tpProduto === SituacaoProduto.COMPRADO) {
                 const product = foundProducts(valuesUpdate.nmProduto);
-                // se o produto existir em compras verifique se precisa recalcular, caso não existe o produto, é necessario recalcular.
                 if (product) {
                     const needUpdate = product?.vlUnitario !== valuesUpdate.vlUnitario
                     if (needUpdate && product.stMateriaPrima) recalculate(valuesUpdate)
                 }
                 if (product.stMateriaPrima) {
+                    //Necessario atualizar o valor unitario do produto, pois ao cadastrar uma materia prima voce nao seta 
+                    //o valor unitario.
                     const foundProduct = produtoDataTable.find(prod => prod.nmProduto === valuesUpdate.nmProduto)
                     if (foundProduct && foundProduct.vlUnitario !== valuesUpdate.vlUnitario) {
                         const refID: string = foundProduct.id ?? '';
@@ -460,6 +464,7 @@ function AtualizarEstoque() {
         } catch (error) {
             dispatch(setLoading(false))
             setSubmitForm(false);
+            console.log(error)
             setTimeout(() => { setSubmitForm(undefined) }, 3000);
             return;
         }
@@ -515,7 +520,9 @@ function AtualizarEstoque() {
      * Edita uma linha da tabela e do banco de dados, atualizando também o estoque correspondente.
      */
     async function handleEditRow() {
-        if (selected) {
+        if (selected && selected.totalPago) {
+            selected.vlUnitario = convertToNumber(selected.vlUnitario.toString())
+            selected.totalPago = convertToNumber(selected.totalPago.toString())
             const refID: string = selected.id ?? '';
             const refTable = doc(db, "Compras", refID);
             const estoque: EstoqueModel = {
@@ -751,6 +758,7 @@ function AtualizarEstoque() {
                 products={[]}
                 setIsEdit={setIsEdit}
             />
+            <ModalDelete open={openDelete} onDeleteClick={handleDeleteRow} onCancelClick={() => setOpenDelete(false)} />
             <ContainerButton>
                 <Button
                     label='Cadastrar Estoque'
@@ -775,7 +783,7 @@ function AtualizarEstoque() {
                     { label: 'Nome', name: 'nmProduto' },
                     { label: 'Data', name: 'dtCompra' },
                     { label: 'Valor Unitario', name: 'vlUnitario', isCurrency: true },
-                    { label: 'Quantidade', name: 'quantidade' },
+                    { label: 'Quantidade', name: 'quantidade', isInfinite: true },
                     { label: 'Valor Total', name: 'totalPago', isCurrency: true }
                 ]}
                 data={dataTable}
@@ -790,7 +798,7 @@ function AtualizarEstoque() {
                         return
                     }
                 }}
-                onDelete={handleDeleteRow}
+                onDelete={() => setOpenDelete(true)}
             />
         </Box>
     );

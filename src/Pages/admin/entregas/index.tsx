@@ -13,8 +13,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { NotaFiscal } from '../../../Components/notaFiscal';
 import ClienteModel from "../cadastroClientes/model/cliente";
 import formatDate from "../../../Components/masks/formatDate";
+import ProdutosModel from '../cadastroProdutos/model/produtos';
 import FormAlert from "../../../Components/FormAlert/formAlert";
 import { State, setLoading } from '../../../store/reducer/reducer';
+import ModalDelete from '../../../Components/FormAlert/modalDelete';
 import { addDoc, collection, deleteDoc, doc } from "firebase/firestore";
 import { Autocomplete, AutocompleteChangeReason, TextField } from "@mui/material";
 
@@ -45,7 +47,6 @@ import { BoxTitleDefault } from "../estoque/style";
 //hooks
 import useEstoque from '../../../hooks/useEstoque';
 import useFormatCurrency from '../../../hooks/formatCurrency';
-import ProdutosModel from '../cadastroProdutos/model/produtos';
 
 
 const objClean: EntregaModel = {
@@ -57,16 +58,17 @@ const objClean: EntregaModel = {
 
 function Entregas() {
     const [key, setKey] = useState<number>(0);
-    const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
     const [selected, setSelected] = useState<EntregaModel>();
     const [recarregue, setRecarregue] = useState<boolean>(true);
+    const [openDelete, setOpenDelete] = useState<boolean>(false);
+    const [shouldShow, setShouldShow] = useState<boolean>(false);
+    const [scrollActive, setScrollActive] = useState<boolean>(false);
     const [clienteCurrent, setClienteCurrent] = useState<ClienteModel>();
     const [quantidades, setQuantidades] = useState<{ [key: string]: number }>({});
-    const [scrollActive, setScrollActive] = useState<boolean>(false)
-    const [shouldShow, setShouldShow] = useState<boolean>(false);
+    const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
+
     const dispatch = useDispatch();
     const { loading } = useSelector((state: State) => state.user);
-
     const { NumberFormatForBrazilianCurrency, convertToNumber } = useFormatCurrency();
     const { removedStockEntrega } = useEstoque();
 
@@ -102,6 +104,7 @@ function Entregas() {
 
     //deleta uma linha da tabela e do banco de dados
     async function handleDeleteRow() {
+        setOpenDelete(false)
         if (selected) {
             const refID: string = selected.id ?? '';
             await deleteDoc(doc(db, "Entregas", refID)).then(() => {
@@ -353,6 +356,7 @@ function Entregas() {
                     </DivButtons>
                 </DivButtonAndTable>
             </ContainerAll>
+            <ModalDelete open={openDelete} onDeleteClick={handleDeleteRow} onCancelClick={() => setOpenDelete(false)} />
             <FormAlert submitForm={submitForm} name={'Entregas'} styleLoadingMarginTop='-12rem' />
             {/*Tabala */}
             <BoxTitleDefault>
@@ -371,7 +375,7 @@ function Entregas() {
                 isLoading={isLoading}
                 onSelectedRow={setSelected}
                 isVisibleEdit
-                onDelete={handleDeleteRow}
+                onDelete={() => setOpenDelete(true)}
                 isdisabled={selected ? false : true}
             />
         </Box>

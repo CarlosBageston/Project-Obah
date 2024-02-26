@@ -14,8 +14,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import FormAlert from "../../../Components/FormAlert/formAlert";
 import formatPhone from "../../../Components/masks/maskTelefone";
 import { State, setLoading } from '../../../store/reducer/reducer';
+import ModalDelete from '../../../Components/FormAlert/modalDelete';
 import { Box, ContainerButton, TitleDefault } from "../cadastroClientes/style";
 import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
+
 const IsEdit = lazy(() => import('../../../Components/isEdit/isEdit'));
 
 
@@ -32,12 +34,14 @@ const objClean: ColaboradorModel = {
 }
 function CadastroColaborador() {
 
+    const [key, setKey] = useState<number>(0);
     const [isEdit, setIsEdit] = useState<boolean>(false);
+    const [recarregue, setRecarregue] = useState<boolean>(true);
+    const [openDelete, setOpenDelete] = useState<boolean>(false);
     const [selected, setSelected] = useState<ColaboradorModel>();
     const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
-    const [key, setKey] = useState<number>(0);
-    const [recarregue, setRecarregue] = useState<boolean>(true);
     const [initialValues, setInitialValues] = useState<ColaboradorModel>({ ...objClean });
+
     const dispatch = useDispatch();
     const { loading } = useSelector((state: State) => state.user);
 
@@ -113,6 +117,7 @@ function CadastroColaborador() {
 
     //deleta uma linha da tabela e do banco de dados
     async function handleDeleteRow() {
+        setOpenDelete(false)
         if (selected) {
             const refID: string = selected.id ?? '';
             await deleteDoc(doc(db, "Colaborador", refID)).then(() => {
@@ -243,6 +248,7 @@ function CadastroColaborador() {
                     </ContainerInputs>
                     <FormAlert submitForm={submitForm} name={'Colaborador'} />
                 </div>
+                <ModalDelete open={openDelete} onDeleteClick={handleDeleteRow} onCancelClick={() => setOpenDelete(false)} />
                 <ContainerButton>
                     <Button
                         type={'button'}
@@ -291,7 +297,7 @@ function CadastroColaborador() {
                             return
                         }
                     }}
-                    onDelete={handleDeleteRow}
+                    onDelete={() => setOpenDelete(true)}
                     isdisabled={selected ? false : true}
                 />
             </Box>

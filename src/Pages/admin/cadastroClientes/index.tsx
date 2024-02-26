@@ -14,7 +14,9 @@ import ProdutosModel from '../cadastroProdutos/model/produtos';
 import FormAlert from '../../../Components/FormAlert/formAlert';
 import formatPhone from '../../../Components/masks/maskTelefone';
 import { State, setLoading } from '../../../store/reducer/reducer';
+import ModalDelete from '../../../Components/FormAlert/modalDelete';
 import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+
 const IsEdit = lazy(() => import('../../../Components/isEdit/isEdit'));
 const IsAdding = lazy(() => import('../../../Components/isAdding/isAdding'));
 
@@ -42,17 +44,18 @@ const objClean: ClienteModel = {
 
 function CadastroCliente() {
     const [key, setKey] = useState<number>(0);
-    const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
-    const [recarregue, setRecarregue] = useState<boolean>(true);
-    const [isVisibleTpProuto, setIsVisibleTpProduto] = useState<boolean>(false)
     const [isEdit, setIsEdit] = useState<boolean>(false);
     const [selected, setSelected] = useState<ClienteModel>();
+    const [recarregue, setRecarregue] = useState<boolean>(true);
+    const [openDelete, setOpenDelete] = useState<boolean>(false);
+    const [isVisibleTpProuto, setIsVisibleTpProduto] = useState<boolean>(false);
+    const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
+    const [initialValues, setInitialValues] = useState<ClienteModel>({ ...objClean });
+
     const dispatch = useDispatch();
+    const { convertToNumber } = useFormatCurrency();
     const { loading } = useSelector((state: State) => state.user);
 
-    const { convertToNumber } = useFormatCurrency();
-
-    const [initialValues, setInitialValues] = useState<ClienteModel>({ ...objClean });
     const inputsConfig = [
         { label: 'Nome', propertyName: 'nmCliente' },
         { label: 'Telefone', propertyName: 'tfCliente' },
@@ -118,6 +121,7 @@ function CadastroCliente() {
 
     //deleta uma linha da tabela e do banco de dados
     async function handleDeleteRow() {
+        setOpenDelete(false)
         if (selected) {
             const refID: string = selected.id ?? '';
             await deleteDoc(doc(db, "Clientes", refID)).then(() => {
@@ -251,6 +255,7 @@ function CadastroCliente() {
                     </ContainerInfoCliente>
                     <FormAlert submitForm={submitForm} name={'Cliente'} />
                 </div>
+                <ModalDelete open={openDelete} onDeleteClick={handleDeleteRow} onCancelClick={() => setOpenDelete(false)} />
                 <ContainerButton>
                     <Button
                         type={'button'}
@@ -310,7 +315,7 @@ function CadastroCliente() {
                             return
                         }
                     }}
-                    onDelete={handleDeleteRow}
+                    onDelete={() => setOpenDelete(true)}
                     isdisabled={selected ? false : true}
                 />
             </Box>

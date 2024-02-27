@@ -1,8 +1,7 @@
-import moment from "moment";
 import { useRef } from "react";
-import { EntregaModel } from "../../../Pages/admin/entregas/model/entrega";
 import 'chart.js/auto'
-import GetData from "../../../firebase/getData";
+import TelaDashboard from '../../../enumeration/telaDashboard';
+import useDadosPorMesDashboard from "../../../hooks/useDadosPorMesDashboard";
 
 /**
  * ChartLine Component
@@ -18,37 +17,7 @@ import GetData from "../../../firebase/getData";
 export default function ChartLine() {
     const ref = useRef();
   
-    const {
-        dataTable: dataTableEntrega,
-    } = GetData('Entregas', true) as { dataTable: EntregaModel[] };
-    
-    //filtrando dados por data
-    const mesesDoAno = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-    const filtrarDados = (dados: EntregaModel[], mes: number) => {
-        const dadosFiltrado = dados.filter(item => {
-            if (item.dtEntrega === null) return false;
-            const momentObj = moment(item.dtEntrega, "DD/MM/YYYY HH:mm");
-            const mesItem = momentObj.month() + 1;
-            return mesItem === mes;
-        });
-        const quantidade = dadosFiltrado.length
-        const valorTotal = dadosFiltrado.reduce((total, item) => {
-           const valorEntrega = item.vlEntrega ? item.vlEntrega : 0;
-            return total + valorEntrega;
-        }, 0);
-        
-        const valorLucro = dadosFiltrado.reduce((total, item) => {
-            const valueLucro = item.vlEntrega ? item.vlLucro : 0;
-            return total + valueLucro;
-        }, 0)
-        return {
-            mes,
-            quantidade,
-            valorTotal,
-            valorLucro
-        }
-    };
-    const dadosPorMes = mesesDoAno.map(mes => filtrarDados(dataTableEntrega, mes));
+    const { dadosPorMes, vlLucro, vlTotal } = useDadosPorMesDashboard(TelaDashboard.ENTREGA)
 
    const labels = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
@@ -119,6 +88,7 @@ export default function ChartLine() {
         dataLine,
         optionsLine,
         ref,
-        dadosPorMes
+        vlLucro, 
+        vlTotal
     };
 }

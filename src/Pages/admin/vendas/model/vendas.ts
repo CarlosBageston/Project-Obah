@@ -18,7 +18,7 @@ export interface ProdutoEscaniado{
         }
 
 interface VendaModel {
-    dtProduto: string | null,
+    dtProduto: Date | null,
     vlLucroTotal: number,
     vlTotal: number ,
     vlRecebido: number,

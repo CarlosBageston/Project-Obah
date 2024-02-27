@@ -1,4 +1,5 @@
 import * as Yup from 'yup';
+import moment from 'moment';
 import { useFormik } from 'formik';
 import { db } from "../../../firebase";
 import Input from "../../../Components/input";
@@ -14,6 +15,7 @@ import { NotaFiscal } from '../../../Components/notaFiscal';
 import ClienteModel from "../cadastroClientes/model/cliente";
 import formatDate from "../../../Components/masks/formatDate";
 import ProdutosModel from '../cadastroProdutos/model/produtos';
+import TelaDashboard from '../../../enumeration/telaDashboard';
 import FormAlert from "../../../Components/FormAlert/formAlert";
 import { State, setLoading } from '../../../store/reducer/reducer';
 import ModalDelete from '../../../Components/FormAlert/modalDelete';
@@ -47,12 +49,13 @@ import { BoxTitleDefault } from "../estoque/style";
 //hooks
 import useEstoque from '../../../hooks/useEstoque';
 import useFormatCurrency from '../../../hooks/formatCurrency';
+import { useCalculateValueDashboard } from '../../../hooks/useCalculateValueDashboard';
 
 
 const objClean: EntregaModel = {
     vlLucro: 0,
     vlEntrega: 0,
-    dtEntrega: '',
+    dtEntrega: null,
     quantidades: [],
 }
 
@@ -65,12 +68,14 @@ function Entregas() {
     const [scrollActive, setScrollActive] = useState<boolean>(false);
     const [clienteCurrent, setClienteCurrent] = useState<ClienteModel>();
     const [quantidades, setQuantidades] = useState<{ [key: string]: number }>({});
+    const [recarregueDashboard, setRecarregueDashboard] = useState<boolean>(true);
     const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
 
     const dispatch = useDispatch();
     const { loading } = useSelector((state: State) => state.user);
     const { NumberFormatForBrazilianCurrency, convertToNumber } = useFormatCurrency();
     const { removedStockEntrega } = useEstoque();
+    const { calculateValueDashboard } = useCalculateValueDashboard(recarregueDashboard, setRecarregueDashboard);
 
     const initialValues: EntregaModel = ({ ...objClean });
     const ref = useRef<HTMLDivElement>(null);
@@ -133,6 +138,7 @@ function Entregas() {
         removedStockEntrega(clienteCurrent, quantidades)
         valuesUpdate.vlEntrega = convertToNumber(valuesUpdate.vlEntrega.toString())
         valuesUpdate.vlLucro = convertToNumber(valuesUpdate.vlLucro.toString())
+        calculateValueDashboard(valuesUpdate.vlEntrega, valuesUpdate.dtEntrega, TelaDashboard.ENTREGA, valuesUpdate.vlLucro)
         await addDoc(collection(db, "Entregas"), {
             ...valuesUpdate
         })
@@ -149,6 +155,7 @@ function Entregas() {
             });
         resetForm()
         cleanState()
+        setRecarregueDashboard(true)
     }
 
     //manupulando evento de onchange do Select
@@ -166,6 +173,7 @@ function Entregas() {
             })
             setClienteCurrent(clienteSelecionado)
             setFieldValue('cliente.nmCliente', clienteSelecionado.nmCliente)
+            setFieldValue('dtEntrega', moment(new Date()).format('DD/MM/YYYY'))
         }
     }
 
@@ -240,7 +248,8 @@ function Entregas() {
                             name="dtEntrega"
                             onBlur={handleBlur}
                             label="Data da Entrega"
-                            value={values.dtEntrega}
+                            value={values.dtEntrega ?? ''}
+                            raisedLabel={values.dtEntrega ? true : false}
                             onChange={e => setFieldValue(e.target.name, formatDate(e.target.value))}
                             error={touched.dtEntrega && errors.dtEntrega ? errors.dtEntrega : ''}
                             styleDiv={{ marginTop: 8 }}
@@ -343,14 +352,14 @@ function Entregas() {
                             label={<AiTwotonePrinter size={30} />}
                             type='button'
                             style={{ margin: '0rem 0px 2rem 0px', height: '4rem', width: '5rem' }}
-                            disabled={values.dtEntrega.length < 10}
+                            disabled={values.dtEntrega ? false : true}
                             onClick={() => setShouldShow(true)}
                         />
                         <Button
                             label='Cadastrar Entrega'
                             type="button"
                             onClick={handleSubmit}
-                            disabled={loading}
+                            disabled={loading || values.dtEntrega ? false : true}
                             style={{ margin: '2rem 0px 4rem 0px', height: '4rem', width: '12rem' }}
                         />
                     </DivButtons>

@@ -32,65 +32,42 @@ import {
 import { generateReport } from '../../../hooks/report-excel';
 import { useFormik } from 'formik';
 import DashboardModel from './model/dashboard';
+import useFormatCurrency from '../../../hooks/formatCurrency';
 
 
 function Dashboard() {
-
-    const { dataVertical, optionsVertical, dadosPorMesVertical } = ChartBarVertical();
-    const { dataLine, optionsLine, ref, dadosPorMes } = ChartLine();
+    const { dataVertical, optionsVertical, vlLucro: vlLucroVertical, vlTotal: vlTotalVertical } = ChartBarVertical();
+    const { dataLine, optionsLine, ref, vlLucro: vlLucroLine, vlTotal: vlTotalLine } = ChartLine();
     const { dataHorizontal, optionsHotizontal } = ChartBarHorizontal()
-    const [isLocked, setIsLocked] = useState<boolean>(true);
     const [freeScreen, setFreeScreen] = useState<boolean>(false);
+    const [isLocked, setIsLocked] = useState<boolean>(true);
     const refInput = useRef<HTMLInputElement>(null);
+
     const initialValues: DashboardModel = {
         error: '',
         password: '',
         somaAnual: null,
         somaLucroAnual: null,
-        somaTotalEntregas: null,
-        somaTotalVendas: null
     }
     const {
         dataTable
     } = GetData('Dashboard', true);
+    const { NumberFormatForBrazilianCurrency } = useFormatCurrency()
 
     const { values, setFieldValue } = useFormik<DashboardModel>({
         initialValues,
         onSubmit: () => { },
     });
 
-    function formattedMoeda(data: number): string {
-        return data.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    }
-
-    function sumValue() {
-        //soma do valor total de todas as entregas do ano
-        const totalEntregas = dadosPorMes.map(entregas => entregas.valorTotal).reduce((total, item) => total + item);
-        const totalVendas = dadosPorMesVertical.map(vendas => vendas.valorTotal).reduce((total, item) => total + item);
-
-        //soma do valor Lucro de todas as entregas do ano
-        const lucroEntregas = dadosPorMes.map(entregas => entregas.valorLucro).reduce((lucro, item) => lucro + item)
-
-        //soma do valor Lucro de todas as vendas do ano
-        const lucroVendas = dadosPorMesVertical.map(vendas => vendas.valorLucro).reduce((lucro, item) => lucro + item)
-
-        //somando todas as vendas e entregas do ano
-        const somaLucroAnual = lucroEntregas + lucroVendas
-
-        //somando todas as vendas e entregas do ano
-        const somaAnual = totalVendas + totalEntregas
-
-        setFieldValue('somaTotalEntregas', formattedMoeda(totalEntregas));
-        setFieldValue('somaTotalVendas', formattedMoeda(totalVendas));
-        setFieldValue('somaLucroAnual', formattedMoeda(somaLucroAnual));
-        setFieldValue('somaAnual', formattedMoeda(somaAnual));
-    }
-
     function getDataReport() {
-        if (values.somaTotalEntregas && values.somaTotalVendas)
-            generateReport(values.somaTotalEntregas, values.somaTotalVendas);
+        generateReport(vlTotalLine, vlTotalVertical);
     }
-
+    useEffect(() => {
+        if (vlLucroLine && vlLucroVertical && vlTotalLine && vlTotalVertical) {
+            setFieldValue('somaAnual', vlTotalLine + vlTotalVertical);
+            setFieldValue('somaLucroAnual', vlLucroLine + vlLucroVertical);
+        }
+    }, [vlLucroLine, vlLucroVertical, vlTotalLine, vlTotalVertical])
 
     const togglePadlock = () => {
         setIsLocked(false);
@@ -109,7 +86,6 @@ function Dashboard() {
                 setFreeScreen(true);
                 setFieldValue('password', '');
                 setFieldValue('error', '');
-                sumValue()
             } else {
                 setFieldValue('error', 'Acesso Negado')
             }
@@ -180,12 +156,12 @@ function Dashboard() {
                     </Button>
                     <DivResult>
                         <TextResult>Ganho anual</TextResult>
-                        <SumResult>{freeScreen && values.somaAnual ? `${values.somaAnual}` : 'R$ 0,00'}</SumResult>
+                        <SumResult>{freeScreen && values.somaAnual ? `${NumberFormatForBrazilianCurrency(values.somaAnual)}` : 'R$ 0,00'}</SumResult>
                         <Paragraph>Soma de todas as vendas no decorrer do ano</Paragraph>
                     </DivResult>
                     <DivResult>
                         <TextResult>Lucro anual</TextResult>
-                        <SumResult>{freeScreen && values.somaLucroAnual ? `${values.somaLucroAnual}` : 'R$ 0,00'}</SumResult>
+                        <SumResult>{freeScreen && values.somaLucroAnual ? `${NumberFormatForBrazilianCurrency(values.somaLucroAnual)}` : 'R$ 0,00'}</SumResult>
                         <Paragraph>Soma de todas as vendas no decorrer do ano</Paragraph>
                     </DivResult>
                 </ContainerResult>

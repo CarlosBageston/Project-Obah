@@ -12,6 +12,7 @@ import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from 'react-redux';
 import { addDoc, collection } from "firebase/firestore";
 import VendaModel, { ProdutoEscaniado } from "./model/vendas";
+import TelaDashboard from '../../../enumeration/telaDashboard';
 import ProdutosModel from "../cadastroProdutos/model/produtos";
 import FormAlert from "../../../Components/FormAlert/formAlert";
 import { State, setLoading } from '../../../store/reducer/reducer';
@@ -50,11 +51,12 @@ import {
 import useEstoque from '../../../hooks/useEstoque';
 import useFormatCurrency from '../../../hooks/formatCurrency';
 import useHandleInputKeyPress from '../../../hooks/useHandleInputKeyPress';
+import { useCalculateValueDashboard } from '../../../hooks/useCalculateValueDashboard';
 
 
 const objClean: VendaModel = {
     vlTotal: 0,
-    dtProduto: '',
+    dtProduto: null,
     vlRecebido: 0,
     vlTroco: 0,
     produtoEscaniado: [],
@@ -63,19 +65,22 @@ const objClean: VendaModel = {
 function Vendas() {
     const [key, setKey] = useState<number>(0);
     const [barcode, setBarcode] = useState("");
-    const [qntBolas, setQntBolas] = useState<number | undefined>(undefined);
     const [ShowSuggestion, setShowSuggestion] = useState(false);
     const [isValidQntBolas, setIsValidQntBolas] = useState<boolean>(false);
     const [produtoNotFound, setProdutoNotFound] = useState<boolean>(false);
+    const [qntBolas, setQntBolas] = useState<number | undefined>(undefined);
     const [multiplica, setMultiplica] = useState<number | undefined>(undefined);
     const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
+    const [recarregueDashboard, setRecarregueDashboard] = useState<boolean>(true);
     const [productSuggestion, setProductSuggestion] = useState<ProdutosModel[]>([]);
+
     const dispatch = useDispatch();
     const { loading } = useSelector((state: State) => state.user);
 
     const { NumberFormatForBrazilianCurrency, convertToNumber, formatCurrencyRealTime } = useFormatCurrency();
     const { handleInputKeyDown, suggestionsRef, selectedSuggestionIndex, onKeyPressHandleSubmit, inputRef } = useHandleInputKeyPress();
     const { removedStockVenda } = useEstoque();
+    const { calculateValueDashboard } = useCalculateValueDashboard(recarregueDashboard, setRecarregueDashboard);
 
     //realizando busca no banco de dados
     const {
@@ -269,6 +274,7 @@ function Vendas() {
             ...values,
             vlRecebido: convertToNumber(values.vlRecebido.toString())
         };
+        calculateValueDashboard(valuesUpdate.vlTotal, valuesUpdate.dtProduto, TelaDashboard.VENDA, valuesUpdate.vlLucroTotal)
         await addDoc(collection(db, "Vendas"), {
             ...valuesUpdate
         }).then(() => {
@@ -283,6 +289,7 @@ function Vendas() {
         });
         clearState();
         resetForm()
+        setRecarregueDashboard(true)
     }
 
     /**

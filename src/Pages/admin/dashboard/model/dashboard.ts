@@ -8,8 +8,6 @@
 interface DashboardModel {
     somaLucroAnual: number | null,
     somaAnual: number | null,
-    somaTotalEntregas: number | null,
-    somaTotalVendas: number | null,
     password: string,
     error: string,
 

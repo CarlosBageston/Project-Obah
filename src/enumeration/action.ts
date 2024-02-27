@@ -1,6 +1,3 @@
-
-
-
 /**
  * Enum de action cartão ponto
  *

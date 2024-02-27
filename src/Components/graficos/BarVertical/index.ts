@@ -1,7 +1,6 @@
-import moment from "moment";
-import ProdutoModel from "../../../Pages/admin/vendas/model/vendas";
 import 'chart.js/auto'
-import GetData from "../../../firebase/getData";
+import TelaDashboard from '../../../enumeration/telaDashboard';
+import useDadosPorMesDashboard from "../../../hooks/useDadosPorMesDashboard";
 
 /**
  * ChartBarVertical Component
@@ -15,31 +14,7 @@ import GetData from "../../../firebase/getData";
  */
 export default function ChartBarVertical() {
     
-    //realizando busca no banco de dados
-    const {
-        dataTable: dataTableVendas,
-    } = GetData('Vendas', true) as { dataTable: ProdutoModel[] };
-
-    //filtrando dados por data
-    const mesesDesejados = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-    const filtrarDadosPorMes = (dados: ProdutoModel[], mes: number) => {
-        const dadosFiltrado = dados.filter(item => {
-            if (item.dtProduto === null) return false;
-            const momentObj = moment(item.dtProduto, "DD/MM/YYYY HH:mm");
-            const mesItem = momentObj.month() + 1;
-            return mesItem === mes;
-        });
-        const quantidade = dadosFiltrado.length
-        const valorTotal = dadosFiltrado.reduce((total, item) => total + item.vlTotal, 0)
-        const valorLucro = dadosFiltrado.reduce((total, item) => total + item.vlLucroTotal, 0)
-        return {
-            mes,
-            quantidade,
-            valorTotal,
-            valorLucro
-        }
-    };
-    const dadosPorMesVertical = mesesDesejados.map(mes => filtrarDadosPorMes(dataTableVendas, mes));
+    const { dadosPorMes, vlLucro, vlTotal } = useDadosPorMesDashboard(TelaDashboard.VENDA)
 
     const optionsVertical = {
         responsive: true,
@@ -58,7 +33,7 @@ export default function ChartBarVertical() {
             tooltip: {
                 callbacks: {
                     label: (context: any) => {
-                        const venda = dadosPorMesVertical[context.dataIndex];
+                        const venda = dadosPorMes[context.dataIndex];
                         return [`Quantidade: ${venda.quantidade}`, `Valor Total: R$ ${venda.valorTotal.toFixed(2)}`];
                     },
                 },
@@ -99,7 +74,7 @@ export default function ChartBarVertical() {
         datasets: [
             {
                 label: 'Quantidade',
-                data: dadosPorMesVertical.map(venda => venda.quantidade),
+                data: dadosPorMes.map(venda => venda.quantidade),
                 backgroundColor: '#165BAA',
             },
         ],
@@ -108,6 +83,7 @@ export default function ChartBarVertical() {
     return{
         dataVertical,
         optionsVertical,
-        dadosPorMesVertical
+        vlLucro, 
+        vlTotal
     }
 }

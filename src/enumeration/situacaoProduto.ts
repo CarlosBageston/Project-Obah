@@ -1,6 +1,3 @@
-
-
-
 /**
  * Enum de situação
  *

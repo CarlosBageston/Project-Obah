@@ -14,11 +14,11 @@ import GenericTable from "../../../Components/table";
 import { useDispatch, useSelector } from 'react-redux';
 import FiltroGeneric from "../../../Components/filtro";
 import formatDate from "../../../Components/masks/formatDate";
+import TelaDashboard from '../../../enumeration/telaDashboard';
 import ProdutosModel from "../cadastroProdutos/model/produtos";
 import CompraHistoricoModel from './model/comprahistoricoModel';
 import { InputConfig } from "../../../Components/isEdit/isEdit";
 import FormAlert from "../../../Components/FormAlert/formAlert";
-import DashboardCompras from '../dashboard/model/dashboardCompra';
 import { State, setLoading } from '../../../store/reducer/reducer';
 import SituacaoProduto from "../../../enumeration/situacaoProduto";
 import ModalDelete from '../../../Components/FormAlert/modalDelete';
@@ -39,9 +39,10 @@ import { BoxTitleDefault } from "../estoque/style";
 import useEstoque from '../../../hooks/useEstoque';
 import { useUniqueNames } from '../../../hooks/useUniqueName';
 import useFormatCurrency from '../../../hooks/formatCurrency';
+import { foundKgProduto } from '../../../hooks/useFoundProductKg';
 import useHandleInputKeyPress from '../../../hooks/useHandleInputKeyPress';
 import { calculateTotalValue } from '../../../hooks/useCalculateTotalValue';
-import { foundKgProduto } from '../../../hooks/useFoundProductKg';
+import { useCalculateValueDashboard } from '../../../hooks/useCalculateValueDashboard';
 
 
 const objClean: ComprasModel = {
@@ -72,6 +73,7 @@ function AtualizarEstoque() {
     const { convertToNumber, formatCurrency, formatCurrencyRealTime } = useFormatCurrency();
     const { removedStockCompras, updateStock } = useEstoque();
     const { onKeyPressHandleSubmit } = useHandleInputKeyPress();
+    const { calculateValueDashboard } = useCalculateValueDashboard(recarregueDashboard, setRecarregueDashboard);
 
     const inputsConfig: InputConfig[] = [
         { label: 'Nome Do Produto', propertyName: 'nmProduto' },
@@ -99,10 +101,6 @@ function AtualizarEstoque() {
     const {
         dataTable: dataTableEstoque,
     } = GetData('Estoque', recarregue) as { dataTable: EstoqueModel[] };
-
-    const {
-        dataTable: dataTableDashboard,
-    } = GetData('Dados Dashboard', recarregueDashboard) as { dataTable: DashboardCompras[] };
 
     const {
         dataTable: dataTableCompraHistorico,
@@ -307,41 +305,6 @@ function AtualizarEstoque() {
     }
 
     /**
-     * Calcula o valor total da compra e atualiza o dashboard com base nos valores fornecidos.
-     * 
-     * @param valueCurrent - Valor total da compra.
-     * @param dateBuy - Data da compra.
-     */
-    async function calculateValueTotal(valueCurrent: number, dateBuy: Date | null) {
-        let sumValue: number = 0
-        const mesAtual = moment(dateBuy, "DD/MM/YYYY").format("DD/MM/YYYY");
-        const existingMonth = dataTableDashboard.find(compraMes => compraMes.mes === moment(mesAtual, "DD/MM/YYYY").month() + 1)
-        const valueCurrentFormatado = valueCurrent.toString().match(/\d+/g)?.join('.')
-
-        if (existingMonth && valueCurrentFormatado) {
-            sumValue += existingMonth.qntdComprada;
-            sumValue += parseFloat(valueCurrentFormatado);
-
-            const refID: string = existingMonth.id ?? '';
-            const refTable = doc(db, "Dados Dashboard", refID);
-            await updateDoc(refTable, {
-                totalCompras: existingMonth.totalCompras + 1,
-                qntdComprada: parseFloat(sumValue.toFixed(2))
-            })
-        } else {
-            if (valueCurrentFormatado) {
-                sumValue = parseFloat(valueCurrentFormatado)
-            }
-            await addDoc(collection(db, "Dados Dashboard"), {
-                qntdComprada: parseFloat(sumValue.toFixed(2)),
-                mes: moment(mesAtual, "DD/MM/YYYY").month() + 1,
-                totalCompras: 1
-            })
-        }
-        setRecarregueDashboard(false)
-    }
-
-    /**
      * Salva um Historico de Compras para que essa tabela tenha todos os produtos salvos e com valores atualizados.
      * @param valuesUpdate objeto que ta sendo atualizado o estoque
      */
@@ -448,7 +411,7 @@ function AtualizarEstoque() {
                 }
                 createStock(valuesUpdate)
                 if (valuesUpdate.totalPago) {
-                    calculateValueTotal(valuesUpdate.totalPago, valuesUpdate.dtCompra)
+                    calculateValueDashboard(valuesUpdate.totalPago, valuesUpdate.dtCompra, TelaDashboard.COMPRA)
                 }
             }
             if (values.tpProduto === SituacaoProduto.FABRICADO) {

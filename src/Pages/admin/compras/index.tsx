@@ -588,7 +588,7 @@ function AtualizarEstoque() {
                         )}
                     </FormControl>
                     <Autocomplete
-                        options={useUniqueNames(dataTableCompraHistorico, values.tpProduto, values.tpProduto, produtoDataTable)}
+                        options={useUniqueNames(dataTableCompraHistorico, values.tpProduto, values.tpProduto)}
                         getOptionLabel={(option: ComprasModel) => option.nmProduto || ""}
                         onChange={(e, newValue, reason) => handleAutoComplete(newValue, reason)}
                         disabled={values.tpProduto === null}

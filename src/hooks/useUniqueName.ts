@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import ComprasModel from '../Pages/admin/compras/model/compras';
 import SituacaoProduto from '../enumeration/situacaoProduto';
-import ProdutosModel from '../Pages/admin/cadastroProdutos/model/produtos';
+import ComprasModel from '../Pages/admin/compras/model/compras';
 import CompraHistoricoModel from '../Pages/admin/compras/model/comprahistoricoModel';
 
 /**
@@ -14,8 +13,6 @@ import CompraHistoricoModel from '../Pages/admin/compras/model/comprahistoricoMo
  * @param dataTable - Lista de compras a ser processada.
  * @param tpProduto - Tipo de produto atual selecionado.
  * @param optionTpProduto - Tipo de produto para filtrar (COMPRADO ou FABRICADO).
- * @param dataTableProduto - Lista de produtos para considerar no filtro.
- * @param dataTableEstoque - Lista de estoque para considerar no filtro.
  * @param isEdit - Indica se os dados estão sendo editados.
  * 
  * @returns Lista de nomes únicos de produtos com base nos parâmetros fornecidos.
@@ -24,7 +21,6 @@ export function useUniqueNames(
     dataTable: CompraHistoricoModel[], 
     tpProduto: SituacaoProduto | null, 
     optionTpProduto: SituacaoProduto | null,
-    dataTableProduto: ProdutosModel[],
     isEdit?: boolean
     ) {
     const [uniqueNames, setUniqueNames] = useState<any>([]);
@@ -33,14 +29,14 @@ export function useUniqueNames(
      * Função para realizar a busca no banco de dados de acordo com o tipo de produto selecionado.
      * @returns {ComprasModel[] | ProdutosModel[]} Lista de compras ou produtos do banco de dados.
      */
-    function databaseSearch(): ComprasModel[] | ProdutosModel[] {
+    function databaseSearch(): ComprasModel[] | CompraHistoricoModel[] {
         if (optionTpProduto === SituacaoProduto.COMPRADO) {
             const databaseCompras = dataTable.filter((produto) =>
             (produto.tpProduto === SituacaoProduto.FABRICADO && produto.stMateriaPrima) || produto.tpProduto === SituacaoProduto.COMPRADO 
             );
             return databaseCompras as ComprasModel[];
         } else {
-            const databaseProduto = dataTableProduto.filter((produto) =>
+            const databaseProduto = dataTable.filter((produto) =>
                 (produto.tpProduto === SituacaoProduto.FABRICADO && produto.stMateriaPrima) || produto.tpProduto === SituacaoProduto.FABRICADO
             );
             return databaseProduto || [] as ComprasModel[];

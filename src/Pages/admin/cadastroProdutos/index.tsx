@@ -217,6 +217,11 @@ function CadastroProduto() {
                 const refIdEstoque: string = stock.id ?? ''
                 await deleteDoc(doc(db, "Estoque", refIdEstoque))
             }
+            const historyCompra = dataTableCompraHistorico.find(history => history.nmProduto === selected.nmProduto)
+            if (historyCompra) {
+                const refIdHistory: string = historyCompra.id ?? ''
+                await deleteDoc(doc(db, "Compra Historico", refIdHistory))
+            }
         }
         setSelected(undefined)
     }
@@ -427,7 +432,7 @@ function CadastroProduto() {
             {/*Adicionando Produto */}
             <IsAdding
                 addingScreen="Produto"
-                data={useUniqueNames(dataTableCompraHistorico, values.tpProduto, SituacaoProduto.COMPRADO, dataTable)}
+                data={useUniqueNames(dataTableCompraHistorico, values.tpProduto, SituacaoProduto.COMPRADO)}
                 isAdding={isVisibleTpProuto}
                 products={values.mpFabricado}
                 setFieldValue={setFieldValue}
@@ -446,7 +451,7 @@ function CadastroProduto() {
                 isEdit={isEdit}
                 products={selected ? selected.mpFabricado : []}
                 setIsEdit={setIsEdit}
-                newData={useUniqueNames(dataTableCompraHistorico, values.tpProduto, SituacaoProduto.COMPRADO, dataTable, isEdit)}
+                newData={useUniqueNames(dataTableCompraHistorico, values.tpProduto, SituacaoProduto.COMPRADO, isEdit)}
             />
             <ModalDelete open={openDelete} onDeleteClick={handleDeleteRow} onCancelClick={() => setOpenDelete(false)} />
             <AlertDialog open={error ? true : false} nmProduto={error} onOKClick={() => { setError(undefined); history('/atualizar-estoque') }} />

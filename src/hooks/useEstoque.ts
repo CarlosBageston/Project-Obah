@@ -71,20 +71,11 @@ export default function useEstoque(){
             const estoqueMP = dataTableEstoque.find(estoque => estoque.nmProduto === produto.nmProduto);
             if (estoqueMP) {
                 const listVersaoComQntd: Versao[] = [...estoqueMP.versaos];
-                const versoesOrdenadas = estoqueMP.versaos.sort((a, b) => a.versao - b.versao);
+                let quantidadeRestante = updatedQuantidades[produto.nmProduto];
+                const versoesOrdenadas = estoqueMP.versaos.sort((a, b) => b.versao - a.versao);
                 versoesOrdenadas.forEach(versao => {
-                    if (updatedQuantidades[produto.nmProduto] > 0) {
-                        const qntdMinima = Math.min(quantidades[produto.nmProduto], versao.vrQntd)
-                        const novaQuantidade = estoqueMP.quantidade - qntdMinima;
-                        const novaQntdPorVersao = versao.vrQntd - qntdMinima
-                        if (novaQuantidade > 0) {
-                            versao.vrQntd = novaQntdPorVersao;
-                        } else {
-                            versao.vrQntd = 0
-                        }
-
-                        estoqueMP.quantidade = parseFloat(novaQuantidade.toFixed(2))
-                        updatedQuantidades[produto.nmProduto] -= qntdMinima;
+                    if (quantidadeRestante > 0) {
+                        quantidadeRestante = calculateStock(quantidadeRestante, versao, estoqueMP);
                     }
                 })
                 await updateRemovedStock({
@@ -118,19 +109,10 @@ export default function useEstoque(){
             if (estoqueProduto) {
                 const listVersaoComQntd: Versao[] = [...estoqueProduto.versaos];
                 const versoesOrdenadas = estoqueProduto.versaos.sort((a, b) => a.versao - b.versao);
+                let quantidadeRestante = produto.quantidadeVenda;
                 versoesOrdenadas.forEach(versao => {
                     if (produto.quantidadeVenda > 0) {
-                        const qntdMinima = Math.min(produto.quantidadeVenda, versao.vrQntd)
-                        const novaQuantidade = estoqueProduto.quantidade - qntdMinima;
-                        const novaQntdPorVersao = versao.vrQntd - qntdMinima
-                        if (novaQuantidade > 0) {
-                            versao.vrQntd = novaQntdPorVersao;
-                        } else {
-                            versao.vrQntd = 0
-                        }
-
-                        estoqueProduto.quantidade = parseFloat(novaQuantidade.toFixed(2))
-                        produto.quantidadeVenda -= qntdMinima;
+                        quantidadeRestante = calculateStock(quantidadeRestante, versao, estoqueProduto)
                     }
                 })
                 await updateRemovedStock({
@@ -165,17 +147,7 @@ export default function useEstoque(){
     
                         versoesOrdenadas.forEach(versao => {
                             if (qntdUsadaProducao > 0) {
-                                const qntdMinima = Math.min(qntdUsadaProducao, versao.vrQntd)
-                                const novaQuantidade = estoqueMP.quantidade - qntdMinima;
-                                const novaQntdPorVersao = versao.vrQntd - qntdMinima
-                                if (novaQuantidade > 0) {
-                                    versao.vrQntd = novaQntdPorVersao;
-                                } else {
-                                    versao.vrQntd = 0
-                                }
-    
-                                estoqueMP.quantidade = parseFloat(novaQuantidade.toFixed(2))
-                                qntdUsadaProducao -= qntdMinima;
+                                qntdUsadaProducao = calculateStock(qntdUsadaProducao, versao, estoqueMP);
                             }
                         })
                         await updateRemovedStock({
@@ -234,6 +206,28 @@ export default function useEstoque(){
                 });
             }
         }
+    }
+
+    /**
+     * Calcula e atualiza o estoque com base na quantidade usada na produção.
+     *
+     * @param {number} qntdUsadaProducao - Quantidade usada na produção.
+     * @param {Versao} versao - Objeto representando a versão do produto.
+     * @param {EstoqueModel} estoqueMP - Objeto representando o estoque do produto.
+     * @returns {number} - A quantidade restante após o cálculo.
+     */
+    function calculateStock(qntdUsadaProducao: number, versao: Versao, estoqueMP: EstoqueModel): number {
+        const qntdMinima = Math.min(qntdUsadaProducao, versao.vrQntd)
+        const novaQuantidade = estoqueMP.quantidade - qntdMinima;
+        const novaQntdPorVersao = versao.vrQntd - qntdMinima
+        if (novaQuantidade > 0) {
+            versao.vrQntd = novaQntdPorVersao;
+        } else {
+            versao.vrQntd = 0
+        }
+
+        estoqueMP.quantidade = parseFloat(novaQuantidade.toFixed(2))
+        return qntdUsadaProducao -= qntdMinima;
     }
 
     return {

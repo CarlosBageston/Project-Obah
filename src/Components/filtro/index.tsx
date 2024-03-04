@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BiSearchAlt } from 'react-icons/bi'
 import { CgPlayListSearch } from 'react-icons/cg'
 import { FormControl, Autocomplete, TextField, AutocompleteChangeReason } from '@mui/material';
@@ -9,7 +9,7 @@ import ProdutosModel from '../../Pages/admin/cadastroProdutos/model/produtos';
 interface Props {
     data: any[],
     setFilteredData: (data: any[]) => void,
-    type: "cliente" | "produto",
+    type: "cliente" | "produto" | "Entrega",
     carregarDados: React.Dispatch<React.SetStateAction<boolean>>
 }
 
@@ -28,11 +28,11 @@ interface Props {
  */
 
 const FiltroGeneric = ({ data, setFilteredData, type, carregarDados }: Props) => {
-    const uniqueNames = [...new Set(data.map(item => item.nmProduto))];
     const [valueClient, setValueClient] = useState<any>();
     const [valueproduct, setValueproduct] = useState<any>();
     const [showInput, setShowInput] = useState<boolean>(false);
     const [search, setSearch] = useState<boolean>(false);
+    const [uniqueNames, setUniqueNames] = useState<any[]>([]);
 
 
     /**
@@ -73,8 +73,13 @@ const FiltroGeneric = ({ data, setFilteredData, type, carregarDados }: Props) =>
       */
     const filterByClienteOrProduto = (clientes: ClienteModel, produtos: ProdutosModel) => {
         if (type === 'cliente') {
-            if (clientes && clientes.nmCliente) {
-                const clienteEncontrado = data.filter(cliente => cliente.nmCliente === clientes.nmCliente)
+            if (clientes) {
+                const clienteEncontrado = data.filter(cliente => cliente.nmCliente === clientes)
+                setFilteredData(clienteEncontrado)
+            }
+        } else if (type === 'Entrega') {
+            if (clientes) {
+                const clienteEncontrado = data.filter(cli => cli.cliente.nmCliente === clientes)
                 setFilteredData(clienteEncontrado)
             }
         } else {
@@ -107,44 +112,16 @@ const FiltroGeneric = ({ data, setFilteredData, type, carregarDados }: Props) =>
             }
         }
     }
-    let selectComponent = null;
-    if (type === 'produto') {
-        selectComponent = (
-            <Autocomplete
-                id="tags-standard"
-                options={uniqueNames}
-                getOptionLabel={(produto: string) => produto}
-                onChange={(e, newValue, reason) => handleAutoComplete(newValue, reason)}
-                renderInput={(params) => (
-                    <TextField
-                        {...params}
-                        onKeyDown={onKeyPressCallFilter}
-                        variant="standard"
-                        label="Filtro"
-                        placeholder="Selecione..."
-                    />
-                )}
-            />
-        );
-    } else {
-        selectComponent = (
-            <Autocomplete
-                id="tags-standard"
-                options={data}
-                getOptionLabel={(cliente: any) => cliente.nmCliente}
-                onChange={(e, value, reason) => handleAutoComplete(value, reason)}
-                renderInput={(params) => (
-                    <TextField
-                        {...params}
-                        onKeyDown={onKeyPressCallFilter}
-                        variant="standard"
-                        label="Filtro"
-                        placeholder="Selecione..."
-                    />
-                )}
-            />
-        );
-    }
+    useEffect(() => {
+        if (data && data.length) {
+            setUniqueNames(
+                type === 'produto'
+                    ? [...new Set(data.map(item => item.nmProduto))] :
+                    type === 'Entrega' ? [...new Set(data.map(item => item.cliente.nmCliente))]
+                        : [...new Set(data.map(item => item.nmCliente))]
+            );
+        }
+    }, [data, type]);
     return (
         <div>
             <FormControl
@@ -154,7 +131,21 @@ const FiltroGeneric = ({ data, setFilteredData, type, carregarDados }: Props) =>
             >
                 <ContainerFilter>
                     <ContainerInput isVisible={showInput}>
-                        {selectComponent}
+                        <Autocomplete
+                            id="tags-standard"
+                            options={uniqueNames}
+                            getOptionLabel={(produto: string) => { return produto; }}
+                            onChange={(e, newValue, reason) => handleAutoComplete(newValue, reason)}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    onKeyDown={onKeyPressCallFilter}
+                                    variant="standard"
+                                    label="Filtro"
+                                    placeholder="Selecione..."
+                                />
+                            )}
+                        />
                     </ContainerInput>
                     <ContainerButton>
                         {!showInput ? (

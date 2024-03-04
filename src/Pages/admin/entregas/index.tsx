@@ -94,6 +94,7 @@ function Entregas() {
         dataTable: produtoDataTable,
     } = GetData('Produtos', recarregue) as { dataTable: ProdutosModel[] };
 
+
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<EntregaModel>({
         validateOnBlur: true,
         validateOnChange: true,
@@ -370,7 +371,7 @@ function Entregas() {
             {/*Tabala */}
             <BoxTitleDefault>
                 <div>
-                    <FiltroGeneric data={dataTableEntregas} setFilteredData={setDataTableEntregas} carregarDados={setRecarregue} type="cliente" />
+                    <FiltroGeneric data={dataTableEntregas} setFilteredData={setDataTableEntregas} carregarDados={setRecarregue} type="Entrega" />
                 </div>
             </BoxTitleDefault>
             <GenericTable

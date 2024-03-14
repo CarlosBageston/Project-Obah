@@ -36,12 +36,12 @@ import useFormatCurrency from '../../../hooks/formatCurrency';
 
 
 function Dashboard() {
-    const { dataVertical, optionsVertical, vlLucro: vlLucroVertical, vlTotal: vlTotalVertical } = ChartBarVertical();
-    const { dataLine, optionsLine, ref, vlLucro: vlLucroLine, vlTotal: vlTotalLine } = ChartLine();
-    const { dataHorizontal, optionsHotizontal } = ChartBarHorizontal()
     const [freeScreen, setFreeScreen] = useState<boolean>(false);
     const [isLocked, setIsLocked] = useState<boolean>(true);
     const refInput = useRef<HTMLInputElement>(null);
+    const { dataVertical, optionsVertical, vlLucro: vlLucroVertical, vlTotal: vlTotalVertical } = ChartBarVertical(freeScreen);
+    const { dataLine, optionsLine, ref, vlLucro: vlLucroLine, vlTotal: vlTotalLine } = ChartLine(freeScreen);
+    const { dataHorizontal, optionsHotizontal } = ChartBarHorizontal(freeScreen)
 
     const initialValues: DashboardModel = {
         error: '',

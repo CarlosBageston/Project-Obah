@@ -52,6 +52,7 @@ import useEstoque from '../../../hooks/useEstoque';
 import useFormatCurrency from '../../../hooks/formatCurrency';
 import useHandleInputKeyPress from '../../../hooks/useHandleInputKeyPress';
 import { useCalculateValueDashboard } from '../../../hooks/useCalculateValueDashboard';
+import useDeleteOldData from '../../../hooks/useDeleteOldData';
 
 
 const objClean: VendaModel = {
@@ -80,6 +81,7 @@ function Vendas() {
     const { NumberFormatForBrazilianCurrency, convertToNumber, formatCurrencyRealTime } = useFormatCurrency();
     const { handleInputKeyDown, suggestionsRef, selectedSuggestionIndex, onKeyPressHandleSubmit, inputRef } = useHandleInputKeyPress();
     const { removedStockVenda } = useEstoque();
+    const { deleteVendas } = useDeleteOldData()
     const { calculateValueDashboard } = useCalculateValueDashboard(recarregueDashboard, setRecarregueDashboard);
 
     //realizando busca no banco de dados
@@ -101,7 +103,9 @@ function Vendas() {
         }),
         onSubmit: handleSubmitForm,
     });
-
+    useEffect(() => {
+        deleteVendas()
+    }, [])
     /**
      * atualizar a data em tempo real.
      * 

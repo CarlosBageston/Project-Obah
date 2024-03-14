@@ -12,9 +12,9 @@ import useDadosPorMesDashboard from "../../../hooks/useDadosPorMesDashboard";
  * 
  * @returns Retorna um objeto contendo os dados do gráfico (dataVertical), as opções de configuração (optionsVertical) e os dados por mês (dadosPorMesVertical).
  */
-export default function ChartBarVertical() {
+export default function ChartBarVertical(freeScreen: boolean) {
     
-    const { dadosPorMes, vlLucro, vlTotal } = useDadosPorMesDashboard(TelaDashboard.VENDA)
+    const { dadosPorMes, vlLucro, vlTotal } = useDadosPorMesDashboard(TelaDashboard.VENDA, freeScreen)
 
     const optionsVertical = {
         responsive: true,

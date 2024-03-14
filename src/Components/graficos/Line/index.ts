@@ -14,10 +14,10 @@ import useDadosPorMesDashboard from "../../../hooks/useDadosPorMesDashboard";
  * @returns Retorna um objeto contendo os dados do gráfico (dataLine), as opções de configuração (optionsLine), uma referência (ref) e os dados por mês (dadosPorMes).
  */
 
-export default function ChartLine() {
+export default function ChartLine(freeScreen: boolean) {
     const ref = useRef();
   
-    const { dadosPorMes, vlLucro, vlTotal } = useDadosPorMesDashboard(TelaDashboard.ENTREGA)
+    const { dadosPorMes, vlLucro, vlTotal } = useDadosPorMesDashboard(TelaDashboard.ENTREGA, freeScreen)
 
    const labels = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 

@@ -215,8 +215,8 @@ function AtualizarEstoque() {
                 produto.mpFabricado.forEach(item => {
                     const foundProduct = foundProducts(item.nmProduto)
                     if (item.nmProduto !== valuesUpdate.nmProduto) {
-                        foundKgProduto(foundProduct)
-                        const totalAtualizado = calculateTotalValue(item, foundProduct)
+                        const foundProductUpdate = foundKgProduto(foundProduct)
+                        const totalAtualizado = calculateTotalValue(item, foundProductUpdate)
                         soma += totalAtualizado
                     } else {
                         const totalAtualizado = calculateTotalValue(item, valuesUpdate)

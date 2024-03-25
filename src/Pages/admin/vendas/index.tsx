@@ -79,11 +79,19 @@ function Vendas() {
     const dispatch = useDispatch();
     const { loading } = useSelector((state: State) => state.user);
 
-    const { NumberFormatForBrazilianCurrency, convertToNumber, formatCurrencyRealTime } = useFormatCurrency();
-    const { handleInputKeyDown, suggestionsRef, selectedSuggestionIndex, onKeyPressHandleSubmit, inputRef } = useHandleInputKeyPress();
     const { removedStockVenda } = useEstoque();
     const { deleteVendas } = useDeleteOldData();
+    const { NumberFormatForBrazilianCurrency, convertToNumber, formatCurrencyRealTime } = useFormatCurrency();
     const { calculateValueDashboard } = useCalculateValueDashboard(recarregueDashboard, setRecarregueDashboard);
+    const {
+        handleInputKeyDown,
+        suggestionsRef,
+        selectedSuggestionIndex,
+        onKeyPressHandleSubmit,
+        inputRef,
+        inputRefF3,
+        inputRefF4
+    } = useHandleInputKeyPress();
 
     //realizando busca no banco de dados
     const {
@@ -124,6 +132,22 @@ function Vendas() {
         setFieldValue('dtProduto', dataFormatada);
     }, [values.vlRecebido]);
 
+    useEffect(() => {
+        // Função para fechar as sugestões quando o usuário clicar fora
+        const handleClickOutside = (event: MouseEvent) => {
+            if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)) {
+                setShowSuggestion(false);
+            }
+        };
+
+        // Adiciona um event listener para capturar cliques fora da lista de sugestões
+        document.addEventListener('mousedown', handleClickOutside);
+
+        // Remove o event listener quando o componente for desmontado para evitar vazamentos de memória
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     /**
      * Função para calcular totais com base nos valores fornecidos.
@@ -419,6 +443,7 @@ function Vendas() {
                         name=""
                         onChange={handleInputChange}
                         value={barcode}
+                        inputRef={inputRefF3}
                         onKeyDown={(e) => handleInputKeyDown(e, productSuggestion, selectSuggestion)}
                         onKeyPress={handleMultiplicaKeyPress}
                     />
@@ -489,6 +514,7 @@ function Vendas() {
                                 error={touched.vlRecebido && errors.vlRecebido ? errors.vlRecebido : ''}
                                 name="vlRecebido"
                                 onBlur={handleBlur}
+                                inputRef={inputRefF4}
                                 value={values.vlRecebido !== 0 ? values.vlRecebido : ''}
                                 maxLength={9}
                                 onKeyPress={e => onKeyPressHandleSubmit(e, handleSubmit)}

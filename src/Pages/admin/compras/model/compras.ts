@@ -18,5 +18,6 @@ interface ComprasModel {
     mpFabricado?: ComprasModel[]
     stEstoqueInfinito?: boolean
     stMateriaPrima?: boolean
+    kgProduto?: number
 }
 export default ComprasModel

@@ -395,7 +395,7 @@ function AtualizarEstoque() {
             vlUnitario: convertToNumber(values.vlUnitario.toString()),
             totalPago: values.totalPago && convertToNumber(values.totalPago?.toString())
         };
-        // savePurchaseHistory(valuesUpdate)
+        savePurchaseHistory(valuesUpdate)
         try {
             if (valuesUpdate.tpProduto === SituacaoProduto.COMPRADO) {
                 const product = foundProducts(valuesUpdate.nmProduto);
@@ -420,12 +420,12 @@ function AtualizarEstoque() {
                 }
             }
             if (values.tpProduto === SituacaoProduto.FABRICADO) {
-                // if (valuesUpdate.stEstoqueInfinito) {
-                //     const infiniteStock = Number.MAX_SAFE_INTEGER
-                //     valuesUpdate.quantidade = infiniteStock
-                // } else {
-                //     await removedStockCompras(valuesUpdate)
-                // }
+                if (valuesUpdate.stEstoqueInfinito) {
+                    const infiniteStock = Number.MAX_SAFE_INTEGER
+                    valuesUpdate.quantidade = infiniteStock
+                } else {
+                    await removedStockCompras(valuesUpdate)
+                }
                 createStock(valuesUpdate)
             }
         } catch (error) {

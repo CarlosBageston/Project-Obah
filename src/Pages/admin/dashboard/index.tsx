@@ -2,6 +2,7 @@ import { SHA256 } from 'crypto-js';
 import { Button } from "../../login/style";
 import { Bar, Line } from "react-chartjs-2";
 import GetData from "../../../firebase/getData";
+import { TableKey } from '../../../types/tableName';
 import ChartLine from "../../../Components/graficos/Line";
 import ChartBarVertical from "../../../Components/graficos/BarVertical";
 import ChartBarHorizontal from "../../../Components/graficos/BarHorizontal";
@@ -29,19 +30,19 @@ import {
     DivPadLock,
     StyledGiPadlockInternal,
 } from './style'
-import { generateReport } from '../../../hooks/report-excel';
 import { useFormik } from 'formik';
 import DashboardModel from './model/dashboard';
+import { generateReport } from '../../../hooks/report-excel';
 import useFormatCurrency from '../../../hooks/formatCurrency';
 
 
 function Dashboard() {
-    const { dataVertical, optionsVertical, vlLucro: vlLucroVertical, vlTotal: vlTotalVertical } = ChartBarVertical();
-    const { dataLine, optionsLine, ref, vlLucro: vlLucroLine, vlTotal: vlTotalLine } = ChartLine();
-    const { dataHorizontal, optionsHotizontal } = ChartBarHorizontal()
     const [freeScreen, setFreeScreen] = useState<boolean>(false);
     const [isLocked, setIsLocked] = useState<boolean>(true);
     const refInput = useRef<HTMLInputElement>(null);
+    const { dataVertical, optionsVertical, vlLucro: vlLucroVertical, vlTotal: vlTotalVertical } = ChartBarVertical(freeScreen);
+    const { dataLine, optionsLine, ref, vlLucro: vlLucroLine, vlTotal: vlTotalLine } = ChartLine(freeScreen);
+    const { dataHorizontal, optionsHotizontal } = ChartBarHorizontal(freeScreen)
 
     const initialValues: DashboardModel = {
         error: '',
@@ -51,7 +52,7 @@ function Dashboard() {
     }
     const {
         dataTable
-    } = GetData('Dashboard', true);
+    } = GetData(TableKey.Dashboard, true);
     const { NumberFormatForBrazilianCurrency } = useFormatCurrency()
 
     const { values, setFieldValue } = useFormik<DashboardModel>({

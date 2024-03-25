@@ -5,6 +5,7 @@ import ComprasModel from "../Pages/admin/compras/model/compras";
 import { ProdutoEscaniado } from "../Pages/admin/vendas/model/vendas";
 import ClienteModel from "../Pages/admin/cadastroClientes/model/cliente";
 import EstoqueModel, { Versao } from "../Pages/admin/estoque/model/estoque";
+import { TableKey } from "../types/tableName";
 
 /**
  * Hook personalizado para manipulação de estoque.
@@ -17,11 +18,11 @@ import EstoqueModel, { Versao } from "../Pages/admin/estoque/model/estoque";
 export default function useEstoque(){
     const {
         dataTable: dataTableEstoque,
-    } = GetData('Estoque', true) as { dataTable: EstoqueModel[] };
+    } = GetData(TableKey.Estoque, true) as { dataTable: EstoqueModel[] };
 
     const {
         dataTable: dataTableCompras,
-    } = GetData('Compras', true) as { dataTable: ComprasModel[] };
+    } = GetData(TableKey.Compras, true) as { dataTable: ComprasModel[] };
 
     /**
      * Atualiza o estoque removendo a quantidade especificada.
@@ -34,14 +35,14 @@ export default function useEstoque(){
         );
         if (estoqueExistente) {
             const refID: string = estoqueExistente.id ?? '';
-            const refTable = doc(db, "Estoque", refID);
+            const refTable = doc(db, TableKey.Estoque, refID);
             for (const versao of estoqueExistente.versaos) {
                 if (versao.vrQntd <= 0) {
                     const compraCorrespondente = dataTableCompras.find(compra =>
                         compra.nmProduto === estoqueExistente.nmProduto && compra.nrOrdem === versao.versao
                     );
                     if (compraCorrespondente && compraCorrespondente.id) {
-                        await deleteDoc(doc(db, "Compras", compraCorrespondente.id));
+                        await deleteDoc(doc(db, TableKey.Compras, compraCorrespondente.id));
                     }
 
                 }
@@ -175,7 +176,7 @@ export default function useEstoque(){
         );
         if (estoqueExistente) {
             const refID: string = estoqueExistente.id ?? '';
-            const refTable = doc(db, "Estoque", refID);
+            const refTable = doc(db, TableKey.Estoque, refID);
             const versaoCorrespondente = estoqueExistente.versaos.find(versaoObjeto =>
                 versaoObjeto.versao === versao
             );

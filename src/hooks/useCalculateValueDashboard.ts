@@ -1,10 +1,11 @@
-import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
 import moment from "moment";
 import { db } from "../firebase";
 import GetData from "../firebase/getData";
-import Dashboard from "../Pages/admin/dashboard/model/dashboardCompra";
+import { TableKey } from "../types/tableName";
 import { Dispatch, SetStateAction } from "react";
 import TelaDashboard from "../enumeration/telaDashboard";
+import Dashboard from "../Pages/admin/dashboard/model/dashboardCompra";
+import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
 
 // Função para calcular o valor total e atualizar o painel
 async function updateDashboard(
@@ -26,7 +27,7 @@ async function updateDashboard(
     ? existingMonth.qntdLucro + qntdLucro : 0;
 
     const refID: string = existingMonth ? existingMonth.id ?? "" : '';
-    const refTable = existingMonth ? doc(db, "Dados Dashboard", refID) : null;
+    const refTable = existingMonth ? doc(db, TableKey.DadosDashboard, refID) : null;
 
   const dataToUpdate = existingMonth
     ? {
@@ -42,7 +43,7 @@ async function updateDashboard(
         nrTotal: 1,
       };
 
-    await (existingMonth && refTable ? updateDoc(refTable, dataToUpdate) : addDoc(collection(db, "Dados Dashboard"), dataToUpdate));
+    await (existingMonth && refTable ? updateDoc(refTable, dataToUpdate) : addDoc(collection(db, TableKey.DadosDashboard), dataToUpdate));
     setRecarregueDashboard(false);
 }
 
@@ -50,7 +51,7 @@ async function updateDashboard(
 export function useCalculateValueDashboard(recarregueDashboard: boolean, setRecarregueDashboard: Dispatch<SetStateAction<boolean>>) {
     const {
         dataTable: dataTableDashboard,
-    } = GetData("Dados Dashboard", recarregueDashboard) as { dataTable: Dashboard[] };
+    } = GetData(TableKey.DadosDashboard, recarregueDashboard) as { dataTable: Dashboard[] };
 
     return {
         calculateValueDashboard: async (qntdTotal: number, date: Date | null, tela: number, qntdLucro?: number) => {

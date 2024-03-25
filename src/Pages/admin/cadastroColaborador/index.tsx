@@ -7,6 +7,7 @@ import GetData from "../../../firebase/getData";
 import Button from "../../../Components/button";
 import ColaboradorModel from "./model/colaborador";
 import { BoxTitleDefault } from "../estoque/style";
+import { TableKey } from '../../../types/tableName';
 import { ContainerInputs, DivInput } from "./style";
 import GenericTable from "../../../Components/table";
 import FiltroGeneric from "../../../Components/filtro";
@@ -60,7 +61,7 @@ function CadastroColaborador() {
         dataTable,
         loading: isLoading,
         setDataTable
-    } = GetData('Colaborador', recarregue) as { dataTable: ColaboradorModel[], loading: boolean, setDataTable: (data: ColaboradorModel[]) => void };
+    } = GetData(TableKey.Colaborador, recarregue) as { dataTable: ColaboradorModel[], loading: boolean, setDataTable: (data: ColaboradorModel[]) => void };
 
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<ColaboradorModel>({
         validateOnBlur: true,
@@ -96,7 +97,7 @@ function CadastroColaborador() {
     async function handleEditRow() {
         if (selected) {
             const refID: string = selected.id ?? '';
-            const refTable = doc(db, "Colaborador", refID);
+            const refTable = doc(db, TableKey.Colaborador, refID);
 
             if (JSON.stringify(selected) !== JSON.stringify(initialValues)) {
                 await updateDoc(refTable, { ...selected })
@@ -120,7 +121,7 @@ function CadastroColaborador() {
         setOpenDelete(false)
         if (selected) {
             const refID: string = selected.id ?? '';
-            await deleteDoc(doc(db, "Colaborador", refID)).then(() => {
+            await deleteDoc(doc(db, TableKey.Colaborador, refID)).then(() => {
                 const newDataTable = dataTable.filter(row => row.id !== selected.id);
                 setDataTable(newDataTable);
             });
@@ -131,7 +132,7 @@ function CadastroColaborador() {
     //envia informações para o banco
     async function hundleSubmitForm() {
         dispatch(setLoading(true))
-        await addDoc(collection(db, "Colaborador"), {
+        await addDoc(collection(db, TableKey.Colaborador), {
             ...values
         }).then(() => {
             dispatch(setLoading(false))

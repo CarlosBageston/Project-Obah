@@ -9,6 +9,7 @@ import Input from "../../../Components/input";
 import Button from "../../../Components/button";
 import GetData from "../../../firebase/getData";
 import { useState, useEffect, lazy } from "react";
+import { TableKey } from '../../../types/tableName';
 import EstoqueModel from '../estoque/model/estoque';
 import GenericTable from "../../../Components/table";
 import { useDispatch, useSelector } from 'react-redux';
@@ -89,22 +90,22 @@ function AtualizarEstoque() {
         dataTable,
         loading: isLoading,
         setDataTable
-    } = GetData('Compras', recarregue) as {
+    } = GetData(TableKey.Compras, recarregue) as {
         dataTable: ComprasModel[],
         loading: boolean,
         setDataTable: (data: ComprasModel[]) => void
     };
     const {
         dataTable: produtoDataTable,
-    } = GetData('Produtos', recarregue) as { dataTable: ProdutosModel[] };
+    } = GetData(TableKey.Produtos, recarregue) as { dataTable: ProdutosModel[] };
 
     const {
         dataTable: dataTableEstoque,
-    } = GetData('Estoque', recarregue) as { dataTable: EstoqueModel[] };
+    } = GetData(TableKey.Estoque, recarregue) as { dataTable: EstoqueModel[] };
 
     const {
         dataTable: dataTableCompraHistorico,
-    } = GetData('Compra Historico', recarregue) as { dataTable: CompraHistoricoModel[] };
+    } = GetData(TableKey.CompraHistorico, recarregue) as { dataTable: CompraHistoricoModel[] };
 
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<ComprasModel>({
         validateOnBlur: true,
@@ -163,14 +164,14 @@ function AtualizarEstoque() {
         setOpenDelete(false)
         if (selected) {
             const refID: string = selected.id ?? '';
-            await deleteDoc(doc(db, "Compras", refID)).then(() => {
+            await deleteDoc(doc(db, TableKey.Compras, refID)).then(() => {
                 const newDataTable = dataTable.filter(row => row.id !== selected.id);
                 setDataTable(newDataTable);
             });
             const versoesValidas = dataTableEstoque.find(stock => stock.nmProduto === selected.nmProduto)
             if (versoesValidas) {
                 const refIdEstoque: string = versoesValidas.id ?? ''
-                const refTable = doc(db, "Estoque", refIdEstoque);
+                const refTable = doc(db, TableKey.Estoque, refIdEstoque);
                 const versoes = versoesValidas.versaos.filter(versao => versao.versao !== selected.nrOrdem)
                 const totalQuantity = versoes.reduce((accumulator, versao) => accumulator + versao.vrQntd, 0);
 
@@ -278,7 +279,7 @@ function AtualizarEstoque() {
         );
         if (estoqueExistente) {
             const refID: string = estoqueExistente.id ?? '';
-            const refTable = doc(db, "Estoque", refID);
+            const refTable = doc(db, TableKey.Estoque, refID);
             const novaQuantidade = valuesUpdate.quantidade + estoqueExistente.quantidade;
             await updateDoc(refTable, {
                 nmProduto: valuesUpdate.nmProduto,
@@ -290,7 +291,7 @@ function AtualizarEstoque() {
                 versaos: arrayUnion({ versao: valuesUpdate.nrOrdem, vrQntd: valuesUpdate.quantidade })
             })
         } else {
-            await addDoc(collection(db, "Estoque"), {
+            await addDoc(collection(db, TableKey.Estoque), {
                 nmProduto: valuesUpdate.nmProduto,
                 cdProduto: valuesUpdate.cdProduto,
                 tpProduto: valuesUpdate.tpProduto,
@@ -322,7 +323,7 @@ function AtualizarEstoque() {
 
         if (history) {
             const refID: string = history.id ?? '';
-            const refTable = doc(db, "Compra Historico", refID);
+            const refTable = doc(db, TableKey.CompraHistorico, refID);
 
             const { id, stMateriaPrima, kgProduto, ...historyWithoutId } = history;
 
@@ -356,7 +357,7 @@ function AtualizarEstoque() {
             const history = dataTableCompraHistorico.find(history => history.nmProduto === item.nmProduto)
             if (!history) return;
             const refID: string = history.id ?? '';
-            const refTable = doc(db, "Compra Historico", refID);
+            const refTable = doc(db, TableKey.CompraHistorico, refID);
             const updatedData = { vlUnitario: item.vlUnitario };
             await updateDoc(refTable, updatedData);
         })
@@ -372,7 +373,7 @@ function AtualizarEstoque() {
 
         recalculateProductFound(produtosEncontrado);
 
-        updateValue(produtosEncontrado, "Produtos")
+        updateValue(produtosEncontrado, TableKey.Produtos)
         updateValueCompraHistorico(produtosEncontrado)
 
     }
@@ -404,7 +405,7 @@ function AtualizarEstoque() {
                     const foundProduct = produtoDataTable.find(prod => prod.nmProduto === valuesUpdate.nmProduto)
                     if (foundProduct && foundProduct.vlUnitario !== valuesUpdate.vlUnitario) {
                         const refID: string = foundProduct.id ?? '';
-                        const refTable = doc(db, "Produtos", refID);
+                        const refTable = doc(db, TableKey.Produtos, refID);
                         const updatedData = { vlUnitario: valuesUpdate.vlUnitario };
                         await updateDoc(refTable, updatedData);
                     }
@@ -431,7 +432,7 @@ function AtualizarEstoque() {
             return;
         }
 
-        await addDoc(collection(db, "Compras"), {
+        await addDoc(collection(db, TableKey.Compras), {
             ...valuesUpdate
         })
             .then(() => {
@@ -486,7 +487,7 @@ function AtualizarEstoque() {
             selected.vlUnitario = convertToNumber(selected.vlUnitario.toString())
             selected.totalPago = convertToNumber(selected.totalPago.toString())
             const refID: string = selected.id ?? '';
-            const refTable = doc(db, "Compras", refID);
+            const refTable = doc(db, TableKey.Compras, refID);
             const estoque: EstoqueModel = {
                 nmProduto: selected.nmProduto,
                 cdProduto: selected.cdProduto,

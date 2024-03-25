@@ -1,10 +1,11 @@
 import moment from "moment";
-import { useState, useEffect } from "react";
 import GetData from "../firebase/getData";
+import { useState, useEffect } from "react";
+import { TableKey } from "../types/tableName";
 import Dashboard from "../Pages/admin/dashboard/model/dashboardCompra";
 
 
-export default function useDadosPorMesDashboard(tela: number) {
+export default function useDadosPorMesDashboard(tela: number, freeScreen: boolean) {
     const [dadosPorMes, setDadosPorMes] = useState<any[]>([])
     const [vlTotal, setVlTotal] = useState<number>(0)
     const [vlLucro, setVlLucro] = useState<number>(0)
@@ -12,8 +13,8 @@ export default function useDadosPorMesDashboard(tela: number) {
     //realizando busca no banco de dados
     const {
         dataTable: dataTableVendas,
-    } = GetData('Dados Dashboard', true) as { dataTable: Dashboard[] };
-
+    } = GetData(TableKey.DadosDashboard, freeScreen) as { dataTable: Dashboard[] };
+    
     const gerarMesesDesejados = () => {
         const meses = [];
         const anoAtual = moment().year();

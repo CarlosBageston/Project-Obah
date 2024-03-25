@@ -12,9 +12,9 @@ import useDadosPorMesDashboard from '../../../hooks/useDadosPorMesDashboard';
  * 
  * @returns Retorna um objeto contendo os dados do gráfico (dataHorizontal) e as opções de configuração (optionsHotizontal).
  */
-export default function ChartBarHorizontal() {
+export default function ChartBarHorizontal(freeScreen: boolean) {
     
-    const { dadosPorMes } = useDadosPorMesDashboard(TelaDashboard.COMPRA)
+    const { dadosPorMes } = useDadosPorMesDashboard(TelaDashboard.COMPRA, freeScreen)
 
     const optionsHotizontal = {
         indexAxis: 'y' as const,

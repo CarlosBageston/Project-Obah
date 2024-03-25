@@ -4,9 +4,13 @@ import { useFormik } from "formik";
 import { IoMdClose } from "react-icons/io";
 import { useState, useEffect } from "react";
 import { BiSearchAlt } from "react-icons/bi";
+import { realtimeDb } from '../../../firebase';
 import GetData from "../../../firebase/getData";
+import { onValue, ref } from 'firebase/database';
 import CartaoPontoModel from "./model/cartaoponto";
-import { Box, DivTable, TotalValue, BoxDate, DivFull, DivTableBody, DivTableTitle, DivTableRow } from "./style";
+import { TableKey } from '../../../types/tableName';
+import { TitleDefault } from '../cadastroClientes/style';
+import ActionCartaoPontoEnum from '../../../enumeration/action';
 import { ButtonFilter } from "../../../Components/filtro/style";
 import DatePicker from '../../../Components/datePicker/datePicker';
 import ColaboradorModel from "../cadastroColaborador/model/colaborador";
@@ -15,10 +19,16 @@ import {
     Autocomplete,
     AutocompleteChangeReason,
 } from "@mui/material";
-import { realtimeDb } from '../../../firebase';
-import { onValue, ref } from 'firebase/database';
-import ActionCartaoPontoEnum from '../../../enumeration/action';
-import { TitleDefault } from '../cadastroClientes/style';
+import {
+    Box,
+    DivTable,
+    TotalValue,
+    BoxDate,
+    DivFull,
+    DivTableBody,
+    DivTableTitle,
+    DivTableRow
+} from "./style";
 
 const objClean: CartaoPontoModel = {
     dtInicio: '',
@@ -40,7 +50,7 @@ function CartaoPonto() {
     //realizando busca no banco de dados
     const {
         dataTable: dataTableColabroador,
-    } = GetData('Colaborador', true) as { dataTable: ColaboradorModel[] };
+    } = GetData(TableKey.Colaborador, true) as { dataTable: ColaboradorModel[] };
 
 
     const { values, setFieldValue } = useFormik<CartaoPontoModel>({

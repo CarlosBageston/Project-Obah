@@ -2,6 +2,7 @@ import { SHA256 } from 'crypto-js';
 import { Button } from "../../login/style";
 import { Bar, Line } from "react-chartjs-2";
 import GetData from "../../../firebase/getData";
+import { TableKey } from '../../../types/tableName';
 import ChartLine from "../../../Components/graficos/Line";
 import ChartBarVertical from "../../../Components/graficos/BarVertical";
 import ChartBarHorizontal from "../../../Components/graficos/BarHorizontal";
@@ -29,9 +30,9 @@ import {
     DivPadLock,
     StyledGiPadlockInternal,
 } from './style'
-import { generateReport } from '../../../hooks/report-excel';
 import { useFormik } from 'formik';
 import DashboardModel from './model/dashboard';
+import { generateReport } from '../../../hooks/report-excel';
 import useFormatCurrency from '../../../hooks/formatCurrency';
 
 
@@ -51,7 +52,7 @@ function Dashboard() {
     }
     const {
         dataTable
-    } = GetData('Dashboard', true);
+    } = GetData(TableKey.Dashboard, true);
     const { NumberFormatForBrazilianCurrency } = useFormatCurrency()
 
     const { values, setFieldValue } = useFormik<DashboardModel>({

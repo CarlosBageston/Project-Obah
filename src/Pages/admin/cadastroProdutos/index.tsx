@@ -10,6 +10,7 @@ import { useState, useEffect, lazy } from "react";
 import { BoxTitleDefault } from "../estoque/style";
 import EstoqueModel from '../estoque/model/estoque';
 import ComprasModel from '../compras/model/compras';
+import { TableKey } from '../../../types/tableName';
 import GenericTable from "../../../Components/table";
 import FiltroGeneric from "../../../Components/filtro";
 import { useDispatch, useSelector } from 'react-redux';
@@ -74,14 +75,14 @@ function CadastroProduto() {
         dataTable,
         loading: isLoading,
         setDataTable
-    } = GetData('Produtos', recarregue) as { dataTable: ProdutoModel[], loading: boolean, setDataTable: (data: ProdutoModel[]) => void };
+    } = GetData(TableKey.Produtos, recarregue) as { dataTable: ProdutoModel[], loading: boolean, setDataTable: (data: ProdutoModel[]) => void };
     const {
         dataTable: dataTableCompraHistorico,
-    } = GetData('Compra Historico', recarregue) as { dataTable: ComprasModel[] };
+    } = GetData(TableKey.CompraHistorico, recarregue) as { dataTable: ComprasModel[] };
 
     const {
         dataTable: dataTableEstoque,
-    } = GetData('Estoque', recarregue) as { dataTable: EstoqueModel[] };
+    } = GetData(TableKey.Estoque, recarregue) as { dataTable: EstoqueModel[] };
 
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<ProdutoModel>({
         validateOnBlur: true,
@@ -160,7 +161,7 @@ function CadastroProduto() {
             kgProduto: valuesUpdate.kgProduto,
             nrOrdem: 1
         }
-        await addDoc(collection(db, "Compra Historico"), {
+        await addDoc(collection(db, TableKey.CompraHistorico), {
             ...filteredValuesUpdate
         })
     }
@@ -179,7 +180,7 @@ function CadastroProduto() {
             });
         }
         savePurchaseHistory(values)
-        await addDoc(collection(db, "Produtos"), {
+        await addDoc(collection(db, TableKey.Produtos), {
             ...values
         })
             .then(() => {
@@ -208,19 +209,19 @@ function CadastroProduto() {
         setOpenDelete(false)
         if (selected) {
             const refID: string = selected.id ?? '';
-            await deleteDoc(doc(db, "Produtos", refID)).then(() => {
+            await deleteDoc(doc(db, TableKey.Produtos, refID)).then(() => {
                 const newDataTable = dataTable.filter(row => row.id !== selected.id);
                 setDataTable(newDataTable);
             });
             const stock = dataTableEstoque.find(stock => stock.nmProduto === selected.nmProduto)
             if (stock) {
                 const refIdEstoque: string = stock.id ?? ''
-                await deleteDoc(doc(db, "Estoque", refIdEstoque))
+                await deleteDoc(doc(db, TableKey.Estoque, refIdEstoque))
             }
             const historyCompra = dataTableCompraHistorico.find(history => history.nmProduto === selected.nmProduto)
             if (historyCompra) {
                 const refIdHistory: string = historyCompra.id ?? ''
-                await deleteDoc(doc(db, "Compra Historico", refIdHistory))
+                await deleteDoc(doc(db, TableKey.CompraHistorico, refIdHistory))
             }
         }
         setSelected(undefined)
@@ -235,7 +236,7 @@ function CadastroProduto() {
     async function handleEditRow() {
         if (selected) {
             const refID: string = selected.id ?? '';
-            const refTable = doc(db, "Produtos", refID);
+            const refTable = doc(db, TableKey.Produtos, refID);
 
             if (JSON.stringify(selected) !== JSON.stringify(initialValues)) {
                 await updateDoc(refTable, { ...selected })

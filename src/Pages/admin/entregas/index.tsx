@@ -7,6 +7,7 @@ import { EntregaModel } from "./model/entrega";
 import GetData from "../../../firebase/getData";
 import Button from "../../../Components/button";
 import { AiTwotonePrinter } from 'react-icons/ai';
+import { TableKey } from '../../../types/tableName';
 import GenericTable from "../../../Components/table";
 import FiltroGeneric from "../../../Components/filtro";
 import { useDispatch, useSelector } from 'react-redux';
@@ -49,6 +50,7 @@ import { BoxTitleDefault } from "../estoque/style";
 //hooks
 import useEstoque from '../../../hooks/useEstoque';
 import useFormatCurrency from '../../../hooks/formatCurrency';
+import useDeleteOldData from '../../../hooks/useDeleteOldData';
 import { useCalculateValueDashboard } from '../../../hooks/useCalculateValueDashboard';
 
 
@@ -76,6 +78,7 @@ function Entregas() {
     const { NumberFormatForBrazilianCurrency, convertToNumber } = useFormatCurrency();
     const { removedStockEntrega } = useEstoque();
     const { calculateValueDashboard } = useCalculateValueDashboard(recarregueDashboard, setRecarregueDashboard);
+    const { deleteEntregas } = useDeleteOldData()
 
     const initialValues: EntregaModel = ({ ...objClean });
     const ref = useRef<HTMLDivElement>(null);
@@ -83,16 +86,16 @@ function Entregas() {
     //realizando busca no banco de dados
     const {
         dataTable: dataTableCliente,
-    } = GetData('Clientes', recarregue) as { dataTable: ClienteModel[] };
+    } = GetData(TableKey.Clientes, recarregue) as { dataTable: ClienteModel[] };
     const {
         dataTable: dataTableEntregas,
         setDataTable: setDataTableEntregas,
         loading: isLoading
-    } = GetData('Entregas', recarregue) as { dataTable: EntregaModel[], setDataTable: (data: EntregaModel[]) => void, loading: boolean };
+    } = GetData(TableKey.Entregas, recarregue) as { dataTable: EntregaModel[], setDataTable: (data: EntregaModel[]) => void, loading: boolean };
 
     const {
         dataTable: produtoDataTable,
-    } = GetData('Produtos', recarregue) as { dataTable: ProdutosModel[] };
+    } = GetData(TableKey.Produtos, recarregue) as { dataTable: ProdutosModel[] };
 
 
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<EntregaModel>({
@@ -113,7 +116,7 @@ function Entregas() {
         setOpenDelete(false)
         if (selected) {
             const refID: string = selected.id ?? '';
-            await deleteDoc(doc(db, "Entregas", refID)).then(() => {
+            await deleteDoc(doc(db, TableKey.Entregas, refID)).then(() => {
                 const newDataTable = dataTableEntregas.filter(row => row.id !== selected.id);
                 setDataTableEntregas(newDataTable);
             });
@@ -140,7 +143,7 @@ function Entregas() {
         valuesUpdate.vlEntrega = convertToNumber(valuesUpdate.vlEntrega.toString())
         valuesUpdate.vlLucro = convertToNumber(valuesUpdate.vlLucro.toString())
         calculateValueDashboard(valuesUpdate.vlEntrega, valuesUpdate.dtEntrega, TelaDashboard.ENTREGA, valuesUpdate.vlLucro)
-        await addDoc(collection(db, "Entregas"), {
+        await addDoc(collection(db, TableKey.Entregas), {
             ...valuesUpdate
         })
             .then(() => {
@@ -219,6 +222,11 @@ function Entregas() {
             setScrollActive(hasScrollbar)
         }
     }, [values.cliente]);
+
+    useEffect(() => {
+        if (dataTableEntregas.length)
+            deleteEntregas(dataTableEntregas)
+    }, [dataTableEntregas])
     return (
         <Box>
             <Title>Cadastro de Novas Entregas</Title>

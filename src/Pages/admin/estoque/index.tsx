@@ -1,6 +1,7 @@
 import EstoqueModel from "./model/estoque";
 import GetData from "../../../firebase/getData";
 import React, { useState, useEffect } from "react";
+import { TableKey } from "../../../types/tableName";
 import GenericTable from "../../../Components/table";
 import FiltroGeneric from "../../../Components/filtro";
 import SituacaoProduto from "../../../enumeration/situacaoProduto";
@@ -22,7 +23,7 @@ function Estoque() {
     const {
         dataTable: estoqueDataTable,
         loading,
-    } = GetData('Estoque', recarregue) as { dataTable: EstoqueModel[], loading: boolean }
+    } = GetData(TableKey.Estoque, recarregue) as { dataTable: EstoqueModel[], loading: boolean }
 
     useEffect(() => {
         const atualizadoEstoque = estoqueDataTable.map(estoque => {

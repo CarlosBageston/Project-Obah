@@ -1,6 +1,7 @@
 import moment from "moment";
-import { useState, useEffect } from "react";
 import GetData from "../firebase/getData";
+import { useState, useEffect } from "react";
+import { TableKey } from "../types/tableName";
 import Dashboard from "../Pages/admin/dashboard/model/dashboardCompra";
 
 
@@ -12,7 +13,7 @@ export default function useDadosPorMesDashboard(tela: number, freeScreen: boolea
     //realizando busca no banco de dados
     const {
         dataTable: dataTableVendas,
-    } = GetData('Dados Dashboard', freeScreen) as { dataTable: Dashboard[] };
+    } = GetData(TableKey.DadosDashboard, freeScreen) as { dataTable: Dashboard[] };
     
     const gerarMesesDesejados = () => {
         const meses = [];

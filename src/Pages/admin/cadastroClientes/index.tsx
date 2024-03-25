@@ -6,6 +6,7 @@ import ClienteModel from './model/cliente';
 import Input from '../../../Components/input';
 import GetData from '../../../firebase/getData';
 import Button from '../../../Components/button';
+import { TableKey } from '../../../types/tableName';
 import GenericTable from '../../../Components/table';
 import FiltroGeneric from '../../../Components/filtro';
 import { useDispatch, useSelector } from 'react-redux';
@@ -70,10 +71,10 @@ function CadastroCliente() {
         dataTable,
         loading: isLoading,
         setDataTable
-    } = GetData('Clientes', recarregue) as { dataTable: ClienteModel[], loading: boolean, setDataTable: (data: ClienteModel[]) => void };
+    } = GetData(TableKey.Clientes, recarregue) as { dataTable: ClienteModel[], loading: boolean, setDataTable: (data: ClienteModel[]) => void };
     const {
         dataTable: produtosDataTable,
-    } = GetData('Produtos', recarregue) as { dataTable: ProdutosModel[] };
+    } = GetData(TableKey.Produtos, recarregue) as { dataTable: ProdutosModel[] };
 
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<ClienteModel>({
         validateOnBlur: true,
@@ -98,7 +99,7 @@ function CadastroCliente() {
     async function handleEditRow() {
         if (selected) {
             const refID: string = selected.id ?? '';
-            const refTable = doc(db, "Clientes", refID);
+            const refTable = doc(db, TableKey.Clientes, refID);
             selected.produtos.forEach(product => {
                 product.vlVendaProduto = convertToNumber(product.vlVendaProduto.toString())
             })
@@ -124,7 +125,7 @@ function CadastroCliente() {
         setOpenDelete(false)
         if (selected) {
             const refID: string = selected.id ?? '';
-            await deleteDoc(doc(db, "Clientes", refID)).then(() => {
+            await deleteDoc(doc(db, TableKey.Clientes, refID)).then(() => {
                 const newDataTable = dataTable.filter(row => row.id !== selected.id);
                 setDataTable(newDataTable);
             });
@@ -151,7 +152,7 @@ function CadastroCliente() {
         values.produtos.forEach((produto) => {
             produto.vlVendaProduto = convertToNumber(produto.vlVendaProduto.toString())
         })
-        await addDoc(collection(db, "Clientes"), {
+        await addDoc(collection(db, TableKey.Clientes), {
             ...values
         }).then(() => {
             dispatch(setLoading(false))

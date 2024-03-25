@@ -9,6 +9,7 @@ import Input from "../../../Components/input";
 import Button from "../../../Components/button";
 import GetData from "../../../firebase/getData";
 import React, { useState, useEffect } from "react";
+import { TableKey } from '../../../types/tableName';
 import { useDispatch, useSelector } from 'react-redux';
 import { addDoc, collection } from "firebase/firestore";
 import VendaModel, { ProdutoEscaniado } from "./model/vendas";
@@ -81,13 +82,17 @@ function Vendas() {
     const { NumberFormatForBrazilianCurrency, convertToNumber, formatCurrencyRealTime } = useFormatCurrency();
     const { handleInputKeyDown, suggestionsRef, selectedSuggestionIndex, onKeyPressHandleSubmit, inputRef } = useHandleInputKeyPress();
     const { removedStockVenda } = useEstoque();
-    const { deleteVendas } = useDeleteOldData()
+    const { deleteVendas } = useDeleteOldData();
     const { calculateValueDashboard } = useCalculateValueDashboard(recarregueDashboard, setRecarregueDashboard);
 
     //realizando busca no banco de dados
     const {
         dataTable: dataTableProduto,
-    } = GetData('Produtos', true) as { dataTable: ProdutosModel[] };
+    } = GetData(TableKey.Produtos, true) as { dataTable: ProdutosModel[] };
+
+    const {
+        dataTable: dataTableVenda,
+    } = GetData(TableKey.Vendas, true) as { dataTable: VendaModel[] };
 
     const initialValues: VendaModel = ({ ...objClean });
 
@@ -104,8 +109,9 @@ function Vendas() {
         onSubmit: handleSubmitForm,
     });
     useEffect(() => {
-        deleteVendas()
-    }, [])
+        if (dataTableVenda.length)
+            deleteVendas(dataTableVenda)
+    }, [dataTableVenda])
     /**
      * atualizar a data em tempo real.
      * 
@@ -279,7 +285,7 @@ function Vendas() {
             vlRecebido: convertToNumber(values.vlRecebido.toString())
         };
         calculateValueDashboard(valuesUpdate.vlTotal, valuesUpdate.dtProduto, TelaDashboard.VENDA, valuesUpdate.vlLucroTotal)
-        await addDoc(collection(db, "Vendas"), {
+        await addDoc(collection(db, TableKey.Vendas), {
             ...valuesUpdate
         }).then(() => {
             dispatch(setLoading(false))

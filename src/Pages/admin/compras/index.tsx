@@ -280,7 +280,11 @@ function AtualizarEstoque() {
         if (estoqueExistente) {
             const refID: string = estoqueExistente.id ?? '';
             const refTable = doc(db, TableKey.Estoque, refID);
-            const novaQuantidade = valuesUpdate.quantidade + estoqueExistente.quantidade;
+            let quantidadeKg = valuesUpdate.quantidade;
+            if (valuesUpdate.kgProduto && valuesUpdate.kgProduto !== 1) {
+                quantidadeKg = valuesUpdate.kgProduto * valuesUpdate.quantidade
+            }
+            const novaQuantidade = quantidadeKg + estoqueExistente.quantidade;
             await updateDoc(refTable, {
                 nmProduto: valuesUpdate.nmProduto,
                 cdProduto: valuesUpdate.cdProduto,
@@ -532,6 +536,7 @@ function AtualizarEstoque() {
             setFieldValue('vlUnitario', formatCurrency(newValue.vlUnitario.toString()));
             setFieldValue('qntMinima', newValue.qntMinima);
             setFieldValue('nmProduto', newValue.nmProduto);
+            setFieldValue('kgProduto', newValue.kgProduto);
             setFieldValue('dtCompra', moment(new Date()).format('DD/MM/YYYY'))
             if (newValue.stMateriaPrima) {
                 setFieldValue('stMateriaPrima', newValue.stMateriaPrima)

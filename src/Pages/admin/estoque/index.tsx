@@ -51,7 +51,16 @@ function Estoque() {
                     <BoxTitleFilterDefault>
                         <BoxTitleDefault>
                             <div>
-                                <FiltroGeneric data={dataTableFabricado} setFilteredData={setDataTableFabricado} carregarDados={setRecarregue} type="produto" />
+                                <FiltroGeneric
+                                    data={dataTableFabricado}
+                                    setFilteredData={setDataTableFabricado}
+                                    carregarDados={setRecarregue}
+                                    type="estoque"
+                                    filter={[
+                                        { label: 'Nome', values: 'nmProduto' },
+                                        { label: 'Status', values: 'stEstoque' }
+                                    ]}
+                                />
                             </div>
                         </BoxTitleDefault>
                         <BoxFilterDefault>
@@ -78,7 +87,16 @@ function Estoque() {
                     <BoxTitleFilterDefault>
                         <BoxTitleDefault>
                             <div>
-                                <FiltroGeneric data={dataTableComprado} setFilteredData={setDataTableComprado} carregarDados={setRecarregue} type="produto" />
+                                <FiltroGeneric
+                                    data={dataTableComprado}
+                                    setFilteredData={setDataTableComprado}
+                                    carregarDados={setRecarregue}
+                                    type="estoque"
+                                    filter={[
+                                        { label: 'Nome', values: 'nmProduto' },
+                                        { label: 'Status', values: 'stEstoque' }
+                                    ]}
+                                />
                             </div>
                         </BoxTitleDefault>
                         <BoxFilterDefault>

@@ -242,8 +242,7 @@ function AtualizarEstoque() {
     function recalculateProductFound(produtosEncontrado: ProdutosModel[]) {
         const produtoAtualizados: ProdutosModel[] = []
         produtosEncontrado.forEach(items => {
-            const foundProduct = foundProducts(items.nmProduto)
-            const foundProductUpdate = foundKgProduto(foundProduct)
+            const foundProductUpdate = foundKgProduto(items)
             if (!produtoAtualizados.includes(items)) produtoAtualizados.push(items)
             produtoDataTable.forEach(produto => {
                 if (produto.mpFabricado.some(mp => mp.nmProduto.includes(items.nmProduto))) {

@@ -39,7 +39,16 @@ export function NotaFiscal({ values, clienteCurrent, setShouldShow, quantidades,
         if (ref.current) {
             const printWindow = window.open('', '_blank');
             if (printWindow) {
-                printWindow.document.write('<html><head><title>Nota Fiscal</title></head><body>');
+                printWindow.document.write('<html><head><title>Nota Fiscal</title>');
+                printWindow.document.write(`
+                    <style>
+                        .marginprint {
+                            margin-bottom: 6px;
+                            margin-top: 6px;
+                        }
+                    </style>
+                `);
+                printWindow.document.write('</head><body>');
                 printWindow.document.write(ref.current.innerHTML);
                 printWindow.document.write('</body></html>');
                 printWindow.document.close();
@@ -72,16 +81,19 @@ export function NotaFiscal({ values, clienteCurrent, setShouldShow, quantidades,
                         <div style={{ padding: 16 }} ref={ref}>
                             <div>
                                 <Title>SORVETERIA OBAH</Title>
-                                <TextLabel>R. Uruguai, 115 - Santa Luzia, Dois Vizinhos - PR, 85660-000</TextLabel>
+                                <TextLabel className="marginprint">R. Uruguai, 115 - Santa Luzia, Dois Vizinhos - PR, 85660-000</TextLabel>
+                                <TextLabel className="marginprint">Telefone: (46) 99935-8718</TextLabel>
                                 <DivSubHeader>
                                     <div>
-                                        <TextLabel>CNPJ: 52.193.214/0001-25</TextLabel>
-                                        <TextLabel>IE: Isento</TextLabel>
+                                        <TextLabel className="marginprint">CNPJ: 52.193.214/0001-25</TextLabel>
+                                        <TextLabel className="marginprint">IE: Isento</TextLabel>
                                     </div>
                                     <div>
-                                        <TextLabel>Data e Hora da venda</TextLabel>
-                                        <TextLabel>{values.dtEntrega}</TextLabel>
-                                        <TextLabel>{horaAtual}</TextLabel>
+                                        <TextLabel className="marginprint">Data e Hora da venda</TextLabel>
+                                        <div style={{ display: 'flex' }}>
+                                            <TextLabel className="marginprint">{values.dtEntrega !== null ? values.dtEntrega.toString() : ''}</TextLabel>
+                                            <TextLabel className="marginprint">-{horaAtual}</TextLabel>
+                                        </div>
                                     </div>
                                 </DivSubHeader>
                             </div>

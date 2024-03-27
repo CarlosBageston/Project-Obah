@@ -11,7 +11,7 @@ O Projeto Gestão Sorveteria Obah foi criado para facilitar a gestão completa d
 ## Instalação e Uso
 1. Clone o repositório:
 ````
-git clone https://github.com/CarlosBageston/Project-Obah
+git clone https://github.com/CarlosBageston/Project-Obah.git
 ````
 2. Instale as dependências do projeto:
 ````

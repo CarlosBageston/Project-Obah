@@ -85,7 +85,7 @@ width: 100%;
 `
 
 export const TitleNota = styled.p`
-color: #0a0269;
+color: ${props => props.theme.paletteColor.tertiaryBlue};
 font-size: 1.2rem;
 padding: 4px 12px;
 font-weight: bold;
@@ -97,7 +97,7 @@ justify-content: space-between;
 `
 export const TitlePreco = styled.div`
 display: flex;
-color: #001f03;
+color: ${props => props.theme.paletteColor.primaryGreen};
 padding: 4px 12px;
 font-weight: 600;
 `
@@ -146,7 +146,10 @@ font-weight: bold;
 `;
 
 export const DivMultiplicar = styled.div`
-width: 8rem;
+width: 100%;
+display: flex;
+justify-content: space-between;
+align-items: center;
 `;
 
 export const DivSuggestions = styled.div`
@@ -179,17 +182,28 @@ padding: 8px;
 font-size: 20px;
 ${(props) => props.isSelected && `
         background: ${props.theme.paletteColor.primaryBlue};
-        box-shadow: 0 0 8px 1px rgba(0, 142, 236, 0.815);
+        box-shadow: 0 0 8px 1px ${props.theme.paletteColor.secundBlue};
         transition: all 0.2s ease-out;
         color: #fff;
         transform: translateY(-2px);
     `}
 &:hover {
     background: ${props => props.theme.paletteColor.primaryBlue};
-    box-shadow: 0 0 8px 1px rgba(0, 142, 236, 0.815);
+    box-shadow: 0 0 8px 1px ${props => props.theme.paletteColor.secundBlue};
     transition: all 0.2s ease-out;
     color: #fff;
     transform: translateY(-2px);
 }
 cursor: pointer;
+`;
+
+export const DivTable = styled.div`
+width: 8rem;
+height: 2rem;
+display: flex;
+align-items: center;
+justify-content: center;
+background-color: ${props => props.theme.paletteColor.secundBlue};
+border: 1px solid ${props => props.theme.paletteColor.primaryBlue};
+border-radius: 8px;
 `;

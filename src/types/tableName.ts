@@ -14,5 +14,7 @@ export const TableKey = {
     Colaborador: 'Colaborador',
     Dashboard: 'Dashboard',
     CompraHistorico: 'Compra Historico',
-    Entregas: 'Entregas'
+    Entregas: 'Entregas',
+    Comanda: 'Comanda',
+    Mesas: 'Mesas'
 };

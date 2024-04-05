@@ -455,7 +455,17 @@ function CadastroProduto() {
                 newData={useUniqueNames(dataTableCompraHistorico, values.tpProduto, SituacaoProduto.COMPRADO, isEdit)}
             />
             <ModalDelete open={openDelete} onDeleteClick={handleDeleteRow} onCancelClick={() => setOpenDelete(false)} />
-            <AlertDialog open={error ? true : false} nmProduto={error} onOKClick={() => { setError(undefined); history('/atualizar-estoque') }} />
+            <AlertDialog
+                open={error ? true : false}
+                messege={
+                    <p>
+                        Produtos <b>{error}</b> estão com o estoque vazio. Por favor, Atualize o estoque desses produtos antes de continuar.
+                    </p>
+                }
+                labelButtonOk='Ok'
+                title='Alerta'
+                onOKClick={() => { setError(undefined); history('/atualizar-estoque') }}
+            />
             <ContainerButton>
                 <Button
                     label='Cadastrar Produto'

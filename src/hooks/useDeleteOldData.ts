@@ -3,6 +3,7 @@ import { EntregaModel } from "../Pages/admin/entregas/model/entrega";
 import VendaModel from "../Pages/admin/vendas/model/vendas";
 import { deleteDoc, doc } from "firebase/firestore";
 import { db } from "../firebase";
+import { TableKey } from "../types/tableName";
 
 
 export default function useDeleteOldData(){
@@ -19,7 +20,7 @@ export default function useDeleteOldData(){
         });
         filteredVendas.forEach(async (item) => {
             const refID: string = item.id ?? '';
-            await deleteDoc(doc(db, "Vendas", refID))
+            await deleteDoc(doc(db, TableKey.Vendas, refID))
         })
     }
 
@@ -35,7 +36,7 @@ export default function useDeleteOldData(){
 
         filteredEntregas.forEach(async (item) => {
             const refID: string = item.id ?? '';
-            await deleteDoc(doc(db, "Entregas", refID))
+            await deleteDoc(doc(db, TableKey.Entregas, refID))
         })
     }
 

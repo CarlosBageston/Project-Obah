@@ -32,11 +32,11 @@ export const StyledButton = styled.button`
   transition: all 0.2s ease-in;
   cursor: pointer;
   background-color: #5078fe;
-  box-shadow: 2px 2px 12px 1px rgba(0, 142, 236, 0.815);
+  box-shadow: 2px 2px 12px 1px ${props => props.theme.paletteColor.secundBlue};
 
   &:hover {
     background: ${props => props.theme.paletteColor.primaryBlue};
-    box-shadow: 0 0 8px 1px rgba(0, 142, 236, 0.815);
+    box-shadow: 0 0 8px 1px ${props => props.theme.paletteColor.secundBlue};
     transition: all 0.2s ease-out;
     color: #fff;
     transform: translateY(-2px);
@@ -67,7 +67,7 @@ export const StyledButton = styled.button`
   }
   :disabled {
   &:hover{
-    background: rgb(164 157 159);
+    background: ${props => props.theme.paletteColor.secundDisabled};
     box-shadow: 0px 0px 0px 0px transparent;
     transition: none;
     color: #fff;
@@ -77,9 +77,9 @@ export const StyledButton = styled.button`
     animation: none;
   }
   cursor: default;
-  background: rgb(164 157 159);
+  background: ${props => props.theme.paletteColor.secundDisabled};
   opacity: 0.8;
-  border: 1px solid rgb(164 157 159);
+  border: 1px solid ${props => props.theme.paletteColor.secundDisabled};
   box-shadow: 0px 0px 0px 0px transparent;
 }
 `;

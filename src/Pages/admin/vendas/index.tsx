@@ -46,6 +46,7 @@ import {
     Suggestions,
     SuggestionsLi,
     DivIcon,
+    DivTable,
 } from './style'
 
 //hooks
@@ -54,6 +55,7 @@ import useFormatCurrency from '../../../hooks/formatCurrency';
 import useHandleInputKeyPress from '../../../hooks/useHandleInputKeyPress';
 import { useCalculateValueDashboard } from '../../../hooks/useCalculateValueDashboard';
 import useDeleteOldData from '../../../hooks/useDeleteOldData';
+import { TableManagement } from './components/tableManagement/tableManagement';
 
 
 const objClean: VendaModel = {
@@ -75,7 +77,8 @@ function Vendas() {
     const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
     const [recarregueDashboard, setRecarregueDashboard] = useState<boolean>(true);
     const [productSuggestion, setProductSuggestion] = useState<ProdutosModel[]>([]);
-
+    const [showTableManegement, setShowTableManegement] = useState<boolean>(false);
+    const [fecharComanda, setFecharComanda] = useState<VendaModel>({ ...objClean })
     const dispatch = useDispatch();
     const { loading } = useSelector((state: State) => state.user);
 
@@ -91,7 +94,7 @@ function Vendas() {
         inputRef,
         inputRefF3,
         inputRefF4
-    } = useHandleInputKeyPress();
+    } = useHandleInputKeyPress(setShowSuggestion);
 
     //realizando busca no banco de dados
     const {
@@ -133,21 +136,8 @@ function Vendas() {
     }, [values.vlRecebido]);
 
     useEffect(() => {
-        // Função para fechar as sugestões quando o usuário clicar fora
-        const handleClickOutside = (event: MouseEvent) => {
-            if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)) {
-                setShowSuggestion(false);
-            }
-        };
-
-        // Adiciona um event listener para capturar cliques fora da lista de sugestões
-        document.addEventListener('mousedown', handleClickOutside);
-
-        // Remove o event listener quando o componente for desmontado para evitar vazamentos de memória
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, []);
+        setFieldValue('produtoEscaniado', fecharComanda.produtoEscaniado);
+    }, [fecharComanda])
 
     /**
      * Função para calcular totais com base nos valores fornecidos.
@@ -251,14 +241,14 @@ function Vendas() {
      * Função para limpar o estado do formulário.
      */
     function clearState() {
-        setFieldValue('vlTotal', null),
-            setFieldValue('dtProduto', ''),
-            setFieldValue('vlRecebido', ''),
-            setFieldValue('vlTroco', null),
-            setFieldValue('produtoEscaniado', []),
-            setFieldValue('tpProduto', SituacaoProduto.FABRICADO),
-            setKey(Math.random()),
-            setIsValidQntBolas(false)
+        setFieldValue('vlTotal', null)
+        setFieldValue('dtProduto', '')
+        setFieldValue('vlRecebido', '')
+        setFieldValue('vlTroco', null)
+        setFieldValue('produtoEscaniado', [])
+        setFieldValue('tpProduto', SituacaoProduto.FABRICADO)
+        setKey(Math.random())
+        setIsValidQntBolas(false)
     }
 
     /**
@@ -428,15 +418,30 @@ function Vendas() {
                             name="quantidadeVenda"
                             value={multiplica}
                             style={{ fontSize: 14 }}
-                            styleDiv={{ marginTop: 4 }}
+                            styleDiv={{ marginTop: 4, width: '8rem' }}
                             styleLabel={{ fontSize: 16 }}
                             onChange={(e) => setMultiplica(isNaN(parseFloat(e.target.value)) ? undefined : parseFloat(e.target.value))}
                             error={''}
                             inputRef={inputRef}
                             onKeyPress={handleMultiplicaKeyPress}
                         />
+                        <Button
+                            label='Mesas'
+                            type="button"
+                            onClick={() => { setShowTableManegement(!showTableManegement) }}
+                            style={{ height: 40, width: 150 }}
+                        />
                     </DivMultiplicar>
-
+                    {
+                        showTableManegement ?
+                            <TableManagement
+                                dataTableProduto={dataTableProduto}
+                                setFecharComanda={setFecharComanda}
+                                setShowTableManegement={setShowTableManegement}
+                                produtoEscaniadoList={values.produtoEscaniado}
+                            />
+                            : null
+                    }
                     <Input
                         error={produtoNotFound ? 'Nome não encontrado, verifique o nome e tente novamente' : ''}
                         label="Código do Produto:"
@@ -521,7 +526,7 @@ function Vendas() {
                                 onChange={e => { setFieldValue('vlRecebido', formatCurrencyRealTime(e.target.value)) }}
                             />
                             <ResultadoTotal>Total: {values.vlTotal ? NumberFormatForBrazilianCurrency(values.vlTotal) : ''}</ResultadoTotal>
-                            <ResultadoTotal>Troco: {values.vlTroco ? NumberFormatForBrazilianCurrency(values.vlTroco) : ''}</ResultadoTotal>
+                            <ResultadoTotal>Troco: {values.vlTroco ? NumberFormatForBrazilianCurrency(values.vlTroco) : ' -'}</ResultadoTotal>
                         </div>
                         <div>
                             <Button

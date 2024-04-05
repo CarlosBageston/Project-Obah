@@ -8,12 +8,30 @@ import ProdutosModel from "../Pages/admin/cadastroProdutos/model/produtos";
  * @returns Um objeto contendo referência ao elemento de sugestões, funções de manipulação de eventos de teclado e o índice da sugestão selecionada.
  * @public
  */
-export default function useHandleInputKeyPress() {
+export default function useHandleInputKeyPress(setShowSuggestion?: (value: React.SetStateAction<boolean>) => void) {
     const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState<number>(0);
     const suggestionsRef = useRef<HTMLUListElement>(null);
-    const inputRef = useRef<HTMLInputElement>(null);
+    const inputRefF1 = useRef<HTMLInputElement>(null);
+    const inputRefF2 = useRef<HTMLInputElement>(null);
     const inputRefF3 = useRef<HTMLInputElement>(null);
     const inputRefF4 = useRef<HTMLInputElement>(null);
+
+    const handleClickOutside = (event: MouseEvent) => {
+        if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node) && setShowSuggestion) {
+            setShowSuggestion(false);
+        }
+    };
+
+    useEffect(() => {
+        // Adiciona um event listener para capturar cliques fora da lista de sugestões
+        document.addEventListener('mousedown', handleClickOutside);
+
+        // Remove o event listener quando o componente for desmontado para evitar vazamentos de memória
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
     /**
      * ajustar o scroll quando o índice da sugestão selecionada muda.
      */
@@ -62,7 +80,37 @@ export default function useHandleInputKeyPress() {
             }
         }
     };
+    /**
+     * Adiciona o efeito ao nível do documento para ouvir eventos de teclado para a tecla especificada.
+     *
+     * @param key - Código da tecla.
+     * @param callback - Função que retorna chamada quando a tecla é pressionada.
+     */
+    const useShortcutComanda = (key: string, callback: () => void) => {
+        useEffect(() => {
+            const handleKeyPress = (e: Event) => {
+                if (e instanceof KeyboardEvent && e.key === key) {
+                    e.preventDefault();
+                    callback();
+                }
+            };
 
+            document.addEventListener("keydown", handleKeyPress);
+
+            return () => {
+                document.removeEventListener("keydown", handleKeyPress);
+            };
+        }, [key, callback]);
+    };
+    // Adiciona o atalho de teclado usando o hook useShortcutCodProduct
+    useShortcutComanda("F1", () => {
+        if (inputRefF1.current) {
+            const input = inputRefF1.current.querySelector('input');
+                    if (input) {
+                        input.focus();
+                    }
+        }
+    });
     /**
      * Adiciona o efeito ao nível do documento para ouvir eventos de teclado para a tecla especificada.
      *
@@ -87,8 +135,8 @@ export default function useHandleInputKeyPress() {
     };
     // Adiciona o atalho de teclado usando o hook useShortcut
     useShortcut("F2", () => {
-        if (inputRef.current) {
-            inputRef.current.focus();
+        if (inputRefF2.current) {
+            inputRefF2.current.focus();
         }
     });
     /**
@@ -119,6 +167,7 @@ export default function useHandleInputKeyPress() {
             inputRefF4.current.focus();
         }
     });
+
     /**
      * Adiciona o efeito ao nível do documento para ouvir eventos de teclado para a tecla especificada.
      *
@@ -164,8 +213,9 @@ export default function useHandleInputKeyPress() {
         handleInputKeyDown,
         selectedSuggestionIndex,
         onKeyPressHandleSubmit,
-        inputRef,
+        inputRef: inputRefF2,
         inputRefF3,
-        inputRefF4
+        inputRefF4,
+        inputRefF1
     }
 }

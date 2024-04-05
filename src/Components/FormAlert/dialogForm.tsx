@@ -1,15 +1,19 @@
 import * as React from 'react';
-import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
+import Button from '../button';
 
 interface DialogProps {
     open: boolean;
     onOKClick: () => void;
-    nmProduto: string | undefined
+    labelButtonOk: string
+    title: string;
+    messege: React.ReactNode
+    onCancelClick?: () => void;
+    labelButtonCencel?: string
 }
 
 /**
@@ -23,19 +27,21 @@ interface DialogProps {
  * @returns {JSX.Element} - Elemento JSX representando o componente de diálogo de alerta.
  */
 
-export default function AlertDialog({ open, onOKClick, nmProduto }: DialogProps): JSX.Element {
+export default function AlertDialog({ open, onOKClick, messege, title, labelButtonOk, onCancelClick, labelButtonCencel }: DialogProps): JSX.Element {
     return (
         <Dialog open={open}>
-            <DialogTitle>Alerta</DialogTitle>
+            <DialogTitle>{title}</DialogTitle>
             <DialogContent>
                 <DialogContentText>
-                    Produtos <b>{nmProduto}</b> estão com o estoque vazio. Por favor, Atualize o estoque desses produtos antes de continuar.
+                    {messege}
                 </DialogContentText>
             </DialogContent>
             <DialogActions>
-                <Button onClick={onOKClick} autoFocus>
-                    OK
-                </Button>
+                {labelButtonCencel ?
+                    <Button onClick={onCancelClick} label={labelButtonCencel} type="button" />
+                    : null
+                }
+                <Button onClick={onOKClick} label={labelButtonOk} type="button" />
             </DialogActions>
         </Dialog>
     );

@@ -7,7 +7,13 @@ export const theme: DefaultTheme ={
         borderInput: '#6e6dc0',
         colorLabel: '#4d68af',
         disabled: '#e0e0e0ab',
-        primaryBlue: "#3d6aff"
+        secundDisabled: 'rgb(164 157 159)',
+        primaryBlue: '#3d6aff',
+        secundBlue: 'rgba(0, 142, 236, 0.815)',
+        tertiaryBlue: '#0a0269',
+        primaryGreen: '#001f03',
+        secundGreen: '#34974d',
+        tertiaryGreen: '#36c85b'
     },
     fontsDefault: {
         primaryFont: "'Baloo 2', Arial, sans-serif",

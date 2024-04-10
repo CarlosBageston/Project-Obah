@@ -49,7 +49,7 @@ width: 90%;
 export const BoxProduct = styled.div`
 overflow-y: auto;
 width: 100%;
-height: 15rem;
+height: 13rem;
 ::-webkit-scrollbar {
       width: 8px; /* largura da barra de rolagem */
       background-color: #f0f0f0; /* cor do fundo da barra de rolagem */

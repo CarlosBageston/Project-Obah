@@ -58,7 +58,8 @@ margin-top: 2rem;
 margin-right: 2rem;
 `;
 
-export const ContainerResult = styled.div`
+export const ContainerResult = styled.div<{open: boolean}>`
+position: ${props => props.open ? 'relative' : 'none'};
 display: flex;
 flex-direction: column;
 justify-content: space-around;

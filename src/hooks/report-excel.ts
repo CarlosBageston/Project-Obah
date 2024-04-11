@@ -1,12 +1,12 @@
 import ExcelJS from 'exceljs';
 
 
-export const generateReport = async ( somaTotalEntregas: number, somaTotalVendas: number ) => {
+export const generateReport = async ( somaTotalEntregas: number, somaTotalVendas: number, selectedMonth: string ) => {
 
     // Criação da planilha Excel
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('RelatorioMensal');
-
+    
     worksheet.views = [
         {
             showGridLines: false,
@@ -71,7 +71,7 @@ export const generateReport = async ( somaTotalEntregas: number, somaTotalVendas
     cellA1.value = 'RELATÓRIO MENSAL DAS RECEITAS BRUTAS';
     cellA2.value = 'CNPJ: 52.193.214/0001-25';
     cellA3.value = 'Empreendedor individual: Carlos Eduardo Bageston';
-    cellA4.value = 'Período de apuração: 11/2023';
+    cellA4.value = `Período de apuração: ${selectedMonth}`;
     cellA5.value = 'RECEITA BRUTA MENSAL – REVENDA DE MERCADORIAS (COMÉRCIO) ';
     cellA6.value = 'I – Revenda de mercadorias com dispensa de emissão de documento fiscal ';
     cellA7.value = 'II – Revenda de mercadorias com documento fiscal emitido ';
@@ -90,11 +90,11 @@ export const generateReport = async ( somaTotalEntregas: number, somaTotalVendas
     cellA20.value = '  - Os documentos fiscais comprobatórios das entradas de mercadorias e serviços tomados referentes ao período;';
     cellA21.value = '  - As notas fiscais relativas às operações ou prestações realizadas eventualmente emitidas.';
 
-    cellB6.value = somaTotalVendas ? somaTotalVendas : 'R$ ';
+    cellB6.value = `R$ ${somaTotalVendas ? somaTotalVendas : 'R$ '}`;
     cellB7.value = 'R$ ';
     cellB8.value = 'R$ ';
-    cellB10.value = 'R$ ';
-    cellB11.value = somaTotalEntregas ? somaTotalEntregas : 'R$ ';
+    cellB10.value = `R$ ${somaTotalEntregas ? somaTotalEntregas : 'R$ '}`;
+    cellB11.value = 'R$ ';
     cellB12.value = 'R$ ';
     cellB14.value = 'R$ ';
     cellB15.value = 'R$ ';
@@ -263,6 +263,6 @@ export const generateReport = async ( somaTotalEntregas: number, somaTotalVendas
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = 'relatorio_mensal.xlsx';
+    link.download = `relatorio_mensal_${selectedMonth}.xlsx`;
     link.click();
 };

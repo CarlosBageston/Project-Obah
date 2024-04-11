@@ -84,6 +84,7 @@ export default function ChartBarVertical(freeScreen: boolean) {
         dataVertical,
         optionsVertical,
         vlLucro, 
-        vlTotal
+        vlTotal,
+        dadosPorMes
     }
 }

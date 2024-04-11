@@ -19,7 +19,7 @@ export default function ChartLine(freeScreen: boolean) {
   
     const { dadosPorMes, vlLucro, vlTotal } = useDadosPorMesDashboard(TelaDashboard.ENTREGA, freeScreen)
 
-   const labels = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    const labels = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
     const dataLine = {
         labels,
@@ -89,6 +89,7 @@ export default function ChartLine(freeScreen: boolean) {
         optionsLine,
         ref,
         vlLucro, 
-        vlTotal
+        vlTotal,
+        dadosPorMes
     };
 }

@@ -32,16 +32,17 @@ import {
 } from './style'
 import { useFormik } from 'formik';
 import DashboardModel from './model/dashboard';
-import { generateReport } from '../../../hooks/report-excel';
 import useFormatCurrency from '../../../hooks/formatCurrency';
+import PopUpReport from './components/pop-upReport';
 
 
 function Dashboard() {
     const [freeScreen, setFreeScreen] = useState<boolean>(false);
+    const [openReport, setOpenReport] = useState<boolean>(false);
     const [isLocked, setIsLocked] = useState<boolean>(true);
     const refInput = useRef<HTMLInputElement>(null);
-    const { dataVertical, optionsVertical, vlLucro: vlLucroVertical, vlTotal: vlTotalVertical } = ChartBarVertical(freeScreen);
-    const { dataLine, optionsLine, ref, vlLucro: vlLucroLine, vlTotal: vlTotalLine } = ChartLine(freeScreen);
+    const { dataVertical, optionsVertical, vlLucro: vlLucroVertical, vlTotal: vlTotalVertical, dadosPorMes: DadosPorMesVertical } = ChartBarVertical(freeScreen);
+    const { dataLine, optionsLine, ref, vlLucro: vlLucroLine, vlTotal: vlTotalLine, dadosPorMes: DadosPorMesLine } = ChartLine(freeScreen);
     const { dataHorizontal, optionsHotizontal } = ChartBarHorizontal(freeScreen)
 
     const initialValues: DashboardModel = {
@@ -60,9 +61,6 @@ function Dashboard() {
         onSubmit: () => { },
     });
 
-    function getDataReport() {
-        generateReport(vlTotalLine, vlTotalVertical);
-    }
     useEffect(() => {
         if (vlLucroLine && vlLucroVertical && vlTotalLine && vlTotalVertical) {
             setFieldValue('somaAnual', vlTotalLine + vlTotalVertical);
@@ -151,10 +149,11 @@ function Dashboard() {
                         </DivGraficVertical>
                     </ContainerTwoGrafic>
                 </ContainerGrafic>
-                <ContainerResult>
-                    <Button onClick={() => getDataReport()}>
+                <ContainerResult open={freeScreen}>
+                    <Button onClick={() => { setOpenReport(!openReport) }}>
                         Gerar Relatório Mensal
                     </Button>
+                    <PopUpReport open={openReport} DadosPorMesLine={DadosPorMesLine} DadosPorMesVertical={DadosPorMesVertical} />
                     <DivResult>
                         <TextResult>Ganho anual</TextResult>
                         <SumResult>{freeScreen && values.somaAnual ? `${NumberFormatForBrazilianCurrency(values.somaAnual)}` : 'R$ 0,00'}</SumResult>

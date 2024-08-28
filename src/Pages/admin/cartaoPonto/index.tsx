@@ -29,6 +29,7 @@ import {
     DivTableTitle,
     DivTableRow
 } from "./style";
+import useFormatCurrency from '../../../hooks/formatCurrency';
 
 const objClean: CartaoPontoModel = {
     dtInicio: '',
@@ -43,10 +44,11 @@ function CartaoPonto() {
     const [currentColaborador, setCurrentColaborador] = useState<ColaboradorModel | null>();
     const [initialValues, setInitialValues] = useState<CartaoPontoModel>({ ...objClean });
     const [currentCartaoPonto, setCurrentCartaoPonto] = useState<CartaoPontoModel[]>([])
-    const [sumTotalPago, setSumTotalPago] = useState<number>();
-    const [sumHoraTrabalhada, setHoraTrabalhada] = useState<number>();
+    const [sumTotalPago, setSumTotalPago] = useState<string>('');
+    const [sumHoraTrabalhada, setHoraTrabalhada] = useState<string>('');
     const [dataRealTime, setDataRealTime] = useState<CartaoPontoModel[]>([])
 
+    const { formatCurrency } = useFormatCurrency();
     //realizando busca no banco de dados
     const {
         dataTable: dataTableColabroador,
@@ -104,28 +106,32 @@ function CartaoPonto() {
         let horasTrabalhadas = 0;
         let valorPago = 0;
 
-        for (let i = 0; i < data.length; i++) {
-            const entrada = data[i];
+        data.forEach((entrada, i) => {
             const saida = data[i + 1];
 
             if (entrada && saida && entrada.action === 0 && saida.action === 1) {
-                const horaEntrada = entrada.datetime ? new Date(entrada.datetime).getTime() : 0;
-                const horaSaida = saida.datetime ? new Date(saida.datetime).getTime() : 0;
-                const diffMilliseconds = horaSaida - horaEntrada;
-                const diffHours = diffMilliseconds / (1000 * 60 * 60);
+                const horaEntrada = moment(entrada.datetime);
+                const horaSaida = moment(saida.datetime);
+                const diffSeconds = horaSaida.diff(horaEntrada, 'seconds'); // Diferença em segundos
+                const vlHora = entrada.vlHora ?? 0;
 
-                const vlHora = entrada.vlHora;
-
-                if (!isNaN(diffHours) && !isNaN(vlHora as number)) {
-                    horasTrabalhadas += diffHours;
-                    valorPago += diffHours * Number(vlHora);
+                if (!isNaN(diffSeconds) && !isNaN(vlHora)) {
+                    horasTrabalhadas += diffSeconds / 3600; // Convertendo segundos para horas
+                    valorPago += (diffSeconds / 3600) * vlHora;
                 }
-
-                i++;
             }
-        }
+        });
 
-        return { horasTrabalhadas, valorPago };
+        // Converter horas trabalhadas para horas, minutos e segundos
+        const totalSeconds = Math.floor(horasTrabalhadas * 3600);
+        const horas = Math.floor(totalSeconds / 3600);
+        const minutos = Math.floor((totalSeconds % 3600) / 60);
+        const segundos = totalSeconds % 60;
+
+        return {
+            horasTrabalhadas: `${horas}:${minutos}:${segundos}`,
+            valorPago: formatCurrency(valorPago.toFixed(2))
+        };
     }
 
     function handleSearch() {
@@ -133,13 +139,13 @@ function CartaoPonto() {
             const dataFormattedInicio = new Date(values.dtInicio)
             const dataFormattedTermino = new Date(values.dtTermino)
 
-            const dateInicio = moment(dataFormattedInicio).format("DD/MM/YYYY");
-            const dateTermino = moment(dataFormattedTermino).format("DD/MM/YYYY")
+            const inicioDate = moment(dataFormattedInicio, "DD/MM/YYYY");
+            const terminoDate = moment(dataFormattedTermino, "DD/MM/YYYY");
 
             const filteredData = dataRealTime.filter(cartao => {
-                const cartaoDate = moment(cartao.datetime).format("DD/MM/YYYY");
+                const cartaoDate = moment(cartao.datetime);
 
-                return cartaoDate >= dateInicio && cartaoDate <= dateTermino &&
+                return cartaoDate.isSameOrAfter(inicioDate, 'day') && cartaoDate.isSameOrBefore(terminoDate, 'day') &&
                     cartao.uid === currentColaborador.idCartaoPonto;
             });
             filteredData.map((item) => {
@@ -149,7 +155,6 @@ function CartaoPonto() {
             })
             const { horasTrabalhadas, valorPago } = calcularHorasTrabalhadas(filteredData)
             setSumTotalPago(valorPago)
-            setCurrentCartaoPonto(filteredData)
             setHoraTrabalhada(horasTrabalhadas)
             mergeEntriesAndExits(filteredData)
         }
@@ -255,49 +260,40 @@ function CartaoPonto() {
                     </ButtonFilter>
                 </div>
             </DivFull>
-
-            {currentCartaoPonto.length > 0 &&
-                <div>
-                    <DivTable>
-                        <DivTableTitle>
-                            <h3>Data Trabalhada</h3>
-                            <h3>Hora de entrada</h3>
-                            <h3>Hora de saída</h3>
-                            <h3>Valor a Receber</h3>
-                        </DivTableTitle>
-                        <DivTableBody>
-                            {currentCartaoPonto.map(row => (
-                                <DivTableRow key={row.id}>
-                                    <p>{moment(row.entrada).format("DD/MM/YYYY")}</p>
-                                    <p>{moment(row.entrada).format("HH:mm:ss")}</p>
-                                    <p>{moment(row.saida).format("HH:mm:ss")}</p>
-                                    <p>
-                                        {row.vlHora && row.vlHora % 1 === 0 && typeof row.vlHora === 'number'
-                                            ? ` ${row.vlHora.toFixed(0)},00`
-                                            : `${row.vlHora?.toString() + ',00'}`
-                                        }
-                                    </p>
-                                </DivTableRow>
-                            ))}
-                        </DivTableBody>
-                    </DivTable>
+            <div style={{ minHeight: 'calc(100vh - 433px)' }}>
+                {currentCartaoPonto.length > 0 &&
                     <div>
-                        <TotalValue>Total de Horas Trabalhadas:
-                            {sumHoraTrabalhada && sumHoraTrabalhada % 1 === 0 ?
-                                ` ${sumHoraTrabalhada?.toFixed(0)},00`
-                                :
-                                ` ${sumHoraTrabalhada?.toFixed(2).replace('.', ',')}`}
-                        </TotalValue>
-                        <TotalValue>Valor Total: R$
-                            {sumTotalPago && sumTotalPago % 1 === 0 ?
-                                ` ${sumTotalPago?.toFixed(0)},00`
-                                :
-                                ` ${sumTotalPago?.toFixed(2).replace('.', ',')}`}
-                        </TotalValue>
-                    </div>
+                        <DivTable>
+                            <DivTableTitle>
+                                <h3>Data Trabalhada</h3>
+                                <h3>Hora de entrada</h3>
+                                <h3>Hora de saída</h3>
+                                <h3>Valor a Receber</h3>
+                            </DivTableTitle>
+                            <DivTableBody>
+                                {currentCartaoPonto.map(row => (
+                                    <DivTableRow key={row.id}>
+                                        <p>{moment(row.entrada).format("DD/MM/YYYY")}</p>
+                                        <p>{moment(row.entrada).format("HH:mm:ss")}</p>
+                                        <p>{moment(row.saida).format("HH:mm:ss")}</p>
+                                        <p>
+                                            {row.vlHora && row.vlHora % 1 === 0 && typeof row.vlHora === 'number'
+                                                ? ` ${row.vlHora.toFixed(0)},00`
+                                                : `${row.vlHora?.toString() + ',00'}`
+                                            }
+                                        </p>
+                                    </DivTableRow>
+                                ))}
+                            </DivTableBody>
+                        </DivTable>
+                        <div>
+                            <TotalValue>Total de Horas Trabalhadas: {sumHoraTrabalhada}</TotalValue>
+                            <TotalValue>Valor Total: {sumTotalPago}</TotalValue>
+                        </div>
 
-                </div>
-            }
+                    </div>
+                }
+            </div>
         </Box>
     )
 }

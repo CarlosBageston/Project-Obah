@@ -6,7 +6,7 @@ position: absolute;
 display: flex;
 width: 90%;
 height: 34%;
-top: 80px;
+top: 150px;
 left: 18px;
 background-color: #ffffff;
 border-radius: 8px;

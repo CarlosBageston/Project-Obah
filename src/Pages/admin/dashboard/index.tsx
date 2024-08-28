@@ -106,9 +106,6 @@ function Dashboard() {
             <div>
                 <Title>Dashboard Sorveteria Obah!</Title>
             </div>
-            <DivPadLock>
-                <StyledGiPadlockInternal onClick={() => { setFreeScreen(false); setIsLocked(true) }} />
-            </DivPadLock>
             <Container>
                 <BlockedInformation isVisible={freeScreen} onClick={togglePadlock}>
                     <StyledGiPadlock isLocked={isLocked} />
@@ -150,6 +147,9 @@ function Dashboard() {
                     </ContainerTwoGrafic>
                 </ContainerGrafic>
                 <ContainerResult open={freeScreen}>
+                    <DivPadLock>
+                        <StyledGiPadlockInternal onClick={() => { setFreeScreen(false); setIsLocked(true) }} />
+                    </DivPadLock>
                     <Button onClick={() => { setOpenReport(!openReport) }}>
                         Gerar Relatório Mensal
                     </Button>

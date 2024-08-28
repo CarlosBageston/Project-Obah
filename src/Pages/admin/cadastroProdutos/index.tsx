@@ -141,6 +141,7 @@ function CadastroProduto() {
     const inputsConfig: InputConfig[] = [
         { label: 'Nome', propertyName: 'nmProduto' },
         { label: 'Código do Produto', propertyName: 'cdProduto' },
+        { label: 'Rendimento Em Kg', propertyName: 'kgProduto' },
         { label: 'Valor de Venda', propertyName: 'vlVendaProduto', isCurrency: true },
         { label: 'Valor Pago', propertyName: 'vlUnitario', isCurrency: true, isDisable: selected?.tpProduto === SituacaoProduto.FABRICADO },
     ];

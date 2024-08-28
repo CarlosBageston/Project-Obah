@@ -62,7 +62,7 @@ export const ContainerResult = styled.div<{open: boolean}>`
 position: ${props => props.open ? 'relative' : 'none'};
 display: flex;
 flex-direction: column;
-justify-content: space-around;
+justify-content: space-between;
 margin-left: 2rem;
 `;
 
@@ -184,18 +184,13 @@ text-shadow: 1px 1px 1px #080808;
 `;
 
 export const DivPadLock = styled.div`
-position: relative;
-width: 98%;
 display: flex;
 justify-content: flex-end;
-margin-top: 2rem;
 `;
 
 export const StyledGiPadlockInternal = styled(GiPadlock)`
 width: 50px;
 height: 50px;
-position: absolute;
-z-index: 0;
 color: #000;
 transition: transform 0.3s;
 &:hover{

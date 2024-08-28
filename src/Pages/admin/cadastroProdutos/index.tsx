@@ -240,7 +240,9 @@ function CadastroProduto() {
             const refTable = doc(db, TableKey.Produtos, refID);
 
             if (JSON.stringify(selected) !== JSON.stringify(initialValues)) {
-                selected.vlUnitario = convertToNumber(selected.vlUnitario.toString())
+                if (typeof selected.vlUnitario === 'string') {
+                    selected.vlUnitario = convertToNumber(selected.vlUnitario)
+                }
                 selected.vlVendaProduto = convertToNumber(selected.vlVendaProduto.toString())
                 await updateDoc(refTable, { ...selected })
                     .then(() => {

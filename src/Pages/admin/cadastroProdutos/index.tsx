@@ -240,7 +240,9 @@ function CadastroProduto() {
             const refTable = doc(db, TableKey.Produtos, refID);
 
             if (JSON.stringify(selected) !== JSON.stringify(initialValues)) {
-                selected.vlUnitario = convertToNumber(selected.vlUnitario.toString())
+                if (typeof selected.vlUnitario === 'string') {
+                    selected.vlUnitario = convertToNumber(selected.vlUnitario)
+                }
                 selected.vlVendaProduto = convertToNumber(selected.vlVendaProduto.toString())
                 await updateDoc(refTable, { ...selected })
                     .then(() => {
@@ -268,6 +270,8 @@ function CadastroProduto() {
         let somaFormat = 0.00;
         if (isEdit && selected && selected.mpFabricado.length > 0) {
             somaFormat = calculateTotalValue(selected.mpFabricado, dataTableCompraHistorico);
+            console.log(somaFormat)
+            console.log(parseFloat(somaFormat.toFixed(2)))
             setSelected((prevSelected) => ({
                 ...prevSelected,
                 vlUnitario: parseFloat(somaFormat.toFixed(2)),

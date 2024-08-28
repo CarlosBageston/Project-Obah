@@ -141,7 +141,7 @@ function CadastroProduto() {
     const inputsConfig: InputConfig[] = [
         { label: 'Nome', propertyName: 'nmProduto' },
         { label: 'Código do Produto', propertyName: 'cdProduto' },
-        { label: 'Rendimento Em Kg', propertyName: 'kgProduto' },
+        { label: 'Rendimento Em Kg', propertyName: 'kgProduto', isDisable: selected?.kgProduto === undefined },
         { label: 'Valor de Venda', propertyName: 'vlVendaProduto', isCurrency: true },
         { label: 'Valor Pago', propertyName: 'vlUnitario', isCurrency: true, isDisable: selected?.tpProduto === SituacaoProduto.FABRICADO },
     ];
@@ -240,6 +240,8 @@ function CadastroProduto() {
             const refTable = doc(db, TableKey.Produtos, refID);
 
             if (JSON.stringify(selected) !== JSON.stringify(initialValues)) {
+                selected.vlUnitario = convertToNumber(selected.vlUnitario.toString())
+                selected.vlVendaProduto = convertToNumber(selected.vlVendaProduto.toString())
                 await updateDoc(refTable, { ...selected })
                     .then(() => {
                         const index = dataTable.findIndex((item) => item.id === selected.id);
@@ -264,7 +266,7 @@ function CadastroProduto() {
      */
     useEffect(() => {
         let somaFormat = 0.00;
-        if (isEdit && selected) {
+        if (isEdit && selected && selected.mpFabricado.length > 0) {
             somaFormat = calculateTotalValue(selected.mpFabricado, dataTableCompraHistorico);
             setSelected((prevSelected) => ({
                 ...prevSelected,

@@ -1,10 +1,6 @@
 
 import { Suspense, lazy } from 'react';
 import Footer from '../Pages/Footer';
-import Contato from '../Pages/Contato';
-import SobreNos from '../Pages/SobreNos';
-import Carousel from '../Pages/Carousel';
-import MaisVendidos from '../Pages/MaisVendidos';
 import logo from '../assets/Image/logo.png';
 
 const Login = lazy(() => import('../Pages/login'));
@@ -37,15 +33,6 @@ export default function Router() {
             }>
                 <Routes>
                     <Route path='/' element={
-                        <>
-                            <Carousel />
-                            <MaisVendidos />
-                            <SobreNos />
-                            <Contato />
-                        </>
-                    }
-                    />
-                    <Route path='/login' element={
                         <Login />
                     }
                     />

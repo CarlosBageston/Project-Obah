@@ -7,21 +7,11 @@ import { FiEdit } from "react-icons/fi";
 
 export const ContainerTable = styled.div`
 margin:  0 4rem;
-overflow: auto;
-height: 27rem;
-
-::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-    background-color: #F5F5F5;
-  }
-::-webkit-scrollbar-thumb {
-    background-color: #888;
-    border-radius: 4px;
-  }
-::-webkit-scrollbar-thumb:hover {
-    background-color: #555;
-  }
+height: 25rem;
+`;
+export const ContainerFilter = styled(ContainerTable)`
+height: auto;
+margin-bottom: -20px;
 `;
 
 export const StyledTableCell = styleMui(TableCell)(({ theme }) => ({

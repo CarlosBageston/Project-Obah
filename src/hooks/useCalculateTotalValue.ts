@@ -1,8 +1,12 @@
+import { where } from "firebase/firestore";
 import CompraHistoricoModel from "../Pages/admin/compras/model/comprahistoricoModel";
 import ComprasModel from "../Pages/admin/compras/model/compras";
 import SituacaoProduto from "../enumeration/situacaoProduto";
 import useFormatCurrency from "./formatCurrency";
+import { getItemsByQuery } from "./queryFirebase";
 import { foundKgProduto } from "./useFoundProductKg";
+import { TableKey } from "../types/tableName";
+import { Dispatch } from 'redux';
 
 const { convertToNumber } = useFormatCurrency();
 
@@ -31,28 +35,46 @@ export class ProdutosSemQuantidadeError {
  * @returns {number} - Valor total calculado.
  * @throws {ProdutosSemQuantidadeError} - Lança exceção se houver produtos sem quantidade.
  */
-export function calculateTotalValue(mpList: ComprasModel[] | ComprasModel, comprasDataTable: CompraHistoricoModel[] | CompraHistoricoModel): number {
+export async function calculateTotalValue(
+    mpList: ComprasModel[] | ComprasModel, 
+    dispatch: Dispatch,
+    comprasDataTable?: CompraHistoricoModel,
+): Promise<number> {
     let soma = 0;
     const produtosSemQuantidade: string[] = [];
-    if (Array.isArray(comprasDataTable) && Array.isArray(mpList)) {
-        comprasDataTable.forEach(compra => {
-            if(compra.tpProduto === SituacaoProduto.FABRICADO || !compra.stMateriaPrima) return;
-            if(!compra.vlUnitario){
-                produtosSemQuantidade.push(compra.nmProduto)
-            }
-        })
-        if(produtosSemQuantidade.length > 0){
-            const nomesSeparadosPorVirgula = produtosSemQuantidade.join(', ');
-            throw new ProdutosSemQuantidadeError(nomesSeparadosPorVirgula);
+    const verificarProdutosSemQuantidade = (produtos: CompraHistoricoModel[]) => {
+        return produtos.reduce((acc: string[], compra) => {
+            if (!compra.stMateriaPrima) return acc;
+            if (!compra.vlUnitario) acc.push(compra.nmProduto);
+            return acc;
+        }, []);
+    };
+
+    if (Array.isArray(mpList)) {
+        const { data } = await getItemsByQuery<CompraHistoricoModel>(
+            TableKey.CompraHistorico,
+            [where('tpProduto', '!=', SituacaoProduto.FABRICADO)],
+            dispatch
+        );
+
+        produtosSemQuantidade.push(...verificarProdutosSemQuantidade(data));
+
+        if (produtosSemQuantidade.length > 0) {
+            throw new ProdutosSemQuantidadeError(produtosSemQuantidade.join(', '));
         }
+
+        const produtosMap = new Map<string, CompraHistoricoModel>(
+            data.map(compra => [compra.nmProduto, compra])
+        );
+
         for (const mp of mpList) {
-            const produtoEncontrado = comprasDataTable.find(produto => produto.nmProduto === mp.nmProduto);
+            const produtoEncontrado = produtosMap.get(mp.nmProduto);
             if (produtoEncontrado) {
-                const foundProduct = foundKgProduto(produtoEncontrado)
+                const foundProduct = foundKgProduto(produtoEncontrado);
                 soma += calcularValorParaProduto(mp, foundProduct);
             }
         }
-    } else if (!Array.isArray(comprasDataTable) && !Array.isArray(mpList)) {
+    } else if (!Array.isArray(mpList) && comprasDataTable) {
         soma = calcularValorParaProduto(mpList, comprasDataTable);
     }
     return soma;

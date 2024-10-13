@@ -1,8 +1,8 @@
 import { ContainerAlert } from './style';
 import { useSelector } from 'react-redux';
 import { useState, useEffect } from 'react';
-import { State } from '../../store/reducer/reducer';
 import { Alert, AlertTitle, Box, CircularProgress } from '@mui/material';
+import { RootState } from '../../store/reducer/store';
 
 
 interface Props {
@@ -27,7 +27,7 @@ const FormAlert = ({ submitForm, name, styleLoadingMarginTop, styleLoadingMargin
 
     const [fail, setFail] = useState(false);
     const [success, setSuccess] = useState(false);
-    const { loading } = useSelector((state: State) => state.user);
+    const { loading } = useSelector((state: RootState) => state.user);
     useEffect(() => {
         if (submitForm === true) {
             setSuccess(true)

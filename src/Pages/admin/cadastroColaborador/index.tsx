@@ -1,27 +1,19 @@
 import * as Yup from 'yup';
 import { useFormik } from "formik";
-import { lazy, useState } from "react";
+import { useState } from "react";
 import { db } from "../../../firebase";
 import Input from "../../../Components/input";
-import GetData from "../../../firebase/getData";
 import Button from "../../../Components/button";
 import ColaboradorModel from "./model/colaborador";
-import { BoxTitleDefault } from "../estoque/style";
 import { TableKey } from '../../../types/tableName';
 import { ContainerInputs, DivInput } from "./style";
-import GenericTable from "../../../Components/table";
-import FiltroGeneric from "../../../Components/filtro";
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import FormAlert from "../../../Components/FormAlert/formAlert";
 import formatPhone from "../../../Components/masks/maskTelefone";
-import { State, setLoading } from '../../../store/reducer/reducer';
-import ModalDelete from '../../../Components/FormAlert/modalDelete';
+import { setLoading } from '../../../store/reducer/reducer';
 import { Box, ContainerButton, TitleDefault } from "../cadastroClientes/style";
-import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
-
-const IsEdit = lazy(() => import('../../../Components/isEdit/isEdit'));
-
-
+import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
+import GenericTable from '../../../Components/table';
 
 const objClean: ColaboradorModel = {
     nmColaborador: '',
@@ -37,31 +29,11 @@ function CadastroColaborador() {
 
     const [key, setKey] = useState<number>(0);
     const [isEdit, setIsEdit] = useState<boolean>(false);
-    const [recarregue, setRecarregue] = useState<boolean>(true);
-    const [openDelete, setOpenDelete] = useState<boolean>(false);
-    const [selected, setSelected] = useState<ColaboradorModel>();
+    const [editData, setEditData] = useState<ColaboradorModel>();
     const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
     const [initialValues, setInitialValues] = useState<ColaboradorModel>({ ...objClean });
 
     const dispatch = useDispatch();
-    const { loading } = useSelector((state: State) => state.user);
-
-    const inputsConfig = [
-        { label: 'Nome', propertyName: 'nmColaborador' },
-        { label: 'Telefone', propertyName: 'tfColaborador' },
-        { label: 'Cidade', propertyName: 'cidadeColaborador' },
-        { label: 'Bairro', propertyName: 'bairroColaborador' },
-        { label: 'Rua', propertyName: 'ruaColaborador' },
-        { label: 'Numero', propertyName: 'nrCasaColaborador' },
-        { label: 'ID Cartão Ponto', propertyName: 'idCartaoPonto' },
-        { label: 'Salário - valor por hora', propertyName: 'vlHora' }
-    ];
-
-    const {
-        dataTable,
-        loading: isLoading,
-        setDataTable
-    } = GetData(TableKey.Colaborador, recarregue) as { dataTable: ColaboradorModel[], loading: boolean, setDataTable: (data: ColaboradorModel[]) => void };
 
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<ColaboradorModel>({
         validateOnBlur: true,
@@ -76,7 +48,7 @@ function CadastroColaborador() {
             cidadeColaborador: Yup.string().required('Campo obrigatório'),
             idCartaoPonto: Yup.string().required('Campo obrigatório')
         }),
-        onSubmit: hundleSubmitForm,
+        onSubmit: isEdit ? handleEditRow : hundleSubmitForm,
     });
 
     function cleanState() {
@@ -93,43 +65,21 @@ function CadastroColaborador() {
         setKey(Math.random());
     }
 
-    //editar uma linha da tabela e do banco de dados
     async function handleEditRow() {
-        if (selected) {
-            const refID: string = selected.id ?? '';
-            const refTable = doc(db, TableKey.Colaborador, refID);
+        const refID: string = values.id ?? '';
+        const refTable = doc(db, TableKey.Colaborador, refID);
 
-            if (JSON.stringify(selected) !== JSON.stringify(initialValues)) {
-                await updateDoc(refTable, { ...selected })
-                    .then(() => {
-                        const index = dataTable.findIndex((item) => item.id === selected.id);
-                        const updatedDataTable = [
-                            ...dataTable.slice(0, index),
-                            selected,
-                            ...dataTable.slice(index + 1)
-                        ];
-                        setDataTable(updatedDataTable);
-                    });
-            }
+        if (JSON.stringify(values) !== JSON.stringify(initialValues)) {
+            await updateDoc(refTable, { ...values })
+                .then(() => {
+                    setEditData(values);
+                });
         }
         setIsEdit(false)
-        setSelected(undefined)
+        resetForm()
+        cleanState()
     }
 
-    //deleta uma linha da tabela e do banco de dados
-    async function handleDeleteRow() {
-        setOpenDelete(false)
-        if (selected) {
-            const refID: string = selected.id ?? '';
-            await deleteDoc(doc(db, TableKey.Colaborador, refID)).then(() => {
-                const newDataTable = dataTable.filter(row => row.id !== selected.id);
-                setDataTable(newDataTable);
-            });
-        }
-        setSelected(undefined)
-    }
-
-    //envia informações para o banco
     async function hundleSubmitForm() {
         dispatch(setLoading(true))
         await addDoc(collection(db, TableKey.Colaborador), {
@@ -137,7 +87,6 @@ function CadastroColaborador() {
         }).then(() => {
             dispatch(setLoading(false))
             setSubmitForm(true);
-            setDataTable([...dataTable, values]);
             setTimeout(() => { setSubmitForm(undefined) }, 3000)
         }).catch(() => {
             dispatch(setLoading(false))
@@ -249,57 +198,41 @@ function CadastroColaborador() {
                     </ContainerInputs>
                     <FormAlert submitForm={submitForm} name={'Colaborador'} />
                 </div>
-                <ModalDelete open={openDelete} onDeleteClick={handleDeleteRow} onCancelClick={() => setOpenDelete(false)} />
+
                 <ContainerButton>
                     <Button
                         type={'button'}
-                        label={'Cadastrar Colaborador'}
-                        disabled={loading}
+                        label={isEdit ? 'Editar Colaborador' : 'Cadastrar Colaborador'}
                         onClick={handleSubmit}
                         style={{ margin: '1rem 0 3rem 0', height: '4rem', width: '14rem' }}
                     />
                 </ContainerButton>
 
-                {/* Editar o cliente */}
-                <IsEdit
-                    editingScreen='Colaborador'
-                    setSelected={setSelected}
-                    selected={selected}
-                    handleEditRow={handleEditRow}
-                    inputsConfig={inputsConfig}
-                    isEdit={isEdit}
-                    products={[]}
-                    setIsEdit={setIsEdit}
-                />
-
                 {/*Tabela */}
-                <BoxTitleDefault>
-                    <div>
-                        <FiltroGeneric data={dataTable} setFilteredData={setDataTable} carregarDados={setRecarregue} type="cliente" />
-                    </div>
-                </BoxTitleDefault>
-                <GenericTable
+                <GenericTable<ColaboradorModel>
                     columns={[
-                        { label: 'Nome', name: 'nmColaborador' },
+                        { label: 'Nome', name: 'nmColaborador', shouldApplyFilter: true },
                         { label: 'Telefone', name: 'tfColaborador' },
                         { label: 'Cidade', name: 'cidadeColaborador' },
                         { label: 'Bairro', name: 'bairroColaborador' },
                         { label: 'Rua', name: 'ruaColaborador' },
                         { label: 'Numero Casa', name: 'nrCasaColaborador' },
                     ]}
-                    data={dataTable}
-                    isLoading={isLoading}
-                    onSelectedRow={setSelected}
-                    onEdit={() => {
-                        if (selected) {
-                            setIsEdit(true)
-                            setInitialValues(selected)
-                        } else {
-                            return
-                        }
+                    onEdit={(row: ColaboradorModel | undefined) => {
+                        if (!row) return;
+                        setIsEdit(true);
+                        setFieldValue('nmColaborador', row.nmColaborador);
+                        setFieldValue('tfColaborador', row.tfColaborador);
+                        setFieldValue('ruaColaborador', row.ruaColaborador);
+                        setFieldValue('nrCasaColaborador', row.nrCasaColaborador);
+                        setFieldValue('bairroColaborador', row.bairroColaborador);
+                        setFieldValue('cidadeColaborador', row.cidadeColaborador);
+                        setFieldValue('idCartaoPonto', row.idCartaoPonto);
+                        setFieldValue('vlHora', row.vlHora);
+                        setFieldValue('id', row.id);
                     }}
-                    onDelete={() => setOpenDelete(true)}
-                    isdisabled={selected ? false : true}
+                    collectionName={TableKey.Colaborador}
+                    editData={editData}
                 />
             </Box>
         </>

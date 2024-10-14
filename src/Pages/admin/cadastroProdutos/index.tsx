@@ -4,27 +4,20 @@ import { db } from "../../../firebase";
 import ProdutoModel from "./model/produtos";
 import Input from "../../../Components/input";
 import Button from "../../../Components/button";
-import GetData from "../../../firebase/getData";
-import { FormikTouched, useFormik } from 'formik';
-import { useState, useEffect, lazy } from "react";
-import { BoxTitleDefault } from "../estoque/style";
+import { useFormik } from 'formik';
+import { useState, useEffect } from "react";
 import EstoqueModel from '../estoque/model/estoque';
 import ComprasModel from '../compras/model/compras';
 import { TableKey } from '../../../types/tableName';
 import GenericTable from "../../../Components/table";
-import FiltroGeneric from "../../../Components/filtro";
 import { useDispatch, useSelector } from 'react-redux';
 import FormAlert from "../../../Components/FormAlert/formAlert";
-import { InputConfig } from "../../../Components/isEdit/isEdit";
-import { State, setLoading } from '../../../store/reducer/reducer';
+import { setLoading } from '../../../store/reducer/reducer';
 import SituacaoProduto from "../../../enumeration/situacaoProduto";
-import ModalDelete from '../../../Components/FormAlert/modalDelete';
 import CompraHistoricoModel from '../compras/model/comprahistoricoModel';
-import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, updateDoc, where } from "firebase/firestore";
 import { Checkbox, FormControl, FormControlLabel, InputLabel, MenuItem, Select, } from "@mui/material";
 
-const IsEdit = lazy(() => import('../../../Components/isEdit/isEdit'));
-const IsAdding = lazy(() => import('../../../Components/isAdding/isAdding'));
 
 import {
     Box,
@@ -37,10 +30,12 @@ import {
 
 //hooks
 import { useNavigate } from 'react-router-dom';
-import { useUniqueNames } from '../../../hooks/useUniqueName';
 import useFormatCurrency from '../../../hooks/formatCurrency';
 import AlertDialog from '../../../Components/FormAlert/dialogForm';
 import { ProdutosSemQuantidadeError, calculateTotalValue } from '../../../hooks/useCalculateTotalValue';
+import { RootState } from '../../../store/reducer/store';
+import { getItemsByQuery, getSingleItemByQuery } from '../../../hooks/queryFirebase';
+import CollapseListProduct from '../../../Components/collapse/collapseListProduct';
 
 const objClean: ProdutoModel = {
     cdProduto: '',
@@ -57,32 +52,18 @@ const objClean: ProdutoModel = {
 function CadastroProduto() {
     const [key, setKey] = useState<number>(0);
     const [error, setError] = useState<string>();
-    const [isEdit, setIsEdit] = useState<boolean>(false);
-    const [recarregue, setRecarregue] = useState<boolean>(true);
-    const [openDelete, setOpenDelete] = useState<boolean>(false);
-    const [selected, setSelected] = useState<ProdutoModel | undefined>();
+    const [editData, setEditData] = useState<ProdutoModel>();
     const [isVisibleTpProuto, setIsVisibleTpProduto] = useState<boolean>(false);
-    const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
+    const [submitForm, setSubmitForm] = useState<boolean>();
     const [initialValues, setInitialValues] = useState<ProdutoModel>({ ...objClean });
+    const [deleteData, setDeleteData] = useState<boolean>();
 
     const history = useNavigate();
     const dispatch = useDispatch();
-    const { loading } = useSelector((state: State) => state.user);
-    const { convertToNumber, formatCurrency, formatCurrencyRealTime } = useFormatCurrency();
+    const { loading } = useSelector((state: RootState) => state.user);
+    const { convertToNumber, formatCurrency, formatCurrencyRealTime, NumberFormatForBrazilianCurrency } = useFormatCurrency();
 
-    //realizando busca no banco de dados
-    const {
-        dataTable,
-        loading: isLoading,
-        setDataTable
-    } = GetData(TableKey.Produtos, recarregue) as { dataTable: ProdutoModel[], loading: boolean, setDataTable: (data: ProdutoModel[]) => void };
-    const {
-        dataTable: dataTableCompraHistorico,
-    } = GetData(TableKey.CompraHistorico, recarregue) as { dataTable: ComprasModel[] };
 
-    const {
-        dataTable: dataTableEstoque,
-    } = GetData(TableKey.Estoque, recarregue) as { dataTable: EstoqueModel[] };
 
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<ProdutoModel>({
         validateOnBlur: true,
@@ -90,11 +71,15 @@ function CadastroProduto() {
         initialValues,
         validationSchema: Yup.object().shape({
             nmProduto: Yup.string().required('Campo obrigatório'),
-            cdProduto: Yup.string().required('Campo obrigatório').test('valueUnique', 'Esse código já está cadastrado', value => {
-                const cod = dataTable.find(cod => cod.cdProduto === value)
-                if (cod) return false
-                return true
-            }),
+            cdProduto: Yup.string()
+                .required('Campo obrigatório')
+                .test('valueUnique', 'Esse código já está cadastrado', async (value) => {
+                    if (editData) return true;
+                    if (!value) return false;
+                    const { data } = await getItemsByQuery(TableKey.Produtos, [where('cdProduto', '==', value)], dispatch);
+                    if (data && data.length > 0) return false;
+                    return true;
+                }),
             vlUnitario: Yup.string().required('Campo obrigatório').test('stMateriaPrima1', 'Campo obrigatório', function (value, context) {
                 const { parent } = context;
                 if (parent.stMateriaPrima) return true
@@ -114,7 +99,7 @@ function CadastroProduto() {
                 return true;
             }).nullable()
         }),
-        onSubmit: handleSubmitForm,
+        onSubmit: editData ? handleEditRow : handleSubmitForm,
     });
 
     /**
@@ -134,17 +119,6 @@ function CadastroProduto() {
         })
         setKey(Math.random());
     }
-
-    /**
-     * Configuração dos campos de entrada para o formulário.
-     */
-    const inputsConfig: InputConfig[] = [
-        { label: 'Nome', propertyName: 'nmProduto' },
-        { label: 'Código do Produto', propertyName: 'cdProduto' },
-        { label: 'Rendimento Em Kg', propertyName: 'kgProduto', isDisable: selected?.kgProduto === undefined },
-        { label: 'Valor de Venda', propertyName: 'vlVendaProduto', isCurrency: true },
-        { label: 'Valor Pago', propertyName: 'vlUnitario', isCurrency: true, isDisable: selected?.tpProduto === SituacaoProduto.FABRICADO },
-    ];
 
     /**
      * Salva um Historico de Compras para que essa tabela tenha todos os produtos salvos e com valores atualizados.
@@ -187,7 +161,6 @@ function CadastroProduto() {
             .then(() => {
                 dispatch(setLoading(false))
                 setSubmitForm(true);
-                setDataTable([...dataTable, values]);
                 setTimeout(() => { setSubmitForm(undefined) }, 3000)
             })
             .catch(() => {
@@ -206,26 +179,22 @@ function CadastroProduto() {
      * Este método exclui a entrada correspondente na coleção "Produtos" e, se aplicável, na coleção "Estoque".
      * Após a exclusão, atualiza o estado da tabela.
      */
-    async function handleDeleteRow() {
-        setOpenDelete(false)
+    async function handleDeleteRow(selected: ProdutoModel | undefined, data: ProdutoModel[]) {
         if (selected) {
             const refID: string = selected.id ?? '';
-            await deleteDoc(doc(db, TableKey.Produtos, refID)).then(() => {
-                const newDataTable = dataTable.filter(row => row.id !== selected.id);
-                setDataTable(newDataTable);
-            });
-            const stock = dataTableEstoque.find(stock => stock.nmProduto === selected.nmProduto)
+            await deleteDoc(doc(db, TableKey.Produtos, refID));
+            const stock = await getSingleItemByQuery<EstoqueModel>(TableKey.Estoque, [where('nmProduto', '==', selected.nmProduto)], dispatch)
             if (stock) {
                 const refIdEstoque: string = stock.id ?? ''
                 await deleteDoc(doc(db, TableKey.Estoque, refIdEstoque))
             }
-            const historyCompra = dataTableCompraHistorico.find(history => history.nmProduto === selected.nmProduto)
+            const historyCompra = await getSingleItemByQuery<ComprasModel>(TableKey.CompraHistorico, [where('nmProduto', '==', selected.nmProduto)], dispatch)
             if (historyCompra) {
                 const refIdHistory: string = historyCompra.id ?? ''
                 await deleteDoc(doc(db, TableKey.CompraHistorico, refIdHistory))
             }
+            setDeleteData(true)
         }
-        setSelected(undefined)
     }
 
     /**
@@ -235,29 +204,22 @@ function CadastroProduto() {
      * Após a edição, atualiza o estado da tabela.
      */
     async function handleEditRow() {
-        if (selected) {
-            const refID: string = selected.id ?? '';
-            const refTable = doc(db, TableKey.Produtos, refID);
+        const refID: string = values.id ?? '';
+        const refTable = doc(db, TableKey.Produtos, refID);
 
-            if (JSON.stringify(selected) !== JSON.stringify(initialValues)) {
-                if (typeof selected.vlUnitario === 'string') {
-                    selected.vlUnitario = convertToNumber(selected.vlUnitario)
-                }
-                selected.vlVendaProduto = convertToNumber(selected.vlVendaProduto.toString())
-                await updateDoc(refTable, { ...selected })
-                    .then(() => {
-                        const index = dataTable.findIndex((item) => item.id === selected.id);
-                        const updatedDataTable = [
-                            ...dataTable.slice(0, index),
-                            selected,
-                            ...dataTable.slice(index + 1)
-                        ];
-                        setDataTable(updatedDataTable);
-                    });
+        if (JSON.stringify(values) !== JSON.stringify(initialValues)) {
+            if (typeof values.vlUnitario === 'string') {
+                values.vlUnitario = convertToNumber(values.vlUnitario)
             }
+            values.vlVendaProduto = convertToNumber(values.vlVendaProduto.toString())
+            await updateDoc(refTable, { ...values })
+                .then(() => {
+                    setEditData(values)
+                });
         }
-        setIsEdit(false)
-        setSelected(undefined)
+        resetForm()
+        setFieldValue('tpProduto', null)
+        cleanState()
     }
 
     /**
@@ -267,24 +229,25 @@ function CadastroProduto() {
      * Se ocorrer um erro durante o cálculo, como a ausência de quantidade em produtos, ele captura e trata a exceção.
      */
     useEffect(() => {
-        let somaFormat = 0.00;
-        if (isEdit && selected && selected.mpFabricado.length > 0) {
-            somaFormat = calculateTotalValue(selected.mpFabricado, dataTableCompraHistorico);
-            setSelected((prevSelected) => ({
-                ...prevSelected,
-                vlUnitario: parseFloat(somaFormat.toFixed(2)),
-            } as ProdutoModel | undefined));
-        } else {
+        const calcularValorTotal = async () => {
+            let somaFormat = 0.00;
             try {
-                somaFormat = calculateTotalValue(values.mpFabricado, dataTableCompraHistorico);
-                setFieldValue('vlUnitario', formatCurrency(somaFormat.toString()));
+                if (editData && values.mpFabricado.length > 0) {
+                    somaFormat = await calculateTotalValue(values.mpFabricado, dispatch);
+                    setFieldValue('vlUnitario', formatCurrency(somaFormat.toString()));
+                } else if (values.mpFabricado.length > 0) {
+                    somaFormat = await calculateTotalValue(values.mpFabricado, dispatch);
+                    setFieldValue('vlUnitario', formatCurrency(somaFormat.toString()));
+                }
             } catch (error) {
                 if (error instanceof ProdutosSemQuantidadeError) {
-                    setError(error.produtosSemQuantidade)
+                    setError(error.produtosSemQuantidade);
                 }
             }
-        }
-    }, [values.mpFabricado, isEdit, selected?.mpFabricado]);
+        };
+
+        calcularValorTotal();
+    }, [values.mpFabricado, editData]);
 
     /**
      * controla a visibilidade do tipo de produto.
@@ -303,11 +266,21 @@ function CadastroProduto() {
      * atualizando o campo correspondente no formulário.
      */
     useEffect(() => {
+        if (values.tpProduto === SituacaoProduto.FABRICADO) return;
         if (values.stMateriaPrima) { setFieldValue('tpProduto', SituacaoProduto.COMPRADO); }
-        else { setFieldValue('tpProduto', null); }
     }, [values.stMateriaPrima])
 
+    const handleAddItem = (item: ComprasModel) => {
+        setFieldValue('mpFabricado', [...values.mpFabricado, item]);
+    };
 
+    const handleRemoveItem = (item: ComprasModel) => {
+        setFieldValue('mpFabricado', values.mpFabricado.filter(i => i.nmProduto !== item.nmProduto));
+    };
+    const handleEditItem = (item: ComprasModel) => {
+        setFieldValue('mpFabricado', values.mpFabricado.map(i => i.nmProduto === item.nmProduto ? item : i));
+    }
+    console.log(values.mpFabricado)
     return (
         <Box>
             <Title>Cadastro de Novos Produtos</Title>
@@ -321,8 +294,6 @@ function CadastroProduto() {
                         value={values.nmProduto}
                         onChange={e => setFieldValue(e.target.name, e.target.value)}
                         error={touched.nmProduto && errors.nmProduto ? errors.nmProduto : ''}
-                        styleDiv={{ marginTop: 4 }}
-                        style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                     />
                     <Input
                         key={`cdProduto-${key}`}
@@ -332,8 +303,6 @@ function CadastroProduto() {
                         value={values.cdProduto}
                         onChange={e => setFieldValue(e.target.name, e.target.value)}
                         error={touched.cdProduto && errors.cdProduto ? errors.cdProduto : ''}
-                        styleDiv={{ marginTop: 4 }}
-                        style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                     />
                     <DivSituacaoProduto>
                         <FormControl
@@ -397,8 +366,6 @@ function CadastroProduto() {
                         value={values.vlVendaProduto ? values.vlVendaProduto : ''}
                         onChange={e => setFieldValue(e.target.name, formatCurrencyRealTime(e.target.value))}
                         error={touched.vlVendaProduto && errors.vlVendaProduto ? errors.vlVendaProduto : ''}
-                        styleDiv={{ marginTop: 4 }}
-                        style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                         disabled={values.stMateriaPrima}
                     />
                     <Input
@@ -407,12 +374,9 @@ function CadastroProduto() {
                         onBlur={handleBlur}
                         name="vlUnitario"
                         disabled={values.tpProduto === SituacaoProduto.FABRICADO || values.stMateriaPrima}
-                        raisedLabel={values.tpProduto === SituacaoProduto.FABRICADO}
                         value={values.vlUnitario && values.vlUnitario.toString() !== "R$ 0,00" ? values.vlUnitario : ''}
                         onChange={e => setFieldValue(e.target.name, formatCurrencyRealTime(e.target.value))}
                         error={touched.vlUnitario && errors.vlUnitario ? errors.vlUnitario : ''}
-                        styleDiv={{ marginTop: 4 }}
-                        style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                     />
                     {values.tpProduto === SituacaoProduto.FABRICADO ?
                         <FormControl
@@ -435,31 +399,14 @@ function CadastroProduto() {
                     }
                 </DivInput>
             </ContainerInputs>
-            {/*Adicionando Produto */}
-            <IsAdding
-                addingScreen="Produto"
-                data={useUniqueNames(dataTableCompraHistorico, values.tpProduto, SituacaoProduto.COMPRADO)}
-                isAdding={isVisibleTpProuto}
-                products={values.mpFabricado}
-                setFieldValue={setFieldValue}
-                setIsVisibleTpProduto={setIsVisibleTpProduto}
-                errors={errors.mpFabricado as FormikTouched<any> | undefined}
-                touched={touched}
+            <CollapseListProduct<ComprasModel>
+                isVisible={isVisibleTpProuto}
+                onAddItem={handleAddItem}
+                onRemoveItem={handleRemoveItem}
+                onEditItem={handleEditItem}
+                collectionName={TableKey.Produtos}
+                initialItems={values.mpFabricado}
             />
-
-            {/* Editar o Produto */}
-            <IsEdit
-                editingScreen='Produto'
-                setSelected={setSelected}
-                selected={selected}
-                handleEditRow={handleEditRow}
-                inputsConfig={inputsConfig}
-                isEdit={isEdit}
-                products={selected ? selected.mpFabricado : []}
-                setIsEdit={setIsEdit}
-                newData={useUniqueNames(dataTableCompraHistorico, values.tpProduto, SituacaoProduto.COMPRADO, isEdit)}
-            />
-            <ModalDelete open={openDelete} onDeleteClick={handleDeleteRow} onCancelClick={() => setOpenDelete(false)} />
             <AlertDialog
                 open={error ? true : false}
                 messege={
@@ -473,7 +420,7 @@ function CadastroProduto() {
             />
             <ContainerButton>
                 <Button
-                    label='Cadastrar Produto'
+                    label={editData ? 'Atualizar' : 'Cadastrar'}
                     type="button"
                     disabled={loading}
                     onClick={handleSubmit}
@@ -484,30 +431,34 @@ function CadastroProduto() {
             </ContainerButton>
 
             {/*Tabala */}
-
-            <BoxTitleDefault>
-                <div>
-                    <FiltroGeneric data={dataTable} setFilteredData={setDataTable} carregarDados={setRecarregue} type="produto" />
-                </div>
-            </BoxTitleDefault>
-            <GenericTable
+            <GenericTable<ProdutoModel>
                 columns={[
                     { label: 'Código', name: 'cdProduto' },
                     { label: 'Nome', name: 'nmProduto' },
                     { label: 'Valor Venda', name: 'vlVendaProduto', isCurrency: true },
                     { label: 'Valor Pago', name: 'vlUnitario', isCurrency: true },
                 ]}
-                data={dataTable}
-                isLoading={isLoading}
-                isdisabled={selected ? false : true}
-                onSelectedRow={setSelected}
-                onEdit={() => {
-                    if (selected) {
-                        setIsEdit(true)
-                        setInitialValues(selected)
-                    }
+                collectionName={TableKey.Produtos}
+                onEdit={(row: ProdutoModel | undefined) => {
+                    if (!row) return;
+                    setEditData(row);
+                    setFieldValue('cdProduto', row.cdProduto);
+                    setFieldValue('nmProduto', row.nmProduto);
+                    setFieldValue('vlVendaProduto', row.vlVendaProduto);
+                    setFieldValue('vlUnitario',
+                        row.mpFabricado.length > 0 ?
+                            row.vlUnitario
+                            :
+                            NumberFormatForBrazilianCurrency(row.vlUnitario));
+                    setFieldValue('kgProduto', row.kgProduto);
+                    setFieldValue('tpProduto', row.tpProduto);
+                    setFieldValue('stMateriaPrima', row.stMateriaPrima);
+                    setFieldValue('mpFabricado', row.mpFabricado);
+                    setFieldValue('id', row.id);
                 }}
-                onDelete={() => setOpenDelete(true)}
+                editData={editData}
+                deleteData={deleteData}
+                onDelete={(selected: ProdutoModel | undefined, data: any[]) => handleDeleteRow(selected, data)}
             />
         </Box>
     );

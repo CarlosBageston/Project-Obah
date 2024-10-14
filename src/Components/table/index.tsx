@@ -115,7 +115,7 @@ const GenericTable = <T,>({
     const columnsToFilter = columns.filter(column => column.shouldApplyFilter);
 
     useEffect(() => {
-        if (editData) {
+        if (editData && editData !== selected) {
             const refID: string = (selected as any).id ?? '';
             const index = data.findIndex((item: T) => (item as any).id === refID);
             const updatedDataTable = [

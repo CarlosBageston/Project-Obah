@@ -433,11 +433,12 @@ function CadastroProduto() {
             {/*Tabala */}
             <GenericTable<ProdutoModel>
                 columns={[
-                    { label: 'Código', name: 'cdProduto' },
-                    { label: 'Nome', name: 'nmProduto' },
+                    { label: 'Código', name: 'cdProduto', shouldApplyFilter: true },
+                    { label: 'Nome', name: 'nmProduto', shouldApplyFilter: true },
                     { label: 'Valor Venda', name: 'vlVendaProduto', isCurrency: true },
                     { label: 'Valor Pago', name: 'vlUnitario', isCurrency: true },
                 ]}
+                setEditData={setEditData}
                 collectionName={TableKey.Produtos}
                 onEdit={(row: ProdutoModel | undefined) => {
                     if (!row) return;

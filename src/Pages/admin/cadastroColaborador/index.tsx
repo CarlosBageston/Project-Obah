@@ -28,7 +28,6 @@ const objClean: ColaboradorModel = {
 function CadastroColaborador() {
 
     const [key, setKey] = useState<number>(0);
-    const [isEdit, setIsEdit] = useState<boolean>(false);
     const [editData, setEditData] = useState<ColaboradorModel>();
     const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
     const [initialValues, setInitialValues] = useState<ColaboradorModel>({ ...objClean });
@@ -48,7 +47,7 @@ function CadastroColaborador() {
             cidadeColaborador: Yup.string().required('Campo obrigatório'),
             idCartaoPonto: Yup.string().required('Campo obrigatório')
         }),
-        onSubmit: isEdit ? handleEditRow : hundleSubmitForm,
+        onSubmit: editData ? handleEditRow : hundleSubmitForm,
     });
 
     function cleanState() {
@@ -75,7 +74,6 @@ function CadastroColaborador() {
                     setEditData(values);
                 });
         }
-        setIsEdit(false)
         resetForm()
         cleanState()
     }
@@ -202,7 +200,7 @@ function CadastroColaborador() {
                 <ContainerButton>
                     <Button
                         type={'button'}
-                        label={isEdit ? 'Editar Colaborador' : 'Cadastrar Colaborador'}
+                        label={editData ? 'Editar Colaborador' : 'Cadastrar Colaborador'}
                         onClick={handleSubmit}
                         style={{ margin: '1rem 0 3rem 0', height: '4rem', width: '14rem' }}
                     />
@@ -220,7 +218,7 @@ function CadastroColaborador() {
                     ]}
                     onEdit={(row: ColaboradorModel | undefined) => {
                         if (!row) return;
-                        setIsEdit(true);
+                        setEditData(row);
                         setFieldValue('nmColaborador', row.nmColaborador);
                         setFieldValue('tfColaborador', row.tfColaborador);
                         setFieldValue('ruaColaborador', row.ruaColaborador);
@@ -231,6 +229,7 @@ function CadastroColaborador() {
                         setFieldValue('vlHora', row.vlHora);
                         setFieldValue('id', row.id);
                     }}
+                    setEditData={setEditData}
                     collectionName={TableKey.Colaborador}
                     editData={editData}
                 />

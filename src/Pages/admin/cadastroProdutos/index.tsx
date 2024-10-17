@@ -37,17 +37,6 @@ import { RootState } from '../../../store/reducer/store';
 import { getItemsByQuery, getSingleItemByQuery } from '../../../hooks/queryFirebase';
 import CollapseListProduct from '../../../Components/collapse/collapseListProduct';
 
-const objClean: ProdutoModel = {
-    cdProduto: '',
-    nmProduto: '',
-    vlUnitario: 0,
-    vlVendaProduto: 0,
-    tpProduto: null,
-    stEntrega: false,
-    mpFabricado: [],
-    stMateriaPrima: false,
-    kgProduto: 1
-}
 
 function CadastroProduto() {
     const [key, setKey] = useState<number>(0);
@@ -55,7 +44,6 @@ function CadastroProduto() {
     const [editData, setEditData] = useState<ProdutoModel>();
     const [isVisibleTpProuto, setIsVisibleTpProduto] = useState<boolean>(false);
     const [submitForm, setSubmitForm] = useState<boolean>();
-    const [initialValues, setInitialValues] = useState<ProdutoModel>({ ...objClean });
     const [deleteData, setDeleteData] = useState<boolean>();
 
     const history = useNavigate();
@@ -68,7 +56,17 @@ function CadastroProduto() {
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<ProdutoModel>({
         validateOnBlur: true,
         validateOnChange: true,
-        initialValues,
+        initialValues: {
+            cdProduto: '',
+            nmProduto: '',
+            vlUnitario: 0,
+            vlVendaProduto: 0,
+            tpProduto: null,
+            stEntrega: false,
+            mpFabricado: [],
+            stMateriaPrima: false,
+            kgProduto: 1
+        },
         validationSchema: Yup.object().shape({
             nmProduto: Yup.string().required('Campo obrigatório'),
             cdProduto: Yup.string()
@@ -101,24 +99,6 @@ function CadastroProduto() {
         }),
         onSubmit: editData ? handleEditRow : handleSubmitForm,
     });
-
-    /**
-     * Limpa o estado, redefinindo os valores iniciais e gerando uma nova chave aleatória.
-     */
-    function cleanState() {
-        setInitialValues({
-            cdProduto: '',
-            nmProduto: '',
-            vlUnitario: 0,
-            vlVendaProduto: 0,
-            tpProduto: null,
-            stEntrega: false,
-            mpFabricado: [],
-            stMateriaPrima: false,
-            kgProduto: 1
-        })
-        setKey(Math.random());
-    }
 
     /**
      * Salva um Historico de Compras para que essa tabela tenha todos os produtos salvos e com valores atualizados.
@@ -162,6 +142,7 @@ function CadastroProduto() {
                 dispatch(setLoading(false))
                 setSubmitForm(true);
                 setTimeout(() => { setSubmitForm(undefined) }, 3000)
+                setEditData(values)
             })
             .catch(() => {
                 dispatch(setLoading(false))
@@ -170,7 +151,7 @@ function CadastroProduto() {
             });
         resetForm()
         setFieldValue('tpProduto', null)
-        cleanState()
+        setKey(Math.random());
     }
 
     /**
@@ -196,7 +177,6 @@ function CadastroProduto() {
             setDeleteData(true)
         }
     }
-
     /**
      * Edita uma linha da tabela e do banco de dados.
      * 
@@ -206,20 +186,17 @@ function CadastroProduto() {
     async function handleEditRow() {
         const refID: string = values.id ?? '';
         const refTable = doc(db, TableKey.Produtos, refID);
-
-        if (JSON.stringify(values) !== JSON.stringify(initialValues)) {
-            if (typeof values.vlUnitario === 'string') {
-                values.vlUnitario = convertToNumber(values.vlUnitario)
-            }
-            values.vlVendaProduto = convertToNumber(values.vlVendaProduto.toString())
-            await updateDoc(refTable, { ...values })
-                .then(() => {
-                    setEditData(values)
-                });
+        if (typeof values.vlUnitario === 'string') {
+            values.vlUnitario = convertToNumber(values.vlUnitario)
         }
+        values.vlVendaProduto = convertToNumber(values.vlVendaProduto.toString())
+        await updateDoc(refTable, { ...values })
+            .then(() => {
+                setEditData(values)
+            });
         resetForm()
         setFieldValue('tpProduto', null)
-        cleanState()
+        setKey(Math.random());
     }
 
     /**
@@ -270,17 +247,7 @@ function CadastroProduto() {
         if (values.stMateriaPrima) { setFieldValue('tpProduto', SituacaoProduto.COMPRADO); }
     }, [values.stMateriaPrima])
 
-    const handleAddItem = (item: ComprasModel) => {
-        setFieldValue('mpFabricado', [...values.mpFabricado, item]);
-    };
 
-    const handleRemoveItem = (item: ComprasModel) => {
-        setFieldValue('mpFabricado', values.mpFabricado.filter(i => i.nmProduto !== item.nmProduto));
-    };
-    const handleEditItem = (item: ComprasModel) => {
-        setFieldValue('mpFabricado', values.mpFabricado.map(i => i.nmProduto === item.nmProduto ? item : i));
-    }
-    console.log(values.mpFabricado)
     return (
         <Box>
             <Title>Cadastro de Novos Produtos</Title>
@@ -401,11 +368,12 @@ function CadastroProduto() {
             </ContainerInputs>
             <CollapseListProduct<ComprasModel>
                 isVisible={isVisibleTpProuto}
-                onAddItem={handleAddItem}
-                onRemoveItem={handleRemoveItem}
-                onEditItem={handleEditItem}
+                nameArray='mpFabricado'
                 collectionName={TableKey.Produtos}
                 initialItems={values.mpFabricado}
+                labelAutoComplete='Materia-Prima'
+                setFieldValueExterno={setFieldValue}
+                typeValueInput='number'
             />
             <AlertDialog
                 open={error ? true : false}
@@ -438,7 +406,6 @@ function CadastroProduto() {
                     { label: 'Valor Venda', name: 'vlVendaProduto', isCurrency: true },
                     { label: 'Valor Pago', name: 'vlUnitario', isCurrency: true },
                 ]}
-                setEditData={setEditData}
                 collectionName={TableKey.Produtos}
                 onEdit={(row: ProdutoModel | undefined) => {
                     if (!row) return;
@@ -458,6 +425,7 @@ function CadastroProduto() {
                     setFieldValue('id', row.id);
                 }}
                 editData={editData}
+                setEditData={setEditData}
                 deleteData={deleteData}
                 onDelete={(selected: ProdutoModel | undefined, data: any[]) => handleDeleteRow(selected, data)}
             />

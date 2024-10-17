@@ -14,30 +14,28 @@ import { setLoading } from '../../../store/reducer/reducer';
 import { Box, ContainerButton, TitleDefault } from "../cadastroClientes/style";
 import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
 import GenericTable from '../../../Components/table';
+import _ from 'lodash';
 
-const objClean: ColaboradorModel = {
-    nmColaborador: '',
-    tfColaborador: '',
-    ruaColaborador: '',
-    nrCasaColaborador: '',
-    bairroColaborador: '',
-    cidadeColaborador: '',
-    idCartaoPonto: undefined,
-    vlHora: undefined
-}
 function CadastroColaborador() {
-
     const [key, setKey] = useState<number>(0);
     const [editData, setEditData] = useState<ColaboradorModel>();
     const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
-    const [initialValues, setInitialValues] = useState<ColaboradorModel>({ ...objClean });
 
     const dispatch = useDispatch();
 
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<ColaboradorModel>({
         validateOnBlur: true,
         validateOnChange: true,
-        initialValues,
+        initialValues: {
+            nmColaborador: '',
+            tfColaborador: '',
+            ruaColaborador: '',
+            nrCasaColaborador: '',
+            bairroColaborador: '',
+            cidadeColaborador: '',
+            idCartaoPonto: undefined,
+            vlHora: undefined
+        },
         validationSchema: Yup.object().shape({
             nmColaborador: Yup.string().required('Campo obrigatório'),
             tfColaborador: Yup.string().required('Campo obrigatório'),
@@ -50,32 +48,17 @@ function CadastroColaborador() {
         onSubmit: editData ? handleEditRow : hundleSubmitForm,
     });
 
-    function cleanState() {
-        setInitialValues({
-            nmColaborador: '',
-            tfColaborador: '',
-            ruaColaborador: '',
-            nrCasaColaborador: '',
-            bairroColaborador: '',
-            cidadeColaborador: '',
-            idCartaoPonto: undefined,
-            vlHora: undefined
-        })
-        setKey(Math.random());
-    }
-
     async function handleEditRow() {
         const refID: string = values.id ?? '';
         const refTable = doc(db, TableKey.Colaborador, refID);
-
-        if (JSON.stringify(values) !== JSON.stringify(initialValues)) {
+        if (!_.isEqual(values, editData)) {
             await updateDoc(refTable, { ...values })
                 .then(() => {
                     setEditData(values);
                 });
         }
         resetForm()
-        cleanState()
+        setKey(Math.random());
     }
 
     async function hundleSubmitForm() {
@@ -86,13 +69,14 @@ function CadastroColaborador() {
             dispatch(setLoading(false))
             setSubmitForm(true);
             setTimeout(() => { setSubmitForm(undefined) }, 3000)
+            setEditData(values);
         }).catch(() => {
             dispatch(setLoading(false))
             setSubmitForm(false);
             setTimeout(() => { setSubmitForm(undefined) }, 3000)
         });
         resetForm()
-        cleanState()
+        setKey(Math.random());
     }
     return (
         <>

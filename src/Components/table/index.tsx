@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Table, TableBody, TableContainer, TableHead, TableRow, Paper, CircularProgress } from '@mui/material';
-import { CSSProperties, useEffect, useState } from 'react';
+import { CSSProperties, Dispatch, SetStateAction, useEffect, useState } from 'react';
 import {
     ContainerTable,
     StyledTableCell,
@@ -40,6 +40,7 @@ type TableProps<T> = {
     constraints?: QueryConstraint[]
     editData?: T
     deleteData?: boolean
+    setEditData?: Dispatch<SetStateAction<T | undefined>>
 };
 
 
@@ -53,7 +54,8 @@ const GenericTable = <T,>({
     collectionName,
     constraints,
     editData,
-    deleteData
+    deleteData,
+    setEditData
 }: TableProps<T>) => {
     const [selectedRowId, setSelectedRowId] = useState<string | undefined>(undefined);
     const [selected, setSelected] = useState<T>();
@@ -115,7 +117,7 @@ const GenericTable = <T,>({
     const columnsToFilter = columns.filter(column => column.shouldApplyFilter);
 
     useEffect(() => {
-        if (editData && editData !== selected) {
+        if (editData && selected && editData !== selected) {
             const refID: string = (selected as any).id ?? '';
             const index = data.findIndex((item: T) => (item as any).id === refID);
             const updatedDataTable = [
@@ -124,6 +126,15 @@ const GenericTable = <T,>({
                 ...data.slice(index + 1),
             ];
             setData(updatedDataTable);
+            setEditData && setEditData(undefined);
+            setSelectedRowId(undefined);
+            setSelected(undefined)
+        }
+        if (editData && !selected && data.length < 5) {
+            setData(prov => [...prov, editData]);
+            setEditData && setEditData(undefined);
+            setSelectedRowId(undefined);
+            setSelected(undefined)
         }
     }, [editData])
 

@@ -12,59 +12,100 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 
 interface CollapseListProductProps<T> {
-    initialItems?: T[];
-    onAddItem?: (item: T) => void;
-    onRemoveItem?: (item: T) => void;
-    onEditItem?: (item: T) => void;
+    initialItems: T[];
+    nameArray: string;
     isVisible: boolean;
     collectionName: string;
+    setFieldValueExterno: (field: string, value: any) => any;
+    labelInput?: string
+    labelAutoComplete?: string
+    typeValueInput?: 'number' | 'currency',
 }
 
 interface ItemProps {
     nmProduto: string,
-    quantidade: string
+    quantidade: number | null,
+    vlUnitario: number | null,
+    vlVendaProduto: number | null
 }
 
-const CollapseListProduct = <T,>({ initialItems, onAddItem, onRemoveItem, isVisible, onEditItem, collectionName }: CollapseListProductProps<T>) => {
+const CollapseListProduct = <T,>({
+    initialItems,
+    nameArray,
+    isVisible,
+    collectionName,
+    setFieldValueExterno,
+    labelAutoComplete,
+    typeValueInput,
+    labelInput
+}: CollapseListProductProps<T>) => {
     const [items, setItems] = useState<T[]>(initialItems ?? []);
-    const [suggestions, setSuggestions] = useState<string[]>([]);
+    const [suggestions, setSuggestions] = useState<T[]>([]);
     const [editItem, setEditItem] = useState<T | null>(null);
     const dispatch = useDispatch();
     const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(null);
-    const { convertToNumber } = useFormatCurrency();
+    const { convertToNumber, formatCurrencyRealTime, NumberFormatForBrazilianCurrency } = useFormatCurrency();
+    const [key, setKey] = useState<number>(0);
 
     const handleAddItem = (values: ItemProps) => {
-        if (!suggestions.includes(values.nmProduto)) {
-            setFieldError('nmProduto', 'Item inválido');
-            return;
-        }
-        if (values.nmProduto && values.quantidade) {
+        if (values.nmProduto && (values.quantidade || values.vlVendaProduto)) {
             if (editItem) {
-                const updatedItem = { ...editItem, nmProduto: values.nmProduto, quantidade: values.quantidade } as T;
+                const updatedItem = {
+                    ...editItem,
+                    nmProduto: values.nmProduto,
+                    quantidade: values.quantidade ? convertToNumber(values.quantidade.toString()) : null,
+                    vlVendaProduto: values.vlVendaProduto ? formatCurrencyRealTime(values.vlVendaProduto.toString()) : null,
+                    vlUnitario: values.vlUnitario ? values.vlUnitario : null
+                } as T;
                 const newItems = items.map(item => (item as any).nmProduto === (editItem as any).nmProduto ? updatedItem : item)
                 setItems(newItems);
-                if (onEditItem) onEditItem(updatedItem);
+                setFieldValueExterno(nameArray, initialItems.map(i => (i as any).nmProduto === (updatedItem as any).nmProduto ? updatedItem : i));
             } else {
-                const qntdFormatted = convertToNumber(values.quantidade);
-                const newItem = { nmProduto: values.nmProduto, quantidade: qntdFormatted } as T;
+                const newItem = {
+                    nmProduto: values.nmProduto,
+                    quantidade: values.quantidade ? convertToNumber(values.quantidade.toString()) : null,
+                    vlVendaProduto: values.vlVendaProduto ? formatCurrencyRealTime(values.vlVendaProduto.toString()) : null,
+                    vlUnitario: values.vlUnitario
+                } as T
                 setItems(prev => [...prev, newItem]);
-                if (onAddItem) onAddItem(newItem);
+                setFieldValueExterno(nameArray, [...initialItems, newItem]);
             }
         }
-        resetForm()
         setEditItem(null);
+        resetForm();
+        setKey(Math.random());
     };
-
-    const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm, setFieldError } = useFormik<ItemProps>({
+    const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<ItemProps>({
         initialValues: {
             nmProduto: '',
-            quantidade: '',
+            quantidade: null,
+            vlUnitario: null,
+            vlVendaProduto: null
         },
         validationSchema: Yup.object({
             nmProduto: Yup.string()
                 .required('O nome do produto é obrigatório.')
-                .test('valid-product', 'O produto inserido não é válido.', value => !value || suggestions.includes(value)),
-            quantidade: Yup.string().required('A quantidade é obrigatória.')
+                .test('valid-product', 'O produto inserido não é válido.', value => {
+                    return !value || (suggestions?.find((i: any) => i.nmProduto === value) ? true : false);
+                })
+                .test('unique-product', 'esse Item ja existe na lista.', value => {
+                    if (editItem) return true;
+                    if (!value) return true;
+                    return !items.some((item: any) => item.nmProduto === value);
+                }),
+            quantidade: Yup.string()
+                .nullable()
+                .test('quantidade-optional', 'Campo Obrigatório.', function (value) {
+                    console.log(typeValueInput === 'number' && !value)
+                    if (typeValueInput === 'number' && !value) return false;
+                    return true;
+                }),
+            vlVendaProduto: Yup.string()
+                .nullable()
+                .test('vlVendaProduto-optional', 'Campo Obrigatório.', function (value) {
+                    if (typeValueInput === 'currency' && !value) return false;
+                    return true;
+                })
         }),
         onSubmit: handleAddItem
     });
@@ -74,23 +115,24 @@ const CollapseListProduct = <T,>({ initialItems, onAddItem, onRemoveItem, isVisi
         }
     }, [initialItems])
 
-
-
     const handleRemoveItem = (nmProduto: string) => {
         setItems(prev => prev.filter(item => (item as any).nmProduto !== nmProduto));
         const removedItem = items.find(item => (item as any).nmProduto === nmProduto);
-        if (removedItem && onRemoveItem) onRemoveItem(removedItem);
+        if (!removedItem) return;
+        setFieldValueExterno(nameArray, initialItems.filter(i => (i as any).nmProduto !== (removedItem as any).nmProduto));
     };
 
-    const handleEditItem = (item: T) => {
+    const handleEditItem = (item: any) => {
         setEditItem(item);
-        setFieldValue('nmProduto', (item as any).nmProduto);
-        setFieldValue('quantidade', (item as any).quantidade);
+        setFieldValue('nmProduto', item.nmProduto);
+        setFieldValue('vlVendaProduto', item.vlVendaProduto);
+        setFieldValue('quantidade', item.quantidade);
+        setFieldValue('vlUnitario', item.vlUnitario);
     };
 
-    const renderItem = (item: T) => (
+    const renderItem = (item: any) => (
         <Box
-            key={(item as any).nmProduto}
+            key={item.nmProduto}
             sx={{
                 padding: 2,
                 margin: 0.5,
@@ -109,16 +151,16 @@ const CollapseListProduct = <T,>({ initialItems, onAddItem, onRemoveItem, isVisi
                     <Button onClick={() => handleEditItem(item)}>
                         <EditIcon />
                     </Button>
-                    <Button onClick={() => handleRemoveItem((item as any).nmProduto)}>
+                    <Button onClick={() => handleRemoveItem(item.nmProduto)}>
                         <DeleteIcon style={{ color: '#535353' }} />
                     </Button>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'flex-start', flexDirection: 'column' }}>
                     <Typography>
-                        Nome: {(item as any).nmProduto}
+                        Nome: {item.nmProduto}
                     </Typography>
                     <Typography>
-                        Qntd.: {(item as any).quantidade.toString().replace('.', ',')}
+                        {typeValueInput === 'currency' ? `Valor: ${NumberFormatForBrazilianCurrency(item.vlVendaProduto)}` : `Quantidade: ${item.quantidade}`}
                     </Typography>
                 </Box>
             </Box>
@@ -134,7 +176,7 @@ const CollapseListProduct = <T,>({ initialItems, onAddItem, onRemoveItem, isVisi
             ],
             dispatch
         );
-        setSuggestions(data.map(item => (item as any).nmProduto));
+        setSuggestions(data);
     }
 
     useEffect(() => {
@@ -148,7 +190,7 @@ const CollapseListProduct = <T,>({ initialItems, onAddItem, onRemoveItem, isVisi
             } else {
                 setSuggestions([]);
             }
-        }, 500);
+        }, 200);
 
         setDebounceTimeout(newTimeout);
         return () => {
@@ -165,15 +207,18 @@ const CollapseListProduct = <T,>({ initialItems, onAddItem, onRemoveItem, isVisi
                     <Grid container spacing={2} alignItems="center">
                         <Grid item xs={2}>
                             <Autocomplete
+                                key={key}
                                 freeSolo
                                 disabled={editItem !== null}
                                 options={suggestions}
-                                value={values.nmProduto}
-                                onInputChange={(event, newInputValue) => setFieldValue('nmProduto', newInputValue)}
+                                getOptionLabel={(option: any) => option && option.nmProduto ? option.nmProduto : ""}
+                                value={suggestions.find((item: any) => item.nmProduto === values.nmProduto) || null}
+                                onChange={(_, selectedOption: any) => selectedOption && setFieldValue('vlUnitario', selectedOption.vlUnitario)}
+                                onInputChange={(_, newInputValue) => setFieldValue('nmProduto', newInputValue)}
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
-                                        label="Nome do produto"
+                                        label={labelAutoComplete || 'Nome do Produto'}
                                         variant="standard"
                                         error={touched.nmProduto && Boolean(errors.nmProduto)}
                                         helperText={touched.nmProduto && errors.nmProduto}
@@ -181,14 +226,19 @@ const CollapseListProduct = <T,>({ initialItems, onAddItem, onRemoveItem, isVisi
                                     />
                                 )}
                             />
+
                         </Grid>
                         <Grid item xs={2}>
                             <Input
+                                key={key}
                                 type="text"
-                                value={values.quantidade}
-                                onChange={(e) => setFieldValue('quantidade', e.target.value.replace('.', ','))}
-                                label='Quantidade'
-                                error=''
+                                value={(typeValueInput === 'currency' ? (typeof values.vlVendaProduto === 'number' ? NumberFormatForBrazilianCurrency(values.vlVendaProduto) : values.vlVendaProduto) : values.quantidade) as number}
+                                onChange={(e) => {
+                                    if (typeValueInput === 'currency') setFieldValue('vlVendaProduto', formatCurrencyRealTime(e.target.value))
+                                    else setFieldValue('quantidade', e.target.value.replace('.', ','))
+                                }}
+                                label={labelInput || 'Quantidade'}
+                                error={(touched.vlVendaProduto && errors.vlVendaProduto ? errors.vlVendaProduto : '') || (touched.quantidade && errors.quantidade ? errors.quantidade : '')}
                                 name=''
                             />
                         </Grid>
@@ -200,8 +250,8 @@ const CollapseListProduct = <T,>({ initialItems, onAddItem, onRemoveItem, isVisi
                     </Grid>
                 </Box>
                 <TransitionGroup style={{ display: 'flex', flexWrap: 'wrap', height: '15rem' }}>
-                    {items.map((item) => (
-                        <Grow key={(item as any).id}>
+                    {items.map((item: any) => (
+                        <Grow key={item.id}>
                             {renderItem(item)}
                         </Grow>
                     ))}

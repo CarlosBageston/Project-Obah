@@ -1,85 +1,52 @@
 import * as Yup from 'yup';
 import { useFormik } from 'formik';
-import { lazy, useState } from 'react';
+import { useState } from 'react';
 import { db } from '../../../firebase';
 import ClienteModel from './model/cliente';
 import Input from '../../../Components/input';
-import GetData from '../../../firebase/getData';
 import Button from '../../../Components/button';
 import { TableKey } from '../../../types/tableName';
 import GenericTable from '../../../Components/table';
-import FiltroGeneric from '../../../Components/filtro';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import useFormatCurrency from '../../../hooks/formatCurrency';
-import ProdutosModel from '../cadastroProdutos/model/produtos';
 import FormAlert from '../../../Components/FormAlert/formAlert';
 import formatPhone from '../../../Components/masks/maskTelefone';
-import { State, setLoading } from '../../../store/reducer/reducer';
-import ModalDelete from '../../../Components/FormAlert/modalDelete';
-import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { setLoading } from '../../../store/reducer/reducer';
+import { addDoc, collection, doc, updateDoc } from 'firebase/firestore';
 
-const IsEdit = lazy(() => import('../../../Components/isEdit/isEdit'));
-const IsAdding = lazy(() => import('../../../Components/isAdding/isAdding'));
 
 //import do styled components
 import {
     Box,
     ContainerInfoCliente,
     DivCliente,
-    ButtonStyled,
     ContainerButton,
     TitleDefault,
 } from './style';
-import { BoxTitleDefault } from '../estoque/style';
-
-
-const objClean: ClienteModel = {
-    nmCliente: '',
-    tfCliente: '',
-    ruaCliente: '',
-    nrCasaCliente: '',
-    bairroCliente: '',
-    cidadeCliente: '',
-    produtos: []
-}
+import CollapseListProduct from '../../../Components/collapse/collapseListProduct';
+import _ from 'lodash';
 
 function CadastroCliente() {
     const [key, setKey] = useState<number>(0);
-    const [isEdit, setIsEdit] = useState<boolean>(false);
-    const [selected, setSelected] = useState<ClienteModel>();
-    const [recarregue, setRecarregue] = useState<boolean>(true);
-    const [openDelete, setOpenDelete] = useState<boolean>(false);
-    const [isVisibleTpProuto, setIsVisibleTpProduto] = useState<boolean>(false);
     const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
-    const [initialValues, setInitialValues] = useState<ClienteModel>({ ...objClean });
+    const [editData, setEditData] = useState<ClienteModel>();
 
     const dispatch = useDispatch();
     const { convertToNumber } = useFormatCurrency();
-    const { loading } = useSelector((state: State) => state.user);
 
-    const inputsConfig = [
-        { label: 'Nome', propertyName: 'nmCliente' },
-        { label: 'Telefone', propertyName: 'tfCliente' },
-        { label: 'Cidade', propertyName: 'cidadeCliente' },
-        { label: 'Bairro', propertyName: 'bairroCliente' },
-        { label: 'Rua', propertyName: 'ruaCliente' },
-        { label: 'Numero', propertyName: 'nrCasaCliente' },
-    ];
-
-    //realizando busca no banco de dados
-    const {
-        dataTable,
-        loading: isLoading,
-        setDataTable
-    } = GetData(TableKey.Clientes, recarregue) as { dataTable: ClienteModel[], loading: boolean, setDataTable: (data: ClienteModel[]) => void };
-    const {
-        dataTable: produtosDataTable,
-    } = GetData(TableKey.Produtos, recarregue) as { dataTable: ProdutosModel[] };
 
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<ClienteModel>({
         validateOnBlur: true,
         validateOnChange: true,
-        initialValues,
+        initialValues: {
+            nmCliente: '',
+            tfCliente: '',
+            ruaCliente: '',
+            nrCasaCliente: '',
+            bairroCliente: '',
+            cidadeCliente: '',
+            produtos: []
+        },
         validationSchema: Yup.object().shape({
             nmCliente: Yup.string().required('Campo obrigatório'),
             tfCliente: Yup.string().required('Campo obrigatório'),
@@ -92,58 +59,31 @@ function CadastroCliente() {
                 return true;
             }).nullable()
         }),
-        onSubmit: hundleSubmitForm,
+        onSubmit: editData ? handleEditRow : hundleSubmitForm,
     });
 
     //editar uma linha da tabela e do banco de dados
     async function handleEditRow() {
-        if (selected) {
-            const refID: string = selected.id ?? '';
+        if (values) {
+            console.log(values)
+            const refID: string = values.id ?? '';
             const refTable = doc(db, TableKey.Clientes, refID);
-            selected.produtos.forEach(product => {
-                product.vlVendaProduto = convertToNumber(product.vlVendaProduto.toString())
+            values.produtos.forEach(product => {
+                if (typeof product.vlVendaProduto === 'string') {
+                    product.vlVendaProduto = convertToNumber(product.vlVendaProduto)
+                }
             })
-            if (JSON.stringify(selected) !== JSON.stringify(initialValues)) {
-                await updateDoc(refTable, { ...selected })
+            console.log(_.isEqual(values, editData))
+            if (!_.isEqual(values, editData)) {
+                console.log('entrou')
+                await updateDoc(refTable, { ...values })
                     .then(() => {
-                        const index = dataTable.findIndex((item) => item.id === selected.id);
-                        const updatedDataTable = [
-                            ...dataTable.slice(0, index),
-                            selected,
-                            ...dataTable.slice(index + 1)
-                        ];
-                        setDataTable(updatedDataTable);
+                        setEditData(values)
                     });
             }
+            resetForm()
+            setKey(Math.random());
         }
-        setIsEdit(false)
-        setSelected(undefined)
-    }
-
-    //deleta uma linha da tabela e do banco de dados
-    async function handleDeleteRow() {
-        setOpenDelete(false)
-        if (selected) {
-            const refID: string = selected.id ?? '';
-            await deleteDoc(doc(db, TableKey.Clientes, refID)).then(() => {
-                const newDataTable = dataTable.filter(row => row.id !== selected.id);
-                setDataTable(newDataTable);
-            });
-        }
-        setSelected(undefined)
-    }
-
-    function cleanState() {
-        setInitialValues({
-            nmCliente: '',
-            tfCliente: '',
-            ruaCliente: '',
-            nrCasaCliente: '',
-            bairroCliente: '',
-            cidadeCliente: '',
-            produtos: []
-        })
-        setKey(Math.random());
     }
 
     //envia informações para o banco
@@ -157,15 +97,15 @@ function CadastroCliente() {
         }).then(() => {
             dispatch(setLoading(false))
             setSubmitForm(true);
-            setDataTable([...dataTable, values]);
-            setTimeout(() => { setSubmitForm(undefined) }, 3000)
+            setTimeout(() => { setSubmitForm(undefined) }, 3000);
+            setEditData(values)
         }).catch(() => {
             dispatch(setLoading(false))
             setSubmitForm(false);
             setTimeout(() => { setSubmitForm(undefined) }, 3000)
         });
         resetForm()
-        cleanState()
+        setKey(Math.random());
     }
 
     return (
@@ -245,57 +185,28 @@ function CadastroCliente() {
                                 style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                             />
                         </DivCliente>
-                        <div>
-                            {touched.produtos && errors.produtos && (
-                                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                                //@ts-ignore
-                                <div style={{ color: 'red' }}>{errors.produtos}</div>
-                            )}
-                            <ButtonStyled onClick={() => setIsVisibleTpProduto(true)}> Adicionar Produtos</ButtonStyled>
-                        </div>
                     </ContainerInfoCliente>
+                    <CollapseListProduct
+                        isVisible={true}
+                        nameArray='produtos'
+                        collectionName={TableKey.Produtos}
+                        initialItems={values.produtos}
+                        labelInput='Valor venda'
+                        typeValueInput='currency'
+                        setFieldValueExterno={setFieldValue}
+                    />
                     <FormAlert submitForm={submitForm} name={'Cliente'} />
                 </div>
-                <ModalDelete open={openDelete} onDeleteClick={handleDeleteRow} onCancelClick={() => setOpenDelete(false)} />
                 <ContainerButton>
                     <Button
                         type={'button'}
                         label={'Cadastrar Cliente'}
                         onClick={handleSubmit}
-                        disabled={loading}
                         style={{ margin: '1rem 0 3rem 0', height: '4rem', width: '14rem' }}
                     />
                 </ContainerButton>
-                {/*Adicionar Produtos */}
-                <IsAdding
-                    data={produtosDataTable}
-                    isAdding={isVisibleTpProuto}
-                    setFieldValue={setFieldValue}
-                    setIsVisibleTpProduto={setIsVisibleTpProduto}
-                    products={values.produtos}
-                    addingScreen='Cliente'
-                />
-
-
-                {/* Editar o cliente */}
-                <IsEdit
-                    editingScreen='Cliente'
-                    selected={selected}
-                    handleEditRow={handleEditRow}
-                    inputsConfig={inputsConfig}
-                    isEdit={isEdit}
-                    products={selected ? selected.produtos : []}
-                    setSelected={setSelected}
-                    setIsEdit={setIsEdit}
-                    newData={produtosDataTable}
-                />
 
                 {/*Tabela */}
-                <BoxTitleDefault>
-                    <div>
-                        <FiltroGeneric data={dataTable} setFilteredData={setDataTable} carregarDados={setRecarregue} type="cliente" />
-                    </div>
-                </BoxTitleDefault>
                 <GenericTable
                     columns={[
                         { label: 'Nome', name: 'nmCliente' },
@@ -305,19 +216,22 @@ function CadastroCliente() {
                         { label: 'Rua', name: 'ruaCliente' },
                         { label: 'Numero Casa', name: 'nrCasaCliente' },
                     ]}
-                    data={dataTable}
-                    isLoading={isLoading}
-                    onSelectedRow={setSelected}
-                    onEdit={() => {
-                        if (selected) {
-                            setIsEdit(true)
-                            setInitialValues(selected)
-                        } else {
-                            return
-                        }
+                    onEdit={(row: ClienteModel | undefined) => {
+                        if (!row) return;
+                        setEditData(row)
+                        setFieldValue('nmCliente', row.nmCliente);
+                        setFieldValue('tfCliente', formatPhone(row.tfCliente));
+                        setFieldValue('ruaCliente', row.ruaCliente);
+                        setFieldValue('nrCasaCliente', row.nrCasaCliente);
+                        setFieldValue('bairroCliente', row.bairroCliente);
+                        setFieldValue('cidadeCliente', row.cidadeCliente);
+                        setFieldValue('produtos', row.produtos);
+                        setFieldValue('id', row.id);
+                        setKey(Math.random());
                     }}
-                    onDelete={() => setOpenDelete(true)}
-                    isdisabled={selected ? false : true}
+                    editData={editData}
+                    setEditData={setEditData}
+                    collectionName={TableKey.Clientes}
                 />
             </Box>
         </>

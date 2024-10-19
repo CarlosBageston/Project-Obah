@@ -2,23 +2,21 @@ import Button from "../button";
 import { format } from "date-fns";
 import { useEffect, useRef, useState } from "react";
 import { EntregaModel } from "../../Pages/admin/entregas/model/entrega";
-import ClienteModel from "../../Pages/admin/cadastroClientes/model/cliente";
 import { Table, TableHead, TableRow, TableCell, TableBody, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
 
 
 import { BoxClose, StyledAiOutlineClose } from "../isEdit/style";
 import { Box, DivSubHeader, Title, TotalValue, DivClosePrint, ContainerFlutuantePrint, TextLabel, BoxButtonPrint, BoxButtonDialog } from "./style";
 import useFormatCurrency from "../../hooks/formatCurrency";
+import printJS from "print-js";
 
 interface Props {
     values: EntregaModel,
-    clienteCurrent: ClienteModel,
     setShouldShow: React.Dispatch<React.SetStateAction<boolean>>
-    quantidades: { [key: string]: number }
     handleSubmit: (e?: React.FormEvent<HTMLFormElement> | undefined) => void
 }
 
-export function NotaFiscal({ values, clienteCurrent, setShouldShow, quantidades, handleSubmit }: Props) {
+export function NotaFiscal({ values, setShouldShow, handleSubmit }: Props) {
     const [horaAtual, setHoraAtual] = useState<string>('');
     const [registerProduct, setRegisterProduct] = useState<boolean>(false);
 
@@ -35,33 +33,54 @@ export function NotaFiscal({ values, clienteCurrent, setShouldShow, quantidades,
         return index.toString().padStart(3, '0');
     }
 
+    // TODO: IMPRIMIR CUPOM DE NOTA FISCAL TESTE
+
     const handlePrint = () => {
         if (ref.current) {
-            const printWindow = window.open('', '_blank');
-            if (printWindow) {
-                printWindow.document.write('<html><head><title>Nota Fiscal</title>');
-                printWindow.document.write(`
-                    <style>
-                        .marginprint {
-                            margin-bottom: 6px;
-                            margin-top: 6px;
-                        }
-                    </style>
+            const printContent = ref.current.innerHTML;
+
+            // Crie um iframe temporário
+            const iframe = document.createElement('iframe');
+            document.body.appendChild(iframe);
+            iframe.style.display = 'none'; // Oculta o iframe
+
+            const doc = iframe.contentWindow?.document || iframe.contentDocument;
+
+            if (doc) {
+                doc.open();
+                doc.write(`
+                    <html>
+                    <head>
+                        <title>Nota Fiscal</title>
+                        <style>
+                            @media print {
+                                .marginprint {
+                                    margin-bottom: 6px;
+                                    margin-top: 6px;
+                                }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        ${printContent}
+                    </body>
+                    </html>
                 `);
-                printWindow.document.write('</head><body>');
-                printWindow.document.write(ref.current.innerHTML);
-                printWindow.document.write('</body></html>');
-                printWindow.document.close();
+                doc.close();
 
-                printWindow.addEventListener('afterprint', () => {
-                    printWindow.close();
-                    setRegisterProduct(true)
-                });
+                // Usando print.js para imprimir o conteúdo do iframe
+                printJS({ printable: iframe.contentWindow?.document.body.innerHTML, type: 'html', style: '' });
 
-                printWindow.print();
+                // Remove o iframe após a impressão
+                setTimeout(() => {
+                    document.body.removeChild(iframe);
+                    setRegisterProduct(true);
+                }, 1000);
             }
         }
     };
+
+
     return (
         <>
             {!registerProduct ?
@@ -110,16 +129,13 @@ export function NotaFiscal({ values, clienteCurrent, setShouldShow, quantidades,
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        {clienteCurrent.produtos
-                                            .filter(produto => produto.valorItem !== 0)
+                                        {values.produtos.filter(produto => produto.valorItem !== 0)
                                             .map((produto, index) => (
                                                 <>
-                                                    <TableRow key={produto.cdProduto}>
+                                                    <TableRow key={produto.nmProduto}>
                                                         <TableCell style={{ fontSize: 13 }}>{formatIndex(index + 1)}</TableCell>
                                                         <TableCell style={{ fontSize: 13 }}>{produto.nmProduto}</TableCell>
-                                                        <TableCell style={{ fontSize: 13 }}>
-                                                            {quantidades[produto.nmProduto] ?? 0}
-                                                        </TableCell>
+                                                        <TableCell style={{ fontSize: 13 }}>{produto.quantidade ?? 0}</TableCell>
                                                         <TableCell style={{ fontSize: 13 }}>
                                                             {NumberFormatForBrazilianCurrency(produto.vlVendaProduto).replace('R$', '')}
                                                         </TableCell>
@@ -142,6 +158,7 @@ export function NotaFiscal({ values, clienteCurrent, setShouldShow, quantidades,
                     </Box>
                     <BoxButtonPrint>
                         <Button
+                            className="no-print"
                             label={"Confirmar"}
                             type="button"
                             onClick={handlePrint}

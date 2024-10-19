@@ -8,6 +8,7 @@ export interface ButtonProps {
     type: "button" | "submit" | "reset",
     style?: React.CSSProperties,
     disabled?: boolean | undefined
+    className?: string | undefined
 }
 
 /**
@@ -19,9 +20,10 @@ export interface ButtonProps {
  * @param style Estilo CSS do botão
  * @param disabled Indica se o botão está desabilitado
  */
-function Button({ label: label, onClick, type, style, disabled }: ButtonProps) {
+function Button({ label: label, onClick, type, style, disabled, className }: ButtonProps) {
     return (
         <StyledButton
+            className={className}
             onClick={onClick}
             type={type}
             style={style}

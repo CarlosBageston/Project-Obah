@@ -152,6 +152,7 @@ function CadastroProduto() {
         resetForm()
         setFieldValue('tpProduto', null)
         setKey(Math.random());
+        setEditData(undefined)
     }
 
     /**
@@ -277,7 +278,7 @@ function CadastroProduto() {
                             sx={{ mb: 2, minWidth: 120 }}
                             style={{ width: '13rem', display: 'flex', justifyContent: 'center', marginRight: '12px' }}
                         >
-                            <InputLabel style={{ color: '#4d68af', fontWeight: 'bold', paddingLeft: 4 }} id="standard-label">Situação do produto</InputLabel>
+                            <InputLabel id="standard-label">Situação do produto</InputLabel>
                             <Select
                                 key={`tpProduto-${key}`}
                                 name='tpProduto'
@@ -287,7 +288,6 @@ function CadastroProduto() {
                                 labelId="standard-label"
                                 onChange={e => setFieldValue(e.target.name, e.target.value)}
                                 value={values.tpProduto ?? ''}
-                                style={{ borderBottom: '1px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                             >
                                 <MenuItem
                                     value={SituacaoProduto.FABRICADO}
@@ -350,9 +350,8 @@ function CadastroProduto() {
                             variant="standard"
                             style={{ width: '13rem', display: 'flex', justifyContent: 'center', marginTop: '10px' }}
                         >
-                            <InputLabel style={{ color: '#4d68af', fontWeight: 'bold' }}>Redimento Em Kg</InputLabel>
+                            <InputLabel >Redimento Em Kg</InputLabel>
                             <Select
-                                style={{ borderBottom: '1px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                                 value={values.kgProduto}
                                 label="Age"
                                 onChange={e => setFieldValue('kgProduto', e.target.value)}
@@ -368,6 +367,7 @@ function CadastroProduto() {
             </ContainerInputs>
             <CollapseListProduct<ComprasModel>
                 isVisible={isVisibleTpProuto}
+                tpProdutoSearch={SituacaoProduto.COMPRADO}
                 nameArray='mpFabricado'
                 collectionName={TableKey.Produtos}
                 initialItems={values.mpFabricado}

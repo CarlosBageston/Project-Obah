@@ -3,9 +3,9 @@ import GetData from "../firebase/getData";
 import { deleteDoc, doc, updateDoc } from "firebase/firestore";
 import ComprasModel from "../Pages/admin/compras/model/compras";
 import { ProdutoEscaniado } from "../Pages/admin/vendas/model/vendas";
-import ClienteModel from "../Pages/admin/cadastroClientes/model/cliente";
 import EstoqueModel, { Versao } from "../Pages/admin/estoque/model/estoque";
 import { TableKey } from "../types/tableName";
+import { ProdutosEntregaModel } from "../Pages/admin/entregas/model/entrega";
 
 /**
  * Hook personalizado para manipulação de estoque.
@@ -62,17 +62,15 @@ export default function useEstoque(){
     /**
      * Atualiza o estoque removendo a quantidade especificada após uma entrega.
      *
-     * @param {ClienteModel | undefined} clienteCurrent - Cliente atual.
+     * 
      * @param {Object} quantidades - Quantidades a serem removidas do estoque.
      */
-    async function removedStockEntrega(clienteCurrent: ClienteModel | undefined, quantidades:{ [key: string]: number }) {
-        if (!clienteCurrent) return;
-        const updatedQuantidades: { [key: string]: number } = { ...quantidades };
-        clienteCurrent.produtos.forEach(async produto => {
+    async function removedStockEntrega(produtosList: ProdutosEntregaModel[]) {
+        produtosList.forEach(async produto => {
             const estoqueMP = dataTableEstoque.find(estoque => estoque.nmProduto === produto.nmProduto);
-            if (estoqueMP) {
+            if (estoqueMP && produto.quantidade) {
                 const listVersaoComQntd: Versao[] = [...estoqueMP.versaos];
-                let quantidadeRestante = updatedQuantidades[produto.nmProduto];
+                let quantidadeRestante = produto.quantidade;
                 const versoesOrdenadas = estoqueMP.versaos.sort((a, b) => b.versao - a.versao);
                 versoesOrdenadas.forEach(versao => {
                     if (quantidadeRestante > 0) {

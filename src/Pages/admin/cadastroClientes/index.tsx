@@ -25,6 +25,7 @@ import {
 } from './style';
 import CollapseListProduct from '../../../Components/collapse/collapseListProduct';
 import _ from 'lodash';
+import SituacaoProduto from '../../../enumeration/situacaoProduto';
 
 function CadastroCliente() {
     const [key, setKey] = useState<number>(0);
@@ -123,8 +124,6 @@ function CadastroCliente() {
                                 value={values.nmCliente}
                                 onChange={e => setFieldValue(e.target.name, e.target.value)}
                                 error={touched.nmCliente && errors.nmCliente ? errors.nmCliente : ''}
-                                styleDiv={{ marginTop: 4 }}
-                                style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                             />
                             <Input
                                 key={`tfCliente-${key}`}
@@ -135,8 +134,6 @@ function CadastroCliente() {
                                 value={formatPhone(values.tfCliente)}
                                 onChange={e => setFieldValue(e.target.name, e.target.value)}
                                 error={touched.tfCliente && errors.tfCliente ? errors.tfCliente : ''}
-                                styleDiv={{ marginTop: 4 }}
-                                style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                             />
                             <Input
                                 key={`cidadeCliente-${key}`}
@@ -146,8 +143,6 @@ function CadastroCliente() {
                                 value={formatPhone(values.cidadeCliente)}
                                 onChange={e => setFieldValue(e.target.name, e.target.value)}
                                 error={touched.cidadeCliente && errors.cidadeCliente ? errors.cidadeCliente : ''}
-                                styleDiv={{ marginTop: 4 }}
-                                style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                             />
                         </DivCliente>
                         <DivCliente>
@@ -159,8 +154,6 @@ function CadastroCliente() {
                                 value={values.bairroCliente}
                                 onChange={e => setFieldValue(e.target.name, e.target.value)}
                                 error={touched.bairroCliente && errors.bairroCliente ? errors.bairroCliente : ''}
-                                styleDiv={{ marginTop: 4 }}
-                                style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                             />
                             <Input
                                 key={`ruaCliente-${key}`}
@@ -170,8 +163,6 @@ function CadastroCliente() {
                                 value={values.ruaCliente}
                                 onChange={e => setFieldValue(e.target.name, e.target.value)}
                                 error={touched.ruaCliente && errors.ruaCliente ? errors.ruaCliente : ''}
-                                styleDiv={{ marginTop: 4 }}
-                                style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                             />
                             <Input
                                 key={`nrCasaCliente-${key}`}
@@ -181,13 +172,12 @@ function CadastroCliente() {
                                 value={values.nrCasaCliente}
                                 onChange={e => setFieldValue(e.target.name, e.target.value)}
                                 error={touched.nrCasaCliente && errors.nrCasaCliente ? errors.nrCasaCliente : ''}
-                                styleDiv={{ marginTop: 4 }}
-                                style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                             />
                         </DivCliente>
                     </ContainerInfoCliente>
                     <CollapseListProduct
                         isVisible={true}
+                        tpProdutoSearch={SituacaoProduto.FABRICADO}
                         nameArray='produtos'
                         collectionName={TableKey.Produtos}
                         initialItems={values.produtos}

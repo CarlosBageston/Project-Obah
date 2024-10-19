@@ -93,8 +93,6 @@ function CadastroColaborador() {
                                 value={values.nmColaborador}
                                 onChange={e => setFieldValue(e.target.name, e.target.value)}
                                 error={touched.nmColaborador && errors.nmColaborador ? errors.nmColaborador : ''}
-                                styleDiv={{ marginTop: 4 }}
-                                style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                             />
                             <Input
                                 key={`tfColaborador-${key}`}
@@ -105,8 +103,6 @@ function CadastroColaborador() {
                                 value={formatPhone(values.tfColaborador)}
                                 onChange={e => setFieldValue(e.target.name, e.target.value)}
                                 error={touched.tfColaborador && errors.tfColaborador ? errors.tfColaborador : ''}
-                                styleDiv={{ marginTop: 4 }}
-                                style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                             />
                             <Input
                                 key={`cidadeColaborador-${key}`}
@@ -116,8 +112,6 @@ function CadastroColaborador() {
                                 value={formatPhone(values.cidadeColaborador)}
                                 onChange={e => setFieldValue(e.target.name, e.target.value)}
                                 error={touched.cidadeColaborador && errors.cidadeColaborador ? errors.cidadeColaborador : ''}
-                                styleDiv={{ marginTop: 4 }}
-                                style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                             />
                             <Input
                                 key={`idCartaoPonto-${key}`}
@@ -127,8 +121,6 @@ function CadastroColaborador() {
                                 value={values.idCartaoPonto}
                                 onChange={e => setFieldValue(e.target.name, e.target.value)}
                                 error={touched.idCartaoPonto && errors.idCartaoPonto ? errors.idCartaoPonto : ''}
-                                styleDiv={{ marginTop: 4 }}
-                                style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                             />
                         </DivInput>
                         <DivInput>
@@ -140,8 +132,6 @@ function CadastroColaborador() {
                                 value={values.bairroColaborador}
                                 onChange={e => setFieldValue(e.target.name, e.target.value)}
                                 error={touched.bairroColaborador && errors.bairroColaborador ? errors.bairroColaborador : ''}
-                                styleDiv={{ marginTop: 4 }}
-                                style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                             />
                             <Input
                                 key={`ruaColaborador-${key}`}
@@ -151,8 +141,6 @@ function CadastroColaborador() {
                                 value={values.ruaColaborador}
                                 onChange={e => setFieldValue(e.target.name, e.target.value)}
                                 error={touched.ruaColaborador && errors.ruaColaborador ? errors.ruaColaborador : ''}
-                                styleDiv={{ marginTop: 4 }}
-                                style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                             />
                             <Input
                                 key={`nrCasaColaborador-${key}`}
@@ -162,8 +150,6 @@ function CadastroColaborador() {
                                 value={values.nrCasaColaborador}
                                 onChange={e => setFieldValue(e.target.name, e.target.value)}
                                 error={touched.nrCasaColaborador && errors.nrCasaColaborador ? errors.nrCasaColaborador : ''}
-                                styleDiv={{ marginTop: 4 }}
-                                style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                             />
                             <Input
                                 key={`vlHora-${key}`}
@@ -173,8 +159,6 @@ function CadastroColaborador() {
                                 value={values.vlHora ?? ''}
                                 onChange={e => setFieldValue(e.target.name, e.target.value)}
                                 error={touched.vlHora && errors.vlHora ? errors.vlHora : ''}
-                                styleDiv={{ marginTop: 4 }}
-                                style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                             />
                         </DivInput>
                     </ContainerInputs>

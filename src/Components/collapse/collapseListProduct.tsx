@@ -4,22 +4,24 @@ import { TransitionGroup } from 'react-transition-group';
 import Input from '../input';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import { getItemsByQuery } from '../../hooks/queryFirebase';
 import { useDispatch } from 'react-redux';
-import { where } from 'firebase/firestore';
 import useFormatCurrency from '../../hooks/formatCurrency';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
+import useDebouncedSuggestions from '../../hooks/useDebouncedSuggestions';
+import SituacaoProduto from '../../enumeration/situacaoProduto';
 
 interface CollapseListProductProps<T> {
     initialItems: T[];
     nameArray: string;
     isVisible: boolean;
     collectionName: string;
+    tpProdutoSearch: SituacaoProduto,
     setFieldValueExterno: (field: string, value: any) => any;
     labelInput?: string
     labelAutoComplete?: string
     typeValueInput?: 'number' | 'currency',
+
 }
 
 interface ItemProps {
@@ -37,13 +39,12 @@ const CollapseListProduct = <T,>({
     setFieldValueExterno,
     labelAutoComplete,
     typeValueInput,
-    labelInput
+    labelInput,
+    tpProdutoSearch
 }: CollapseListProductProps<T>) => {
     const [items, setItems] = useState<T[]>(initialItems ?? []);
-    const [suggestions, setSuggestions] = useState<T[]>([]);
     const [editItem, setEditItem] = useState<T | null>(null);
     const dispatch = useDispatch();
-    const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(null);
     const { convertToNumber, formatCurrencyRealTime, NumberFormatForBrazilianCurrency } = useFormatCurrency();
     const [key, setKey] = useState<number>(0);
 
@@ -96,7 +97,6 @@ const CollapseListProduct = <T,>({
             quantidade: Yup.string()
                 .nullable()
                 .test('quantidade-optional', 'Campo Obrigatório.', function (value) {
-                    console.log(typeValueInput === 'number' && !value)
                     if (typeValueInput === 'number' && !value) return false;
                     return true;
                 }),
@@ -109,6 +109,9 @@ const CollapseListProduct = <T,>({
         }),
         onSubmit: handleAddItem
     });
+    const suggestions: ItemProps[] = useDebouncedSuggestions<ItemProps>(values.nmProduto, collectionName, dispatch, 'Produto', tpProdutoSearch);
+
+
     useEffect(() => {
         if (initialItems) {
             setItems(initialItems);
@@ -167,38 +170,6 @@ const CollapseListProduct = <T,>({
         </Box>
     );
 
-    async function fetchSuggestions() {
-        const { data } = await getItemsByQuery<T>(
-            collectionName,
-            [
-                where('nmProduto', '>=', values.nmProduto),
-                where('nmProduto', '<=', values.nmProduto + '\uf8ff')
-            ],
-            dispatch
-        );
-        setSuggestions(data);
-    }
-
-    useEffect(() => {
-        if (debounceTimeout) {
-            clearTimeout(debounceTimeout);
-        }
-
-        const newTimeout = setTimeout(() => {
-            if (values.nmProduto) {
-                fetchSuggestions();
-            } else {
-                setSuggestions([]);
-            }
-        }, 200);
-
-        setDebounceTimeout(newTimeout);
-        return () => {
-            if (newTimeout) {
-                clearTimeout(newTimeout);
-            }
-        };
-    }, [values.nmProduto]);
 
     return (
         <div style={{ marginLeft: '4%' }}>
@@ -209,6 +180,7 @@ const CollapseListProduct = <T,>({
                             <Autocomplete
                                 key={key}
                                 freeSolo
+                                style={{ height: '70px' }}
                                 disabled={editItem !== null}
                                 options={suggestions}
                                 getOptionLabel={(option: any) => option && option.nmProduto ? option.nmProduto : ""}

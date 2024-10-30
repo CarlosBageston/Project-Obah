@@ -9,20 +9,19 @@ import Button from "../../../Components/button";
 import { AiTwotonePrinter } from 'react-icons/ai';
 import { TableKey } from '../../../types/tableName';
 import GenericTable from "../../../Components/table";
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import React, { useState, useEffect } from "react";
 import { NotaFiscal } from '../../../Components/notaFiscal';
 import ClienteModel from "../cadastroClientes/model/cliente";
 import formatDate from "../../../Components/masks/formatDate";
 import TelaDashboard from '../../../enumeration/telaDashboard';
-import FormAlert from "../../../Components/FormAlert/formAlert";
-import { setLoading } from '../../../store/reducer/reducer';
+import { setError, setLoading } from '../../../store/reducer/reducer';
 import { addDoc, collection } from "firebase/firestore";
-import { Autocomplete, AutocompleteChangeReason, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField } from "@mui/material";
+import { Autocomplete, AutocompleteChangeReason, Box, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from "@mui/material";
 
 import {
-    Box,
-    Title,
+    // Box,
+    // Title,
     DivInputs,
     DivButtons,
     ContainerAll,
@@ -36,6 +35,8 @@ import useFormatCurrency from '../../../hooks/formatCurrency';
 import useDeleteOldData from '../../../hooks/useDeleteOldData';
 import { useCalculateValueDashboard } from '../../../hooks/useCalculateValueDashboard';
 import useDebouncedSuggestions from '../../../hooks/useDebouncedSuggestions';
+import CustomSnackBar, { StateSnackBar } from '../../../Components/snackBar/customsnackbar';
+import { RootState } from '../../../store/reducer/store';
 
 
 
@@ -44,11 +45,12 @@ function Entregas() {
     const [editData, setEditData] = useState<EntregaModel>();
     const [shouldShow, setShouldShow] = useState<boolean>(false);
     const [recarregueDashboard, setRecarregueDashboard] = useState<boolean>(true);
-    const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
+    const [openSnackBar, setOpenSnackBar] = useState<StateSnackBar>({ error: false, success: false });
+    const error = useSelector((state: RootState) => state.user.error);
 
     const dispatch = useDispatch();
     const { NumberFormatForBrazilianCurrency, convertToNumber } = useFormatCurrency();
-    const { removedStockEntrega } = useEstoque();
+    const { removedStock } = useEstoque();
     const { calculateValueDashboard } = useCalculateValueDashboard(recarregueDashboard, setRecarregueDashboard);
     const { deleteEntregas } = useDeleteOldData()
 
@@ -82,7 +84,7 @@ function Entregas() {
     //enviando formulario
     async function hundleSubmitForm() {
         dispatch(setLoading(true))
-        removedStockEntrega(values.produtos)
+        removedStock(values.produtos)
         values.vlEntrega = convertToNumber(values.vlEntrega.toString())
         values.vlLucro = convertToNumber(values.vlLucro.toString())
         calculateValueDashboard(values.vlEntrega, values.dtEntrega, TelaDashboard.ENTREGA, values.vlLucro)
@@ -91,15 +93,14 @@ function Entregas() {
         })
             .then(() => {
                 dispatch(setLoading(false))
-                setSubmitForm(true)
                 setDataTableEntregas([...dataTableEntregas, values])
-                setTimeout(() => { setSubmitForm(undefined) }, 3000)
                 setEditData(values)
+                setOpenSnackBar(prev => ({ ...prev, success: true }))
             })
             .catch(() => {
                 dispatch(setLoading(false))
-                setSubmitForm(false)
-                setTimeout(() => { setSubmitForm(undefined) }, 3000)
+                dispatch(setError('Erro ao Cadastrar Entrega'))
+                setOpenSnackBar(prev => ({ ...prev, error: true }))
             });
         resetForm()
         setKey(Math.random());
@@ -107,7 +108,7 @@ function Entregas() {
     }
 
     //manupulando evento de onchange do Select
-    function handleClienteChange(event: React.SyntheticEvent<Element, Event>, value: any, reason: AutocompleteChangeReason) {
+    function handleClienteChange(_: React.SyntheticEvent<Element, Event>, value: any, reason: AutocompleteChangeReason) {
         if (reason === 'clear' || reason === 'removeOption') {
             resetForm()
             setFieldValue('produtos', [])
@@ -150,72 +151,71 @@ function Entregas() {
         if (dataTableEntregas.length)
             deleteEntregas(dataTableEntregas)
     }, [dataTableEntregas])
-    // console.log(values.produtos.length > 0)
-    // console.log(values.produtos)
+
     const suggestions: ClienteModel[] = useDebouncedSuggestions<ClienteModel>(values.nmCliente, TableKey.Clientes, dispatch, 'Cliente');
     return (
-        <Box>
-            <Title>Cadastro de Novas Entregas</Title>
-            <ContainerAll>
-                <DivInputs>
-                    <div>
-                        <Autocomplete
-                            id="tags-standard"
-                            freeSolo
-                            style={{ height: '70px' }}
-                            options={suggestions}
-                            getOptionLabel={(option: any) => option && option.nmCliente ? option.nmCliente : ""}
-                            value={suggestions.find((item: any) => item.nmCliente === (values.cliente ? values.cliente.nmCliente : '')) || null}
-                            onChange={(_, newValue, reason) => handleClienteChange(_, newValue, reason)}
-                            onInputChange={(_, newInputValue, reason) => {
-                                if (reason === 'clear') handleClienteChange(_, null, 'clear');
-                                setFieldValue('nmCliente', newInputValue);
-                            }}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    variant="standard"
-                                    label="Cliente"
-                                    placeholder="Selecione..."
-                                />
-                            )}
-                        />
-                        <Input
-                            key={`dtEntrega-${key}`}
-                            maxLength={10}
-                            name="dtEntrega"
-                            onBlur={handleBlur}
-                            label="Data da Entrega"
-                            value={values.dtEntrega ?? ''}
-                            onChange={e => setFieldValue(e.target.name, formatDate(e.target.value))}
-                            error={touched.dtEntrega && errors.dtEntrega ? errors.dtEntrega : ''}
-                        />
-                    </div>
-                    <div>
-                        <Input
-                            key={`vlEntrega-${key}`}
-                            label="Valor Total"
-                            name="vlEntrega"
-                            onBlur={handleBlur}
-                            value={values.vlEntrega !== 0 ? values.vlEntrega : ''}
-                            onChange={e => setFieldValue(e.target.name, e.target.value)}
-                            error={touched.vlEntrega && errors.vlEntrega ? errors.vlEntrega : ''}
-                            disabled
-                        />
-                        <Input
-                            key={`vlLucro-${key}`}
-                            disabled
-                            label="Lucro"
-                            name="vlLucro"
-                            onBlur={handleBlur}
-                            value={values.vlLucro !== 0 ? values.vlLucro : ''}
-                            onChange={e => setFieldValue(e.target.name, e.target.value)}
-                            error={touched.vlLucro && errors.vlLucro ? errors.vlLucro : ''}
-                        />
-                    </div>
-                </DivInputs>
-                <DivButtonAndTable>
-                    <ContainerTableCliente >
+        <Box sx={{ padding: '5rem' }}>
+            <Typography variant="h4" gutterBottom>
+                Cadastro de Novas Entregas
+            </Typography>
+            <Box sx={{ display: "flex" }}>
+                <Grid item xs={3} sx={{ paddingRight: 10 }}>
+                    <Autocomplete
+                        id="tags-standard"
+                        freeSolo
+                        style={{ height: '70px' }}
+                        options={suggestions}
+                        getOptionLabel={(option: any) => option && option.nmCliente ? option.nmCliente : ""}
+                        value={suggestions.find((item: any) => item.nmCliente === values.nmCliente) || null}
+                        onChange={(_, newValue, reason) => handleClienteChange(_, newValue, reason)}
+                        onInputChange={(_, newInputValue, reason) => {
+                            if (reason === 'clear') handleClienteChange(_, null, 'clear');
+                            setFieldValue('nmCliente', newInputValue);
+                        }}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                variant="standard"
+                                label="Cliente"
+                                placeholder="Selecione..."
+                            />
+                        )}
+                    />
+                    <Input
+                        key={`dtEntrega-${key}`}
+                        maxLength={10}
+                        name="dtEntrega"
+                        onBlur={handleBlur}
+                        label="Data da Entrega"
+                        value={values.dtEntrega ?? ''}
+                        onChange={e => setFieldValue(e.target.name, formatDate(e.target.value))}
+                        error={touched.dtEntrega && errors.dtEntrega ? errors.dtEntrega : ''}
+                    />
+                </Grid>
+                <Grid item xs={3} sx={{ paddingRight: 10 }}>
+                    <Input
+                        key={`vlEntrega-${key}`}
+                        label="Valor Total"
+                        name="vlEntrega"
+                        onBlur={handleBlur}
+                        value={values.vlEntrega !== 0 ? values.vlEntrega : ''}
+                        onChange={e => setFieldValue(e.target.name, e.target.value)}
+                        error={touched.vlEntrega && errors.vlEntrega ? errors.vlEntrega : ''}
+                        disabled
+                    />
+                    <Input
+                        key={`vlLucro-${key}`}
+                        disabled
+                        label="Lucro"
+                        name="vlLucro"
+                        onBlur={handleBlur}
+                        value={values.vlLucro !== 0 ? values.vlLucro : ''}
+                        onChange={e => setFieldValue(e.target.name, e.target.value)}
+                        error={touched.vlLucro && errors.vlLucro ? errors.vlLucro : ''}
+                    />
+                </Grid>
+                <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", width: "50%", }}>
+                    <Box sx={{ height: "19rem", width: "100%", display: "flex", flexDirection: "column", mt: -1 }} >
 
                         <TableContainer component={Paper} className='style-scrollbar'>
                             <Table>
@@ -270,7 +270,7 @@ function Entregas() {
                             </Table>
                         </TableContainer>
 
-                    </ContainerTableCliente>
+                    </Box>
 
                     {shouldShow &&
                         <NotaFiscal
@@ -278,25 +278,24 @@ function Entregas() {
                             setShouldShow={setShouldShow}
                             handleSubmit={handleSubmit}
                         />}
-                    <DivButtons>
+                    <Box display="flex" justifyContent="flex-end">
                         <Button
                             label={<AiTwotonePrinter size={30} />}
                             type='button'
-                            style={{ margin: '0rem 0px 2rem 0px', height: '4rem', width: '5rem' }}
                             disabled={values.dtEntrega ? false : true}
                             onClick={() => setShouldShow(true)}
+                            style={{ width: '6rem', height: '4rem', marginRight: "1rem" }}
                         />
                         <Button
                             label='Cadastrar Entrega'
                             type="button"
                             onClick={handleSubmit}
                             disabled={!values.dtEntrega}
-                            style={{ margin: '2rem 0px 4rem 0px', height: '4rem', width: '12rem' }}
+                            style={{ width: '12rem', height: '4rem' }}
                         />
-                    </DivButtons>
-                </DivButtonAndTable>
-            </ContainerAll>
-            <FormAlert submitForm={submitForm} name={'Entregas'} styleLoadingMarginTop='-12rem' />
+                    </Box>
+                </Box>
+            </Box>
             {/*Tabala */}
             <GenericTable<EntregaModel>
                 columns={[
@@ -309,6 +308,11 @@ function Entregas() {
                 isVisibleEdit
                 editData={editData}
                 setEditData={setEditData}
+            />
+            <CustomSnackBar
+                message={error || "Cadastrado Entrega com sucesso"}
+                open={openSnackBar}
+                setOpen={setOpenSnackBar}
             />
         </Box>
     );

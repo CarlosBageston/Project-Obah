@@ -14,7 +14,6 @@ interface ComprasModel {
     totalPago: number | null,
     tpProduto: SituacaoProduto | null,
     qntMinima: number | null,
-    nrOrdem?: number
     mpFabricado?: ComprasModel[]
     stEstoqueInfinito?: boolean
     stMateriaPrima?: boolean

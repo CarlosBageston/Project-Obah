@@ -11,22 +11,11 @@ import ComprasModel from '../compras/model/compras';
 import { TableKey } from '../../../types/tableName';
 import GenericTable from "../../../Components/table";
 import { useDispatch, useSelector } from 'react-redux';
-import FormAlert from "../../../Components/FormAlert/formAlert";
-import { setLoading } from '../../../store/reducer/reducer';
+import { setError, setLoading } from '../../../store/reducer/reducer';
 import SituacaoProduto from "../../../enumeration/situacaoProduto";
-import CompraHistoricoModel from '../compras/model/comprahistoricoModel';
 import { addDoc, collection, deleteDoc, doc, updateDoc, where } from "firebase/firestore";
-import { Checkbox, FormControl, FormControlLabel, InputLabel, MenuItem, Select, } from "@mui/material";
+import { Box, Checkbox, FormControl, FormControlLabel, Grid, InputLabel, MenuItem, Select, Typography, } from "@mui/material";
 
-
-import {
-    Box,
-    Title,
-    DivInput,
-    ContainerInputs,
-    ContainerButton,
-    DivSituacaoProduto,
-} from './style';
 
 //hooks
 import { useNavigate } from 'react-router-dom';
@@ -36,19 +25,21 @@ import { ProdutosSemQuantidadeError, calculateTotalValue } from '../../../hooks/
 import { RootState } from '../../../store/reducer/store';
 import { getItemsByQuery, getSingleItemByQuery } from '../../../hooks/queryFirebase';
 import CollapseListProduct from '../../../Components/collapse/collapseListProduct';
+import CustomSnackBar, { StateSnackBar } from '../../../Components/snackBar/customsnackbar';
+import { set } from 'lodash';
 
 
 function CadastroProduto() {
     const [key, setKey] = useState<number>(0);
-    const [error, setError] = useState<string>();
+    const [errorQuantidade, setErrorQuantidade] = useState<string>();
     const [editData, setEditData] = useState<ProdutoModel>();
     const [isVisibleTpProuto, setIsVisibleTpProduto] = useState<boolean>(false);
-    const [submitForm, setSubmitForm] = useState<boolean>();
     const [deleteData, setDeleteData] = useState<boolean>();
+    const [openSnackBar, setOpenSnackBar] = useState<StateSnackBar>({ error: false, success: false });
 
     const history = useNavigate();
     const dispatch = useDispatch();
-    const { loading } = useSelector((state: RootState) => state.user);
+    const { loading, error } = useSelector((state: RootState) => state.user);
     const { convertToNumber, formatCurrency, formatCurrencyRealTime, NumberFormatForBrazilianCurrency } = useFormatCurrency();
 
 
@@ -101,27 +92,6 @@ function CadastroProduto() {
     });
 
     /**
-     * Salva um Historico de Compras para que essa tabela tenha todos os produtos salvos e com valores atualizados.
-     * @param valuesUpdate objeto que ta sendo atualizado o estoque
-     */
-    async function savePurchaseHistory(valuesUpdate: ProdutoModel) {
-        const filteredValuesUpdate: CompraHistoricoModel = {
-            nmProduto: valuesUpdate.nmProduto,
-            cdProduto: valuesUpdate.cdProduto,
-            vlUnitario: valuesUpdate.vlUnitario,
-            mpFabricado: valuesUpdate.mpFabricado ? valuesUpdate.mpFabricado : [],
-            qntMinima: null,
-            tpProduto: valuesUpdate.tpProduto,
-            stMateriaPrima: valuesUpdate.stMateriaPrima,
-            kgProduto: valuesUpdate.kgProduto,
-            nrOrdem: 1
-        }
-        await addDoc(collection(db, TableKey.CompraHistorico), {
-            ...filteredValuesUpdate
-        })
-    }
-
-    /**
      * Envia o formulário, realizando a lógica de conversão de moeda e atualizando o histórico de compras.
      */
     async function handleSubmitForm() {
@@ -134,20 +104,18 @@ function CadastroProduto() {
                 return mp.quantidade = quantidade;
             });
         }
-        savePurchaseHistory(values)
         await addDoc(collection(db, TableKey.Produtos), {
             ...values
         })
             .then(() => {
                 dispatch(setLoading(false))
-                setSubmitForm(true);
-                setTimeout(() => { setSubmitForm(undefined) }, 3000)
+                setOpenSnackBar(prev => ({ ...prev, success: true }))
                 setEditData(values)
             })
             .catch(() => {
                 dispatch(setLoading(false))
-                setSubmitForm(false);
-                setTimeout(() => { setSubmitForm(undefined) }, 3000)
+                dispatch(setError('Erro ao Cadastrar Produto'))
+                setOpenSnackBar(prev => ({ ...prev, error: true }))
             });
         resetForm()
         setFieldValue('tpProduto', null)
@@ -161,7 +129,7 @@ function CadastroProduto() {
      * Este método exclui a entrada correspondente na coleção "Produtos" e, se aplicável, na coleção "Estoque".
      * Após a exclusão, atualiza o estado da tabela.
      */
-    async function handleDeleteRow(selected: ProdutoModel | undefined, data: ProdutoModel[]) {
+    async function handleDeleteRow(selected: ProdutoModel | undefined) {
         if (selected) {
             const refID: string = selected.id ?? '';
             await deleteDoc(doc(db, TableKey.Produtos, refID));
@@ -219,7 +187,7 @@ function CadastroProduto() {
                 }
             } catch (error) {
                 if (error instanceof ProdutosSemQuantidadeError) {
-                    setError(error.produtosSemQuantidade);
+                    setErrorQuantidade(error.produtosSemQuantidade);
                 }
             }
         };
@@ -250,10 +218,10 @@ function CadastroProduto() {
 
 
     return (
-        <Box>
-            <Title>Cadastro de Novos Produtos</Title>
-            <ContainerInputs>
-                <DivInput>
+        <Box sx={{ padding: '5rem' }}>
+            <Typography variant="h4" gutterBottom>Cadastro de Novos Produtos</Typography>
+            <Grid container spacing={2}>
+                <Grid item xs={4}>
                     <Input
                         key={`nmProduto-${key}`}
                         label="Nome"
@@ -263,6 +231,8 @@ function CadastroProduto() {
                         onChange={e => setFieldValue(e.target.name, e.target.value)}
                         error={touched.nmProduto && errors.nmProduto ? errors.nmProduto : ''}
                     />
+                </Grid>
+                <Grid item xs={2}>
                     <Input
                         key={`cdProduto-${key}`}
                         name="cdProduto"
@@ -272,59 +242,22 @@ function CadastroProduto() {
                         onChange={e => setFieldValue(e.target.name, e.target.value)}
                         error={touched.cdProduto && errors.cdProduto ? errors.cdProduto : ''}
                     />
-                    <DivSituacaoProduto>
-                        <FormControl
-                            variant="standard"
-                            sx={{ mb: 2, minWidth: 120 }}
-                            style={{ width: '13rem', display: 'flex', justifyContent: 'center', marginRight: '12px' }}
-                        >
-                            <InputLabel id="standard-label">Situação do produto</InputLabel>
-                            <Select
-                                key={`tpProduto-${key}`}
-                                name='tpProduto'
-                                id="standard"
-                                onBlur={handleBlur}
-                                label="Selecione..."
-                                labelId="standard-label"
-                                onChange={e => setFieldValue(e.target.name, e.target.value)}
-                                value={values.tpProduto ?? ''}
-                            >
-                                <MenuItem
-                                    value={SituacaoProduto.FABRICADO}
-                                >
-                                    Fabricado
-                                </MenuItem>
-                                <MenuItem
-                                    value={SituacaoProduto.COMPRADO}
-                                >
-                                    Comprado
-                                </MenuItem>
-                            </Select>
-                            {touched.tpProduto && errors.tpProduto && (
-                                <div style={{ color: 'red' }}>{errors.tpProduto}</div>
-                            )}
-                        </FormControl>
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={values.stEntrega}
-                                    onChange={(e) => setFieldValue("stEntrega", e.target.checked)}
-                                />
-                            }
-                            label="Venda no atacado?"
-                        />
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={values.stMateriaPrima}
-                                    onChange={(e) => setFieldValue("stMateriaPrima", e.target.checked)}
-                                />
-                            }
-                            label="Matéria-Prima ?"
-                        />
-                    </DivSituacaoProduto>
-                </DivInput>
-                <DivInput>
+                </Grid>
+
+
+                <Grid item xs={3}>
+                    <Input
+                        key={`vlUnitario-${key}`}
+                        label="Valor Pago"
+                        onBlur={handleBlur}
+                        name="vlUnitario"
+                        disabled={values.tpProduto === SituacaoProduto.FABRICADO || values.stMateriaPrima}
+                        value={values.vlUnitario && values.vlUnitario.toString() !== "R$ 0,00" ? values.vlUnitario : ''}
+                        onChange={e => setFieldValue(e.target.name, formatCurrencyRealTime(e.target.value))}
+                        error={touched.vlUnitario && errors.vlUnitario ? errors.vlUnitario : ''}
+                    />
+                </Grid>
+                <Grid item xs={3}>
                     <Input
                         key={`vlVendaProduto-${key}`}
                         label="Valor Venda"
@@ -335,39 +268,59 @@ function CadastroProduto() {
                         error={touched.vlVendaProduto && errors.vlVendaProduto ? errors.vlVendaProduto : ''}
                         disabled={values.stMateriaPrima}
                     />
-                    <Input
-                        key={`vlUnitario-${key}`}
-                        label="Valor Pago"
-                        onBlur={handleBlur}
-                        name="vlUnitario"
-                        disabled={values.tpProduto === SituacaoProduto.FABRICADO || values.stMateriaPrima}
-                        value={values.vlUnitario && values.vlUnitario.toString() !== "R$ 0,00" ? values.vlUnitario : ''}
-                        onChange={e => setFieldValue(e.target.name, formatCurrencyRealTime(e.target.value))}
-                        error={touched.vlUnitario && errors.vlUnitario ? errors.vlUnitario : ''}
-                    />
-                    {values.tpProduto === SituacaoProduto.FABRICADO ?
-                        <FormControl
-                            variant="standard"
-                            style={{ width: '13rem', display: 'flex', justifyContent: 'center', marginTop: '10px' }}
+                </Grid>
+                <Grid item xs={2}>
+                    <FormControl fullWidth variant="standard">
+                        <InputLabel id="standard-label">Situação produto</InputLabel>
+                        <Select
+                            key={`tpProduto-${key}`}
+                            name='tpProduto'
+                            id="standard"
+                            onBlur={handleBlur}
+                            label="Selecione..."
+                            labelId="standard-label"
+                            onChange={e => setFieldValue(e.target.name, e.target.value)}
+                            value={values.tpProduto ?? ''}
                         >
-                            <InputLabel >Redimento Em Kg</InputLabel>
-                            <Select
-                                value={values.kgProduto}
-                                label="Age"
-                                onChange={e => setFieldValue('kgProduto', e.target.value)}
-                            >
-                                {Array.from({ length: 15 }, (_, index) => index + 1).map(value => (
-                                    <MenuItem key={value} value={value}>{`${value} Kg`}</MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                        : null
-                    }
-                </DivInput>
-            </ContainerInputs>
+                            <MenuItem value={SituacaoProduto.FABRICADO}>Fabricado</MenuItem>
+                            <MenuItem value={SituacaoProduto.COMPRADO}>Comprado</MenuItem>
+                        </Select>
+                        {touched.tpProduto && errors.tpProduto && (
+                            <div style={{ color: 'red' }}>{errors.tpProduto}</div>
+                        )}
+                    </FormControl>
+                </Grid>
+                <Grid item xs={2} >
+                    <FormControl fullWidth variant="standard">
+                        <InputLabel>Rendimento Em Kg</InputLabel>
+                        <Select
+                            disabled={values.tpProduto === null || values.tpProduto === SituacaoProduto.COMPRADO}
+                            value={values.kgProduto}
+                            onChange={e => setFieldValue('kgProduto', e.target.value)}
+                        >
+                            {Array.from({ length: 15 }, (_, index) => index + 1).map(value => (
+                                <MenuItem key={value} value={value}>{`${value} Kg`}</MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                </Grid>
+                <Grid item xs={5} >
+                    <FormControlLabel
+                        style={{ height: '70px' }}
+                        control={<Checkbox checked={values.stEntrega} onChange={(e) => setFieldValue("stEntrega", e.target.checked)} />}
+                        label="Venda atacado?"
+                    />
+                    <FormControlLabel
+                        style={{ height: '70px' }}
+                        control={<Checkbox checked={values.stMateriaPrima} onChange={(e) => setFieldValue("stMateriaPrima", e.target.checked)} />}
+                        label="Matéria-Prima ?"
+                    />
+                </Grid>
+            </Grid>
+
             <CollapseListProduct<ComprasModel>
                 isVisible={isVisibleTpProuto}
-                tpProdutoSearch={SituacaoProduto.COMPRADO}
+                searchMateriaPrima
                 nameArray='mpFabricado'
                 collectionName={TableKey.Produtos}
                 initialItems={values.mpFabricado}
@@ -375,30 +328,25 @@ function CadastroProduto() {
                 setFieldValueExterno={setFieldValue}
                 typeValueInput='number'
             />
+
             <AlertDialog
-                open={error ? true : false}
-                messege={
-                    <p>
-                        Produtos <b>{error}</b> estão com o estoque vazio. Por favor, Atualize o estoque desses produtos antes de continuar.
-                    </p>
-                }
+                open={errorQuantidade ? true : false}
+                messege={<p>Produtos <b>{errorQuantidade}</b> estão com o estoque vazio. Por favor, Atualize o estoque desses produtos antes de continuar.</p>}
                 labelButtonOk='Ok'
                 title='Alerta'
-                onOKClick={() => { setError(undefined); history('/atualizar-estoque') }}
+                onOKClick={() => { setErrorQuantidade(undefined); history('/atualizar-estoque') }}
             />
-            <ContainerButton>
+
+            <Box mt={4} display="flex" justifyContent="flex-end">
                 <Button
                     label={editData ? 'Atualizar' : 'Cadastrar'}
                     type="button"
                     disabled={loading}
                     onClick={handleSubmit}
-                    style={{ margin: '1rem 4rem 2rem 95%', height: '4rem', width: '12rem' }}
+                    style={{ width: '12rem', height: '4rem' }}
                 />
+            </Box>
 
-                <FormAlert submitForm={submitForm} name={'Produto'} styleLoadingMarginTop='-7rem' />
-            </ContainerButton>
-
-            {/*Tabala */}
             <GenericTable<ProdutoModel>
                 columns={[
                     { label: 'Código', name: 'cdProduto', shouldApplyFilter: true },
@@ -413,11 +361,7 @@ function CadastroProduto() {
                     setFieldValue('cdProduto', row.cdProduto);
                     setFieldValue('nmProduto', row.nmProduto);
                     setFieldValue('vlVendaProduto', row.vlVendaProduto);
-                    setFieldValue('vlUnitario',
-                        row.mpFabricado.length > 0 ?
-                            row.vlUnitario
-                            :
-                            NumberFormatForBrazilianCurrency(row.vlUnitario));
+                    setFieldValue('vlUnitario', row.mpFabricado.length > 0 ? row.vlUnitario : NumberFormatForBrazilianCurrency(row.vlUnitario));
                     setFieldValue('kgProduto', row.kgProduto);
                     setFieldValue('tpProduto', row.tpProduto);
                     setFieldValue('stMateriaPrima', row.stMateriaPrima);
@@ -427,8 +371,9 @@ function CadastroProduto() {
                 editData={editData}
                 setEditData={setEditData}
                 deleteData={deleteData}
-                onDelete={(selected: ProdutoModel | undefined, data: any[]) => handleDeleteRow(selected, data)}
+                onDelete={(selected: ProdutoModel | undefined) => handleDeleteRow(selected)}
             />
+            <CustomSnackBar message={error ? error : "Cadastrado Produto com sucesso"} open={openSnackBar} setOpen={setOpenSnackBar} />
         </Box>
     );
 }

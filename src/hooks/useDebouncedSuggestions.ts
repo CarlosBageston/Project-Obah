@@ -9,6 +9,7 @@ function useDebouncedSuggestions<T>(
     dispatch: any,
     typeSearch: 'Cliente' | 'Produto',
     tpProduto?: SituacaoProduto,
+    stMateriaPrima?: boolean,
     delay: number = 200,
 ) {
     const [suggestions, setSuggestions] = useState<T[]>([]);
@@ -29,11 +30,17 @@ function useDebouncedSuggestions<T>(
                     where('nmCliente', '<=', nmField + '\uf8ff')
                 ];
             } else {
-                constraints = [
-                    where('tpProduto', '==', tpProduto),
+                if (tpProduto) {
+                    constraints.push(where('tpProduto', '==', tpProduto));
+                }
+                if (stMateriaPrima) {
+                    constraints.push(where('stMateriaPrima', '==', stMateriaPrima));
+                }
+
+                constraints.push(
                     where('nmProduto', '>=', nmField),
                     where('nmProduto', '<=', nmField + '\uf8ff')
-                ];
+                );
             }
             const { data } = await getItemsByQuery<T>(
                 collectionName,

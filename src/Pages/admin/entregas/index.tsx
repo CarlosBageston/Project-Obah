@@ -19,16 +19,6 @@ import { setError, setLoading } from '../../../store/reducer/reducer';
 import { addDoc, collection } from "firebase/firestore";
 import { Autocomplete, AutocompleteChangeReason, Box, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from "@mui/material";
 
-import {
-    // Box,
-    // Title,
-    DivInputs,
-    DivButtons,
-    ContainerAll,
-    DivButtonAndTable,
-    ContainerTableCliente,
-} from './style'
-
 //hooks
 import useEstoque from '../../../hooks/useEstoque';
 import useFormatCurrency from '../../../hooks/formatCurrency';
@@ -159,64 +149,65 @@ function Entregas() {
                 Cadastro de Novas Entregas
             </Typography>
             <Box sx={{ display: "flex" }}>
-                <Grid item xs={3} sx={{ paddingRight: 10 }}>
-                    <Autocomplete
-                        id="tags-standard"
-                        freeSolo
-                        style={{ height: '70px' }}
-                        options={suggestions}
-                        getOptionLabel={(option: any) => option && option.nmCliente ? option.nmCliente : ""}
-                        value={suggestions.find((item: any) => item.nmCliente === values.nmCliente) || null}
-                        onChange={(_, newValue, reason) => handleClienteChange(_, newValue, reason)}
-                        onInputChange={(_, newInputValue, reason) => {
-                            if (reason === 'clear') handleClienteChange(_, null, 'clear');
-                            setFieldValue('nmCliente', newInputValue);
-                        }}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                variant="standard"
-                                label="Cliente"
-                                placeholder="Selecione..."
-                            />
-                        )}
-                    />
-                    <Input
-                        key={`dtEntrega-${key}`}
-                        maxLength={10}
-                        name="dtEntrega"
-                        onBlur={handleBlur}
-                        label="Data da Entrega"
-                        value={values.dtEntrega ?? ''}
-                        onChange={e => setFieldValue(e.target.name, formatDate(e.target.value))}
-                        error={touched.dtEntrega && errors.dtEntrega ? errors.dtEntrega : ''}
-                    />
+                <Grid container spacing={2}>
+                    <Grid item xs={5} sx={{ paddingRight: 10 }}>
+                        <Autocomplete
+                            id="tags-standard"
+                            freeSolo
+                            style={{ height: '70px' }}
+                            options={suggestions}
+                            getOptionLabel={(option: any) => option && option.nmCliente ? option.nmCliente : ""}
+                            value={suggestions.find((item: any) => item.nmCliente === values.nmCliente) || null}
+                            onChange={(_, newValue, reason) => handleClienteChange(_, newValue, reason)}
+                            onInputChange={(_, newInputValue, reason) => {
+                                if (reason === 'clear') handleClienteChange(_, null, 'clear');
+                                setFieldValue('nmCliente', newInputValue);
+                            }}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    variant="standard"
+                                    label="Cliente"
+                                    placeholder="Selecione..."
+                                />
+                            )}
+                        />
+                        <Input
+                            key={`dtEntrega-${key}`}
+                            maxLength={10}
+                            name="dtEntrega"
+                            onBlur={handleBlur}
+                            label="Data da Entrega"
+                            value={values.dtEntrega ?? ''}
+                            onChange={e => setFieldValue(e.target.name, formatDate(e.target.value))}
+                            error={touched.dtEntrega && errors.dtEntrega ? errors.dtEntrega : ''}
+                        />
+                    </Grid>
+                    <Grid item xs={5} sx={{ paddingRight: 10 }}>
+                        <Input
+                            key={`vlEntrega-${key}`}
+                            label="Valor Total"
+                            name="vlEntrega"
+                            onBlur={handleBlur}
+                            value={values.vlEntrega !== 0 ? values.vlEntrega : ''}
+                            onChange={e => setFieldValue(e.target.name, e.target.value)}
+                            error={touched.vlEntrega && errors.vlEntrega ? errors.vlEntrega : ''}
+                            disabled
+                        />
+                        <Input
+                            key={`vlLucro-${key}`}
+                            disabled
+                            label="Lucro"
+                            name="vlLucro"
+                            onBlur={handleBlur}
+                            value={values.vlLucro !== 0 ? values.vlLucro : ''}
+                            onChange={e => setFieldValue(e.target.name, e.target.value)}
+                            error={touched.vlLucro && errors.vlLucro ? errors.vlLucro : ''}
+                        />
+                    </Grid>
                 </Grid>
-                <Grid item xs={3} sx={{ paddingRight: 10 }}>
-                    <Input
-                        key={`vlEntrega-${key}`}
-                        label="Valor Total"
-                        name="vlEntrega"
-                        onBlur={handleBlur}
-                        value={values.vlEntrega !== 0 ? values.vlEntrega : ''}
-                        onChange={e => setFieldValue(e.target.name, e.target.value)}
-                        error={touched.vlEntrega && errors.vlEntrega ? errors.vlEntrega : ''}
-                        disabled
-                    />
-                    <Input
-                        key={`vlLucro-${key}`}
-                        disabled
-                        label="Lucro"
-                        name="vlLucro"
-                        onBlur={handleBlur}
-                        value={values.vlLucro !== 0 ? values.vlLucro : ''}
-                        onChange={e => setFieldValue(e.target.name, e.target.value)}
-                        error={touched.vlLucro && errors.vlLucro ? errors.vlLucro : ''}
-                    />
-                </Grid>
-                <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", width: "50%", }}>
+                <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", width: "100%", }}>
                     <Box sx={{ height: "19rem", width: "100%", display: "flex", flexDirection: "column", mt: -1 }} >
-
                         <TableContainer component={Paper} className='style-scrollbar'>
                             <Table>
                                 <TableHead>
@@ -278,7 +269,7 @@ function Entregas() {
                             setShouldShow={setShouldShow}
                             handleSubmit={handleSubmit}
                         />}
-                    <Box display="flex" justifyContent="flex-end">
+                    <Box display="flex" justifyContent="flex-end" mt={3}>
                         <Button
                             label={<AiTwotonePrinter size={30} />}
                             type='button'

@@ -6,7 +6,6 @@ import { BsTrash } from "react-icons/bs";
 import { FiEdit } from "react-icons/fi";
 
 export const ContainerTable = styled.div`
-margin:  0 4rem;
 height: 25rem;
 `;
 export const ContainerFilter = styled(ContainerTable)`
@@ -37,7 +36,7 @@ export const StyledTableRow = styleMui(TableRow)(
 export const ContainerButtons = styled.div`
 display: flex;
 position: relative;
-margin-left: 91%;
+margin-left: 95%;
 margin-top: 20px;
 `;
 export const Button = styled.button<{isdisabled?: boolean; isVisibledDelete?: boolean}>`

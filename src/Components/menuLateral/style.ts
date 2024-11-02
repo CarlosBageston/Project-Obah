@@ -2,15 +2,9 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import styled from "styled-components";
 
-export const BoxTitle = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-`;
-
 export const StyledListItemButton = styled(ListItemButton)`
   && {
-    margin-top: 1rem;
+    padding-top: 1rem;
     :hover {
         background-color: #050042;
     }
@@ -23,7 +17,7 @@ export const Image = styled.img `
 
 export const StyledListItemText = styled(ListItemText)`
   .MuiTypography-root {
-    font-size: 0.8rem;
+    font-size: 12px;
     font-weight: bold;
     color: #fff;
     transition: color 0.2s ease-in-out;

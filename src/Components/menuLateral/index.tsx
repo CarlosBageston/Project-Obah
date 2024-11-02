@@ -3,7 +3,8 @@ import { Link, Outlet } from 'react-router-dom';
 import List from '@mui/material/List';
 import Divider from '@mui/material/Divider';
 import Tooltip from '@mui/material/Tooltip';
-import { Theme, CSSObject, styled } from '@mui/material/styles';
+import { Theme, CSSObject } from '@mui/material/styles';
+import { styled as muiStyled } from '@mui/material/styles';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import { Box, Collapse } from '@mui/material';
 import MuiAppBar, { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
@@ -14,13 +15,11 @@ import logo from '../../assets/Image/logo-admin.png';
 import cliente from '../../assets/Icon/user.png';
 import estoque from '../../assets/Icon/stock.png';
 import compra from '../../assets/Icon/checklist.png';
-import vendas from '../../assets/Icon/acquisition.png';
+import vendas from '../../assets/Icon/coupon.png';
 import dashboard from '../../assets/Icon/dashboard.png';
 import produto from '../../assets/Icon/add-product.png';
 import entrega from '../../assets/Icon/entrega-rapida.png';
-import colaborador from '../../assets/Icon/employee.png';
 import gestao from '../../assets/Icon/gestao.png';
-import cartaoPonto from '../../assets/Icon/cartao-ponto.png';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 
 
@@ -63,7 +62,7 @@ const closedMixin = (theme: Theme): CSSObject => ({
 interface AppBarProps extends MuiAppBarProps {
     open?: boolean;
 }
-const AppBar = styled(MuiAppBar, {
+const AppBar = muiStyled(MuiAppBar, {
     shouldForwardProp: (prop) => prop !== 'open',
 })<AppBarProps>(({ theme, open }) => ({
     zIndex: theme.zIndex.drawer + 1,
@@ -88,8 +87,8 @@ const AppBar = styled(MuiAppBar, {
 
 interface MenuItem {
     label: string;
-    icon: string;
     route: string;
+    icon?: string;
     subItems?: MenuItem[];
 }
 const menuItems: MenuItem[] = [
@@ -101,18 +100,18 @@ const menuItems: MenuItem[] = [
     { label: 'Entregas', icon: entrega, route: '/entregas' },
     {
         label: 'Estoques', icon: estoque, route: '', subItems: [
-            { label: 'Fabricados', icon: estoque, route: '/estoque' },
-            { label: 'Comprados', icon: estoque, route: '/estoque' },
+            { label: 'Fabricados', icon: estoque, route: '/estoque-fabricado' },
+            { label: 'Comprados', icon: estoque, route: '/estoque-comprado' },
         ]
     },
     {
         label: 'Gestão', icon: gestao, route: '', subItems: [
-            { label: 'Colaborador', icon: colaborador, route: '/colaborador' },
-            { label: 'Cartão Ponto', icon: cartaoPonto, route: '/cartao-ponto' }
+            { label: 'Colaborador', route: '/colaborador' },
+            { label: 'Cartão Ponto', route: '/cartao-ponto' }
         ]
     }
 ];
-const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' })(
+const Drawer = muiStyled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' })(
     ({ theme, open }) => ({
         width: drawerWidth,
         flexShrink: 0,
@@ -134,6 +133,7 @@ export default function MenuLateral() {
     const [openSubOptions, setOpenSubOptions] = useState<{ [key: string]: boolean }>({});
 
     const toggleSubmenu = (label: string) => {
+        setOpen(true)
         setOpenSubOptions((prevState) => ({
             ...prevState,
             [label]: !prevState[label]
@@ -174,13 +174,10 @@ export default function MenuLateral() {
                     </Link>
                     {subItems && (
                         <Collapse in={openSubOptions[label]} timeout={'auto'}>
-                            <Box>
+                            <Box sx={{ backgroundColor: '#0b0083' }}>
                                 {subItems.map((subItem) => (
                                     <Link to={subItem.route} key={subItem.label} style={{ textDecoration: 'none', color: 'white' }}>
-                                        <StyledListItemButton sx={{ pl: 4 }}>
-                                            <ListItemIcon>
-                                                <Image src={subItem.icon} alt={subItem.label} width={30} />
-                                            </ListItemIcon>
+                                        <StyledListItemButton sx={{ pl: 10 }}>
                                             <StyledListItemText primary={subItem.label} />
                                         </StyledListItemButton>
                                     </Link>

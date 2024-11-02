@@ -20,6 +20,7 @@ import { RootState } from '../../store/reducer/store';
 import GenericFilter from '../filtro';
 import { db } from '../../firebase';
 import ModalDelete from '../FormAlert/modalDelete';
+import SituacaoProduto from '../../enumeration/situacaoProduto';
 
 type TableColumn = {
     name: string;
@@ -41,6 +42,8 @@ type TableProps<T> = {
     editData?: T
     deleteData?: boolean
     setEditData?: Dispatch<SetStateAction<T | undefined>>
+    checkStock?: boolean
+    pageSize?: number
 };
 
 
@@ -55,7 +58,9 @@ const GenericTable = <T,>({
     constraints,
     editData,
     deleteData,
-    setEditData
+    setEditData,
+    checkStock,
+    pageSize
 }: TableProps<T>) => {
     const [selectedRowId, setSelectedRowId] = useState<string | undefined>(undefined);
     const [selected, setSelected] = useState<T>();
@@ -68,7 +73,6 @@ const GenericTable = <T,>({
     const [recarregue, setRecarregue] = useState<boolean>(true);
     const [openDelete, setOpenDelete] = useState<boolean>(false);
 
-    const pageSize = 5;
     const [hasNextPage, setHasNextPage] = useState(false);
     const [hasPreviousPage, setHasPreviousPage] = useState(false);
 
@@ -92,7 +96,7 @@ const GenericTable = <T,>({
 
     const fetchPageData = async (direction: 'next' | 'previous' = 'next') => {
         const cursor = direction === 'next' ? lastVisible : firstVisible;
-        const result = await getItemsByPage(collectionName ?? '', constraints ?? [], dispatch, pageSize, cursor, direction);
+        const result = await getItemsByPage(collectionName ?? '', constraints ?? [], dispatch, pageSize ? pageSize : 5, cursor, direction);
 
         setData(result.data);
         setFirstVisible(result.firstVisible);
@@ -161,6 +165,23 @@ const GenericTable = <T,>({
         if (onDelete) onDelete(row, data)
         setOpenDelete(false)
     }
+
+    useEffect(() => {
+        if (checkStock) {
+            if (data.length > 0) {
+                const updatedData = data.map(item => {
+                    const isBelowMin = item.qntMinima > item.quantidade;
+                    return {
+                        ...item,
+                        stEstoque: isBelowMin
+                            ? (item.tpProduto === SituacaoProduto.FABRICADO ? 'Fabricar' : 'Comprar')
+                            : 'Bom'
+                    };
+                });
+                setData(updatedData);
+            }
+        }
+    }, [data, checkStock]);
 
     return (
         <>

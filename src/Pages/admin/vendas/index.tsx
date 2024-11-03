@@ -12,42 +12,13 @@ import React, { useState, useEffect } from "react";
 import { TableKey } from '../../../types/tableName';
 import { useDispatch, useSelector } from 'react-redux';
 import { addDoc, collection } from "firebase/firestore";
-import VendaModel, { ProdutoEscaniado } from "./model/vendas";
+import VendaModel from "./model/vendas";
 import TelaDashboard from '../../../enumeration/telaDashboard';
 import ProdutosModel from "../cadastroProdutos/model/produtos";
-import FormAlert from "../../../Components/FormAlert/formAlert";
-import { State, setLoading } from '../../../store/reducer/reducer';
+import { setError, setLoading } from '../../../store/reducer/reducer';
 import SituacaoProduto from "../../../enumeration/situacaoProduto";
 import iceCreamSad from '../../../assets/Image/drawingSadIceCream.png';
-import {
-    Box,
-    Title,
-    DivTitle,
-    DivEmpty,
-    DateStyle,
-    TextEmpty,
-    TitleNota,
-    TitlePreco,
-    BoxProduto,
-    StyleButton,
-    TitleProduto,
-    ContainerAll,
-    DivAdicionais,
-    TextAdicional,
-    ContainerNota,
-    ContainerInput,
-    ResultadoTotal,
-    ContainerPreco,
-    DivMultiplicar,
-    BoxButtonInput,
-    ContainerProdutos,
-    ContainerDescricao,
-    DivSuggestions,
-    Suggestions,
-    SuggestionsLi,
-    DivIcon,
-    DivTable,
-} from './style'
+import MUIButton from "@mui/material/Button";
 
 //hooks
 import useEstoque from '../../../hooks/useEstoque';
@@ -56,6 +27,10 @@ import useHandleInputKeyPress from '../../../hooks/useHandleInputKeyPress';
 import { useCalculateValueDashboard } from '../../../hooks/useCalculateValueDashboard';
 import useDeleteOldData from '../../../hooks/useDeleteOldData';
 import { TableManagement } from './components/tableManagement/tableManagement';
+import { RootState } from '../../../store/reducer/store';
+import { SubProdutoModel } from '../cadastroProdutos/model/subprodutos';
+import CustomSnackBar, { StateSnackBar } from '../../../Components/snackBar/customsnackbar';
+import { Box, Grid, ListItem, ListItemText, Paper, Typography } from '@mui/material';
 
 
 const objClean: VendaModel = {
@@ -74,15 +49,15 @@ function Vendas() {
     const [produtoNotFound, setProdutoNotFound] = useState<boolean>(false);
     const [qntBolas, setQntBolas] = useState<number | undefined>(undefined);
     const [multiplica, setMultiplica] = useState<number | undefined>(undefined);
-    const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
     const [recarregueDashboard, setRecarregueDashboard] = useState<boolean>(true);
     const [productSuggestion, setProductSuggestion] = useState<ProdutosModel[]>([]);
     const [showTableManegement, setShowTableManegement] = useState<boolean>(false);
     const [fecharComanda, setFecharComanda] = useState<VendaModel>({ ...objClean })
     const dispatch = useDispatch();
-    const { loading } = useSelector((state: State) => state.user);
+    const { loading, error } = useSelector((state: RootState) => state.user);
+    const [openSnackBar, setOpenSnackBar] = useState<StateSnackBar>({ error: false, success: false });
 
-    const { removedStockVenda } = useEstoque();
+    const { removedStock } = useEstoque();
     const { deleteVendas } = useDeleteOldData();
     const { NumberFormatForBrazilianCurrency, convertToNumber, formatCurrencyRealTime } = useFormatCurrency();
     const { calculateValueDashboard } = useCalculateValueDashboard(recarregueDashboard, setRecarregueDashboard);
@@ -162,7 +137,7 @@ function Vendas() {
      * @param values - Valores do formulário.
      * @param novoProduto - Novo produto a ser adicionado.
      */
-    function adicionarProdutoAoArray(values: VendaModel, novoProduto: ProdutoEscaniado) {
+    function adicionarProdutoAoArray(values: VendaModel, novoProduto: SubProdutoModel) {
         const novoArrayProdutos = [...values.produtoEscaniado, novoProduto];
         setFieldValue('produtoEscaniado', novoArrayProdutos);
     }
@@ -183,7 +158,7 @@ function Vendas() {
         if (multiplica && isBarcodeNumeric) {
             const { mpFabricado, ...rest } = produtoEncontrado;
             const { valorTotal, formatTotalLucro } = calcularTotais(vlVendaProduto, multiplica, produtoEncontrado.vlUnitario);
-            const novoProduto: ProdutoEscaniado = { ...rest, vlTotalMult: valorTotal, quantidadeVenda: multiplica, vlLucro: formatTotalLucro };
+            const novoProduto: SubProdutoModel = { ...rest, vlTotalMult: valorTotal, quantidade: multiplica, vlLucro: formatTotalLucro } as SubProdutoModel;
             adicionarProdutoAoArray(values, novoProduto);
             setBarcode('')
             setMultiplica(undefined)
@@ -191,7 +166,7 @@ function Vendas() {
         } else if (isBarcodeNumeric) {
             const { mpFabricado, ...rest } = produtoEncontrado;
             const { formatTotalLucro } = calcularTotais(vlVendaProduto, 1, produtoEncontrado.vlUnitario);
-            const novoProduto: ProdutoEscaniado = { ...rest, quantidadeVenda: 1, vlLucro: formatTotalLucro, vlTotalMult: vlVendaProduto };
+            const novoProduto: SubProdutoModel = { ...rest, quantidade: 1, vlLucro: formatTotalLucro, vlTotalMult: vlVendaProduto } as SubProdutoModel;
             adicionarProdutoAoArray(values, novoProduto);
             setBarcode('');
         }
@@ -211,7 +186,7 @@ function Vendas() {
                 if (produtoEncontrado) {
                     const { mpFabricado, ...rest } = produtoEncontrado;
                     const { valorTotal, formatTotalLucro } = calcularTotais(produtoEncontrado.vlVendaProduto, multiplica, produtoEncontrado.vlUnitario);
-                    const novoProduto: ProdutoEscaniado = { ...rest, vlTotalMult: valorTotal, quantidadeVenda: multiplica, vlLucro: formatTotalLucro };
+                    const novoProduto: SubProdutoModel = { ...rest, vlTotalMult: valorTotal, quantidade: multiplica, vlLucro: formatTotalLucro } as SubProdutoModel;
                     adicionarProdutoAoArray(values, novoProduto);
 
                     setBarcode('');
@@ -225,7 +200,7 @@ function Vendas() {
                 if (produtoEncontrado) {
                     const { mpFabricado, ...rest } = produtoEncontrado;
                     const { formatTotalLucro } = calcularTotais(produtoEncontrado.vlVendaProduto, 1, produtoEncontrado.vlUnitario);
-                    const novoProduto: ProdutoEscaniado = { ...rest, quantidadeVenda: 1, vlLucro: formatTotalLucro, vlTotalMult: produtoEncontrado.vlVendaProduto };
+                    const novoProduto: SubProdutoModel = { ...rest, quantidade: 1, vlLucro: formatTotalLucro, vlTotalMult: produtoEncontrado.vlVendaProduto } as SubProdutoModel;
                     adicionarProdutoAoArray(values, novoProduto);
 
                     setBarcode('');
@@ -303,13 +278,12 @@ function Vendas() {
             ...valuesUpdate
         }).then(() => {
             dispatch(setLoading(false))
-            setSubmitForm(true);
-            setTimeout(() => { setSubmitForm(undefined) }, 3000)
-            removedStockVenda(values.produtoEscaniado)
+            removedStock(values.produtoEscaniado)
+            setOpenSnackBar(prev => ({ ...prev, success: true }))
         }).catch(() => {
             dispatch(setLoading(false))
-            setSubmitForm(false);
-            setTimeout(() => { setSubmitForm(undefined) }, 3000)
+            dispatch(setError('Erro ao Cadastrar Venda'))
+            setOpenSnackBar(prev => ({ ...prev, error: true }))
         });
         clearState();
         resetForm()
@@ -323,20 +297,20 @@ function Vendas() {
      * @param quantidade - Quantidade do produto.
      * @param isTaca - Indica se é uma taça.
      */
-    function addProduct(cdProduto: string, quantidade: number | undefined, isTaca: boolean) {
+    function addProduct(cdProduto: string, quantidade?: number | undefined, isTaca?: boolean) {
         const produtoEncontrado = dataTableProduto.find((p) => p.cdProduto === cdProduto);
         if (produtoEncontrado) {
             const { mpFabricado, ...rest } = produtoEncontrado;
-            let novoProduto: ProdutoEscaniado;
+            let novoProduto: SubProdutoModel;
             if (!isTaca) {
                 const valorPago = rest.vlUnitario;
                 const totalLucro = rest.vlVendaProduto - valorPago;
-                novoProduto = { ...rest, quantidadeVenda: 1, vlLucro: totalLucro, vlTotalMult: rest.vlVendaProduto };
+                novoProduto = { ...rest, quantidade: 1, vlLucro: totalLucro, vlTotalMult: rest.vlVendaProduto } as SubProdutoModel;
                 adicionarProdutoAoArray(values, novoProduto)
             } else {
                 if (quantidade) {
                     const valorTotal = quantidade * rest?.vlVendaProduto;
-                    novoProduto = { ...rest, vlVendaProduto: valorTotal, quantidadeVenda: quantidade, vlTotalMult: valorTotal };
+                    novoProduto = { ...rest, vlVendaProduto: valorTotal, quantidade: quantidade, vlTotalMult: valorTotal } as SubProdutoModel;
                     adicionarProdutoAoArray(values, novoProduto)
                     setQntBolas(undefined);
                     setIsValidQntBolas(false)
@@ -407,18 +381,17 @@ function Vendas() {
         setFieldValue('produtoEscaniado', remove);
     }
     return (
-        <Box>
-            <Title>Painel de Vendas</Title>
-            <ContainerAll>
-                <ContainerInput>
-                    <DivMultiplicar>
+        <Box sx={{ padding: '5rem 8rem' }}>
+            <Typography variant="h4" gutterBottom>Painel de Vendas</Typography>
+            <Grid container >
+                <Grid item xs={12} >
+                    <Grid sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Input
                             key={`multiplica${key}`}
                             label="multiplicar ?"
                             name="quantidadeVenda"
                             value={multiplica}
                             style={{ fontSize: 14 }}
-                            styleDiv={{ marginTop: 4, width: '8rem' }}
                             styleLabel={{ fontSize: 16 }}
                             onChange={(e) => setMultiplica(isNaN(parseFloat(e.target.value)) ? undefined : parseFloat(e.target.value))}
                             error={''}
@@ -431,7 +404,7 @@ function Vendas() {
                             onClick={() => { setShowTableManegement(!showTableManegement) }}
                             style={{ height: 40, width: 150 }}
                         />
-                    </DivMultiplicar>
+                    </Grid>
                     {
                         showTableManegement ?
                             <TableManagement
@@ -451,137 +424,155 @@ function Vendas() {
                         inputRef={inputRefF3}
                         onKeyDown={(e) => handleInputKeyDown(e, productSuggestion, selectSuggestion)}
                         onKeyPress={handleMultiplicaKeyPress}
+                        heightDiv={'50px'}
                     />
                     {ShowSuggestion && (
-                        <DivSuggestions>
-                            <Suggestions ref={suggestionsRef}>
+                        <Box sx={{ position: 'relative' }}>
+                            <Paper
+                                className='style-scrollbar'
+                                sx={{
+                                    position: 'absolute',
+                                    width: '100%',
+                                    maxHeight: 200,
+                                    overflow: 'auto',
+                                    zIndex: 2
+                                }}
+                                ref={suggestionsRef}
+                            >
                                 {productSuggestion.map((produto, index) => (
-                                    <SuggestionsLi
-                                        isSelected={index === selectedSuggestionIndex}
+                                    <ListItem
                                         key={produto.id}
                                         onClick={() => selectSuggestion(produto)}
+                                        sx={{
+                                            backgroundColor: index === selectedSuggestionIndex ? 'primary.light' : 'inherit',
+                                        }}
                                     >
-                                        {produto.nmProduto}
-                                    </SuggestionsLi>
+                                        <ListItemText primary={produto.nmProduto} />
+                                    </ListItem>
                                 ))}
-                            </Suggestions>
-                        </DivSuggestions>
+                            </Paper>
+                        </Box>
                     )}
-                </ContainerInput>
-                <BoxProduto>
-                    <BoxButtonInput>
-                        <div>
-                            <div>
-                                <DivAdicionais>
-                                    <TextAdicional>Cascão</TextAdicional>
-                                    <StyleButton
-                                        type="button"
-                                        startIcon={<CgAddR />}
-                                        onClick={() => addProduct('12', undefined, false)}
-                                    />
-                                </DivAdicionais>
-                                <DivAdicionais>
-                                    <TextAdicional>Casquinha</TextAdicional>
-                                    <StyleButton
-                                        type="button"
-                                        startIcon={<CgAddR />}
-                                        onClick={() => addProduct('13', undefined, false)}
-                                    />
-                                </DivAdicionais>
-                                <DivAdicionais>
-                                    <div>
-                                        <div style={{ display: "flex" }}>
-                                            <TextAdicional>Taça Sundae</TextAdicional>
-                                            <StyleButton
-                                                type="button"
-                                                startIcon={<CgAddR />}
-                                                onClick={() => addProduct('14', qntBolas, true)}
-                                            />
-                                        </div>
+                </Grid>
+                <Grid item xs={12} mt={2}>
+                    <Grid sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <Grid item xs={2}>
+                            <Grid>
+                                <Grid container direction="column" spacing={2}>
+                                    <Grid item>
+                                        <MUIButton variant="contained" startIcon={<CgAddR />} onClick={() => addProduct('12')}>
+                                            Cascão
+                                        </MUIButton>
+                                    </Grid>
+                                    <Grid item>
+                                        <MUIButton variant="contained" startIcon={<CgAddR />} onClick={() => addProduct('13')}>
+                                            Casquinha
+                                        </MUIButton>
+                                    </Grid>
+                                    <Grid item>
+                                        <MUIButton sx={{ minWidth: '11rem', justifyContent: 'flex-start' }} variant="contained" startIcon={<CgAddR />} onClick={() => addProduct('14', qntBolas, true)}>
+                                            Taça Sundae
+                                        </MUIButton>
                                         <Input
+                                            name=""
                                             key={`bolasSundae${key}`}
                                             error={isValidQntBolas ? 'Campo Obrigatório' : ''}
                                             label="Qnt. bolas sundae?"
-                                            name=""
                                             onChange={handleChangeTacaSundae}
                                             value={qntBolas}
-                                            style={{ fontSize: 14, }}
-                                            styleDiv={{ marginTop: 4, paddingTop: 5 }}
-                                            styleLabel={{ fontSize: 16, marginTop: '-10px', }}
                                         />
-                                    </div>
-
-                                </DivAdicionais>
-                            </div>
-                            <Input
-                                key={`valorRecebido${key}`}
-                                label="Valor Pago"
-                                error={touched.vlRecebido && errors.vlRecebido ? errors.vlRecebido : ''}
-                                name="vlRecebido"
-                                onBlur={handleBlur}
-                                inputRef={inputRefF4}
-                                value={values.vlRecebido !== 0 ? values.vlRecebido : ''}
-                                maxLength={9}
-                                onKeyPress={e => onKeyPressHandleSubmit(e, handleSubmit)}
-                                onChange={e => { setFieldValue('vlRecebido', formatCurrencyRealTime(e.target.value)) }}
-                            />
-                            <ResultadoTotal>Total: {values.vlTotal ? NumberFormatForBrazilianCurrency(values.vlTotal) : ''}</ResultadoTotal>
-                            <ResultadoTotal>Troco: {values.vlTroco ? NumberFormatForBrazilianCurrency(values.vlTroco) : ' -'}</ResultadoTotal>
-                        </div>
-                        <div>
-                            <Button
-                                label='Finalizar venda'
-                                disabled={values.produtoEscaniado.length === 0 || loading}
-                                type="button"
-                                onClick={handleSubmit}
-                                style={{ height: 80, width: 200 }}
-                            />
-                        </div>
-                    </BoxButtonInput>
-                    <ContainerProdutos>
-
-                        <DivTitle>
-                            <TitleProduto>Produtos</TitleProduto>
-                        </DivTitle>
-                        <ContainerNota>
-                            <DateStyle>{`Data: ${values.dtProduto}`}</DateStyle>
-                            {values.produtoEscaniado.length === 0 ? (
-                                <DivEmpty>
-                                    <img src={iceCreamSad} alt="" width={250} />
-                                    <TextEmpty>Nenhum Sorvetinho incluido</TextEmpty>
-                                </DivEmpty>
-                            ) : (
-                                <>
-                                    <ContainerDescricao>
-                                        <TitleNota>Descrição do Produto</TitleNota>
-                                        <TitleNota>Quantidade</TitleNota>
-                                        <TitleNota>Valor do Produto</TitleNota>
-                                    </ContainerDescricao>
-                                    {values.produtoEscaniado.map((produto, index) => (
-                                        <ContainerPreco key={index}>
-                                            <TitlePreco style={{ width: '15rem' }}>
-                                                <DivIcon onClick={() => removedProdutoEscaneado(index)}>
-                                                    <IoMdClose color={'red'} />
-                                                </DivIcon>
-                                                <div>
-                                                    <p>{produto.nmProduto}</p>
-                                                </div>
-                                            </TitlePreco>
-                                            <TitlePreco style={{ justifyContent: 'center', marginLeft: '-8rem' }}>
-                                                <div>
-                                                    <p>{produto.quantidadeVenda}</p>
-                                                </div>
-                                            </TitlePreco>
-                                            <TitlePreco>{produto.vlTotalMult ? NumberFormatForBrazilianCurrency(produto.vlTotalMult) : ''}</TitlePreco>
-                                        </ContainerPreco>
-                                    ))}
-                                </>
-                            )}
-                        </ContainerNota>
-                    </ContainerProdutos>
-                </BoxProduto>
-                <FormAlert submitForm={submitForm} name={'Venda'} styleLoadingMarginTop='-5rem' styleLoadingMarginLeft='-25rem' />
-            </ContainerAll>
+                                    </Grid>
+                                </Grid>
+                                <Input
+                                    key={`valorRecebido${key}`}
+                                    label="Valor Pago"
+                                    error={touched.vlRecebido && errors.vlRecebido ? errors.vlRecebido : ''}
+                                    name="vlRecebido"
+                                    onBlur={handleBlur}
+                                    inputRef={inputRefF4}
+                                    value={values.vlRecebido !== 0 ? values.vlRecebido : ''}
+                                    maxLength={9}
+                                    onKeyPress={e => onKeyPressHandleSubmit(e, handleSubmit)}
+                                    onChange={e => { setFieldValue('vlRecebido', formatCurrencyRealTime(e.target.value)) }}
+                                />
+                                <Typography variant="h6">Total: {values.vlTotal ? NumberFormatForBrazilianCurrency(values.vlTotal) : ''}</Typography>
+                                <Typography variant="h6">Troco: {values.vlTroco ? NumberFormatForBrazilianCurrency(values.vlTroco) : ' -'}</Typography>
+                            </Grid>
+                            <Grid mt={2}>
+                                <Button
+                                    label='Finalizar venda'
+                                    disabled={values.produtoEscaniado.length === 0 || loading}
+                                    type="button"
+                                    onClick={handleSubmit}
+                                    style={{ height: 80, width: 200 }}
+                                />
+                            </Grid>
+                        </Grid>
+                        <Grid item xs={6}
+                            sx={{
+                                height: '25rem',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                marginTop: 2,
+                                borderRadius: '0px 0px 8px 8px',
+                                boxShadow: '0px 4px 4px rgba(0, 0, 0, 0.25)',
+                            }}>
+                            <Box
+                                sx={{
+                                    width: '100%',
+                                    padding: 1,
+                                    backgroundColor: '#3d6aff',
+                                    color: 'white',
+                                    textAlign: 'center',
+                                    borderRadius: '8px 8px 0px 0px',
+                                    boxShadow: '0px 4px 4px rgba(0, 0, 0, 0.192)',
+                                }}>
+                                <Typography variant="h6">Produtos</Typography>
+                            </Box>
+                            <Box
+                                className='style-scrollbar'
+                                sx={{ width: '100%', overflow: 'auto', height: '23rem', padding: 1 }}
+                            >
+                                <Typography padding={1} variant="body1" fontWeight={600} fontSize={'18px'}>{`Data: ${values.dtProduto}`}</Typography>
+                                {values.produtoEscaniado.length === 0 ? (
+                                    <Box sx={{ textAlign: 'center' }}>
+                                        <img src={iceCreamSad} alt="" width={250} />
+                                        <Typography variant="body1" fontStyle="italic">Nenhum Sorvetinho incluido</Typography>
+                                    </Box>
+                                ) : (
+                                    <>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', padding: 1 }}>
+                                            <Typography sx={{ width: '200px', overflow: 'hidden', fontWeight: 'bold', color: '#0a0269' }} variant="body1">Descrição do Produto</Typography>
+                                            <Typography sx={{ width: '100px', textAlign: 'center', fontWeight: 'bold', color: '#0a0269' }} variant="body1">Quantidade</Typography>
+                                            <Typography sx={{ width: '150px', textAlign: 'right', fontWeight: 'bold', color: '#0a0269' }} variant="body1">Valor do Produto</Typography>
+                                        </Box>
+                                        {values.produtoEscaniado.map((produto, index) => (
+                                            <Box key={index} sx={{ display: 'flex', justifyContent: 'space-between', padding: 1 }}>
+                                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                    <IoMdClose
+                                                        color="red"
+                                                        onClick={() => removedProdutoEscaneado(index)}
+                                                        style={{ marginRight: 7, cursor: 'pointer' }}
+                                                    />
+                                                    <Typography sx={{ width: '150px', overflow: 'hidden', fontWeight: 'bold' }}>
+                                                        {produto.nmProduto}
+                                                    </Typography>
+                                                </Box>
+                                                <Typography sx={{ width: '100px', textAlign: 'center', fontWeight: 'bold' }}>{produto.quantidade}</Typography>
+                                                <Typography sx={{ width: '150px', textAlign: 'right', fontWeight: 'bold' }}>
+                                                    {produto.vlTotalMult ? NumberFormatForBrazilianCurrency(produto.vlTotalMult) : ''}
+                                                </Typography>
+                                            </Box>
+                                        ))}
+                                    </>
+                                )}
+                            </Box>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </Grid>
+            <CustomSnackBar message={error ? error : "Cadastrado Venda com sucesso"} open={openSnackBar} setOpen={setOpenSnackBar} />
         </Box>
     );
 }

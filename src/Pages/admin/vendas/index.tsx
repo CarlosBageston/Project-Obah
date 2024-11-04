@@ -11,7 +11,7 @@ import GetData from "../../../firebase/getData";
 import React, { useState, useEffect } from "react";
 import { TableKey } from '../../../types/tableName';
 import { useDispatch, useSelector } from 'react-redux';
-import { addDoc, collection } from "firebase/firestore";
+import { addDoc, collection, where } from "firebase/firestore";
 import VendaModel from "./model/vendas";
 import TelaDashboard from '../../../enumeration/telaDashboard';
 import ProdutosModel from "../cadastroProdutos/model/produtos";
@@ -30,8 +30,17 @@ import { TableManagement } from './components/tableManagement/tableManagement';
 import { RootState } from '../../../store/reducer/store';
 import { SubProdutoModel } from '../cadastroProdutos/model/subprodutos';
 import CustomSnackBar, { StateSnackBar } from '../../../Components/snackBar/customsnackbar';
-import { Box, Grid, ListItem, ListItemText, Paper, Typography } from '@mui/material';
+import { Autocomplete, AutocompleteChangeReason, Box, Grid, TextField, Typography } from '@mui/material';
+import { getSingleItemByQuery } from '../../../hooks/queryFirebase';
+import useDebouncedSuggestions from '../../../hooks/useDebouncedSuggestions';
 
+
+interface VendaProps {
+    qntdBolas?: number
+    multiplica?: number
+    barcode?: string
+    productSelected?: ProdutosModel
+}
 
 const objClean: VendaModel = {
     vlTotal: 0,
@@ -43,14 +52,7 @@ const objClean: VendaModel = {
 }
 function Vendas() {
     const [key, setKey] = useState<number>(0);
-    const [barcode, setBarcode] = useState("");
-    const [ShowSuggestion, setShowSuggestion] = useState(false);
-    const [isValidQntBolas, setIsValidQntBolas] = useState<boolean>(false);
-    const [produtoNotFound, setProdutoNotFound] = useState<boolean>(false);
-    const [qntBolas, setQntBolas] = useState<number | undefined>(undefined);
-    const [multiplica, setMultiplica] = useState<number | undefined>(undefined);
     const [recarregueDashboard, setRecarregueDashboard] = useState<boolean>(true);
-    const [productSuggestion, setProductSuggestion] = useState<ProdutosModel[]>([]);
     const [showTableManegement, setShowTableManegement] = useState<boolean>(false);
     const [fecharComanda, setFecharComanda] = useState<VendaModel>({ ...objClean })
     const dispatch = useDispatch();
@@ -61,15 +63,6 @@ function Vendas() {
     const { deleteVendas } = useDeleteOldData();
     const { NumberFormatForBrazilianCurrency, convertToNumber, formatCurrencyRealTime } = useFormatCurrency();
     const { calculateValueDashboard } = useCalculateValueDashboard(recarregueDashboard, setRecarregueDashboard);
-    const {
-        handleInputKeyDown,
-        suggestionsRef,
-        selectedSuggestionIndex,
-        onKeyPressHandleSubmit,
-        inputRef,
-        inputRefF3,
-        inputRefF4
-    } = useHandleInputKeyPress(setShowSuggestion);
 
     //realizando busca no banco de dados
     const {
@@ -81,6 +74,25 @@ function Vendas() {
     } = GetData(TableKey.Vendas, true) as { dataTable: VendaModel[] };
 
     const initialValues: VendaModel = ({ ...objClean });
+
+    const formik = useFormik<VendaProps>({
+        initialValues: {
+            qntdBolas: undefined,
+            multiplica: undefined,
+            barcode: '',
+            productSelected: undefined
+        },
+        validateOnBlur: true,
+        validateOnChange: true,
+        onSubmit: () => { }
+    })
+
+    const {
+        onKeyPressHandleSubmit,
+        inputRef,
+        inputRefF4,
+        inputRefF3
+    } = useHandleInputKeyPress(formik.setFieldValue);
 
     const { values, handleSubmit, setFieldValue, touched, errors, handleBlur, resetForm } = useFormik<VendaModel>({
         validateOnBlur: true,
@@ -142,74 +154,47 @@ function Vendas() {
         setFieldValue('produtoEscaniado', novoArrayProdutos);
     }
 
-    /**
-     * ler código de barras em tempo real, buscar no banco e multiplicar o valor, se necessário.
-     * 
-     * verifica se o código de barras é numérico, busca o produto correspondente no banco de dados e realiza 
-     * operações como multiplicação do valor de venda, adicionando o produto escaniado ao array 'produtoEscaniado'.
-     */
     useEffect(() => {
-        const isBarcodeNumeric = !isNaN(Number(barcode));
-        const produtoEncontrado = dataTableProduto.find((p) => p.cdProduto === barcode);
-        if (!produtoEncontrado) return;
-
-        const vlVendaProduto = produtoEncontrado.vlVendaProduto
-
-        if (multiplica && isBarcodeNumeric) {
-            const { mpFabricado, ...rest } = produtoEncontrado;
-            const { valorTotal, formatTotalLucro } = calcularTotais(vlVendaProduto, multiplica, produtoEncontrado.vlUnitario);
-            const novoProduto: SubProdutoModel = { ...rest, vlTotalMult: valorTotal, quantidade: multiplica, vlLucro: formatTotalLucro } as SubProdutoModel;
-            adicionarProdutoAoArray(values, novoProduto);
-            setBarcode('')
-            setMultiplica(undefined)
-            setKey(Math.random())
-        } else if (isBarcodeNumeric) {
-            const { mpFabricado, ...rest } = produtoEncontrado;
-            const { formatTotalLucro } = calcularTotais(vlVendaProduto, 1, produtoEncontrado.vlUnitario);
-            const novoProduto: SubProdutoModel = { ...rest, quantidade: 1, vlLucro: formatTotalLucro, vlTotalMult: vlVendaProduto } as SubProdutoModel;
-            adicionarProdutoAoArray(values, novoProduto);
-            setBarcode('');
-        }
-    }, [barcode]);
-
+        fetchAndProcessProduct();
+    }, [formik.values.productSelected]);
 
     /**
-     * Função chamada ao pressionar Tecla.
-     * 
-     * @param e - Evento de teclado.
-     */
+    * Função chamada ao pressionar Tecla.
+    * 
+    * @param e - Evento de teclado.
+    */
     const handleMultiplicaKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        const isBarcodeNumeric = !isNaN(Number(barcode));
-        if (e.key === 'Enter' && !isBarcodeNumeric) {
-            const produtoEncontrado = dataTableProduto.find((p) => p.nmProduto.toLowerCase() === barcode.toLowerCase());
-            if (multiplica) {
-                if (produtoEncontrado) {
-                    const { mpFabricado, ...rest } = produtoEncontrado;
-                    const { valorTotal, formatTotalLucro } = calcularTotais(produtoEncontrado.vlVendaProduto, multiplica, produtoEncontrado.vlUnitario);
-                    const novoProduto: SubProdutoModel = { ...rest, vlTotalMult: valorTotal, quantidade: multiplica, vlLucro: formatTotalLucro } as SubProdutoModel;
-                    adicionarProdutoAoArray(values, novoProduto);
+        if (e.key !== 'Enter') return;
+        const isBarcodeNumeric = !isNaN(Number(formik.values.barcode));
+        if (isBarcodeNumeric) return;
+        fetchAndProcessProduct();
+    };
 
-                    setBarcode('');
-                    setMultiplica(undefined);
-                    setKey(Math.random())
-                    setProdutoNotFound(false)
-                } else {
-                    setProdutoNotFound(true)
-                }
-            } else {
-                if (produtoEncontrado) {
-                    const { mpFabricado, ...rest } = produtoEncontrado;
-                    const { formatTotalLucro } = calcularTotais(produtoEncontrado.vlVendaProduto, 1, produtoEncontrado.vlUnitario);
-                    const novoProduto: SubProdutoModel = { ...rest, quantidade: 1, vlLucro: formatTotalLucro, vlTotalMult: produtoEncontrado.vlVendaProduto } as SubProdutoModel;
-                    adicionarProdutoAoArray(values, novoProduto);
+    const fetchAndProcessProduct = async () => {
+        formik.setFieldTouched('barcode', true);
+        if (formik.values.productSelected)
+            processProduct(formik.values.productSelected);
+    };
 
-                    setBarcode('');
-                    setProdutoNotFound(false)
-                } else {
-                    setProdutoNotFound(true)
-                }
-            }
-        }
+
+    const processProduct = (produto: ProdutosModel) => {
+        const { vlVendaProduto, vlUnitario } = produto;
+        const quantidade = formik.values.multiplica ?? 1;
+        const { valorTotal, formatTotalLucro } = calcularTotais(vlVendaProduto, quantidade, vlUnitario);
+
+        const novoProduto: SubProdutoModel = {
+            ...produto,
+            vlTotalMult: valorTotal,
+            quantidade,
+            vlLucro: formatTotalLucro
+        } as SubProdutoModel;
+
+        adicionarProdutoAoArray(values, novoProduto);
+
+        // Reset dos estados
+        formik.setFieldValue('barcode', '');
+        formik.setFieldValue('multiplica', undefined);
+        setKey(Math.random());
     };
 
     /**
@@ -223,32 +208,26 @@ function Vendas() {
         setFieldValue('produtoEscaniado', [])
         setFieldValue('tpProduto', SituacaoProduto.FABRICADO)
         setKey(Math.random())
-        setIsValidQntBolas(false)
     }
 
-    /**
-     * calcular o valor total e o lucro total de todos os produtos adicionados.
-     */
     useEffect(() => {
-        //calculando todos os valores de total de venda
-        const precoFiltrado = values.produtoEscaniado.map(scanner => scanner.vlTotalMult);
-        const precoTotal = precoFiltrado.reduce((total, produto) => {
-            if (typeof produto === 'number' && !isNaN(produto) && typeof total === 'number' && !isNaN(total)) {
-                const produtoArredondado = parseFloat(produto.toFixed(2));
-                return total + produtoArredondado;
-            }
-            return total;
-        }, 0);
+        /**
+         * Função auxiliar para calcular o total de um campo específico
+         * de produtos escaneados, ignorando valores inválidos.
+         */
+        const calcularTotal = (campo: keyof SubProdutoModel) => {
+            return values.produtoEscaniado
+                .map((produto) => produto[campo])
+                .reduce((total, valor) => {
+                    const valorNumerico = typeof valor === 'number' ? valor : 0;
+                    const totalNumerico = typeof total === 'number' ? total : 0;
+                    return totalNumerico + parseFloat(valorNumerico.toFixed(2));
+                }, 0 as number);
+        };
 
-        //calculando todos os valores de total de lucro
-        const precoFiltradoLucro = values.produtoEscaniado.map(scanner => scanner.vlLucro)
-        const precoTotalLucro = precoFiltradoLucro.reduce((total, produto) => {
-            if (typeof produto === 'number' && !isNaN(produto) && typeof total === 'number' && !isNaN(total)) {
-                const produtoArredondado = parseFloat(produto.toFixed(2));
-                return total + produtoArredondado;
-            }
-            return total;
-        }, 0);
+        // Calcula o total de venda e o total de lucro
+        const precoTotal = calcularTotal('vlTotalMult');
+        const precoTotalLucro = calcularTotal('vlLucro');
 
         setFieldValue('vlTotal', precoTotal);
         setFieldValue('vlLucroTotal', precoTotalLucro);
@@ -293,67 +272,54 @@ function Vendas() {
     /**
      * adiciona um produto com base no código de barras, quantidade e se é uma taça.
      * 
-     * @param cdProduto - Código do produto.
+     * @param nomeProduto - Código do produto.
      * @param quantidade - Quantidade do produto.
      * @param isTaca - Indica se é uma taça.
      */
-    function addProduct(cdProduto: string, quantidade?: number | undefined, isTaca?: boolean) {
-        const produtoEncontrado = dataTableProduto.find((p) => p.cdProduto === cdProduto);
+    async function addProduct(nomeProduto: string, isTaca?: boolean) {
+        const produtoEncontrado = await getSingleItemByQuery<ProdutosModel>(
+            TableKey.Produtos,
+            [where('nmProduto', '==', nomeProduto)],
+            dispatch
+        );
         if (produtoEncontrado) {
             const { mpFabricado, ...rest } = produtoEncontrado;
-            let novoProduto: SubProdutoModel;
-            if (!isTaca) {
-                const valorPago = rest.vlUnitario;
-                const totalLucro = rest.vlVendaProduto - valorPago;
-                novoProduto = { ...rest, quantidade: 1, vlLucro: totalLucro, vlTotalMult: rest.vlVendaProduto } as SubProdutoModel;
-                adicionarProdutoAoArray(values, novoProduto)
-            } else {
-                if (quantidade) {
-                    const valorTotal = quantidade * rest?.vlVendaProduto;
-                    novoProduto = { ...rest, vlVendaProduto: valorTotal, quantidade: quantidade, vlTotalMult: valorTotal } as SubProdutoModel;
-                    adicionarProdutoAoArray(values, novoProduto)
-                    setQntBolas(undefined);
-                    setIsValidQntBolas(false)
-                    setKey(Math.random())
-                } else {
-                    setIsValidQntBolas(true)
+            const novoProduto = createSubProduct(rest, isTaca, formik.values.qntdBolas);
+            if (novoProduto) {
+                adicionarProdutoAoArray(values, novoProduto);
+                if (isTaca) {
+                    formik.setFieldValue('qntdBolas', undefined);
+                    setKey(Math.random());
                 }
+            } else {
+                formik.setFieldError('qntdBolas', 'Campo Obrigatório para Taça');
+                formik.setFieldTouched('qntdBolas', true, false);
             }
         }
     }
-
+    function createSubProduct(produto: Partial<ProdutosModel>, isTaca?: boolean, quantidade?: number): SubProdutoModel | null {
+        if (!produto.vlVendaProduto || !produto.vlUnitario) return null;
+        if (isTaca && !quantidade) return null;
+        const totalLucro = produto.vlVendaProduto - produto.vlUnitario;
+        if (!quantidade) {
+            return { ...produto, quantidade: 1, vlLucro: totalLucro, vlTotalMult: produto.vlVendaProduto } as SubProdutoModel;
+        } else {
+            const valorTotal = quantidade * produto.vlVendaProduto;
+            return { ...produto, vlLucro: totalLucro, quantidade, vlTotalMult: valorTotal } as SubProdutoModel;
+        }
+    }
     /**
      * Função chamada ao mudar o valor do input de código de barras.
      * 
      * @param e - Evento de mudança.
      */
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const codigoDeBarras = e.currentTarget.value;
-        setBarcode(codigoDeBarras);
-
-        const resultados = dataTableProduto.filter(
-            cod => cod.nmProduto.toLowerCase().includes(codigoDeBarras.toLowerCase()) &&
-                (cod.stMateriaPrima === undefined || cod.stMateriaPrima === false)
-        );
-
-        if (resultados.length > 0) {
-            setShowSuggestion(true);
-            setProductSuggestion(resultados);
+    const handleInputChange = async (_: React.SyntheticEvent<Element, Event>, value: any, reason: AutocompleteChangeReason) => {
+        if (reason === 'clear' || reason === 'removeOption') {
+            formik.resetForm()
+            setKey(Math.random());
         } else {
-            setShowSuggestion(false);
-            setProductSuggestion([]);
+            formik.setFieldValue('productSelected', value)
         }
-    };
-
-    /**
-     * Função para selecionar uma sugestão de produto.
-     * 
-     * @param produto - Produto selecionado.
-     */
-    const selectSuggestion = (produto: ProdutosModel) => {
-        setBarcode(produto.nmProduto);
-        setProductSuggestion([]);
-        setShowSuggestion(false);
     };
 
     /**
@@ -364,9 +330,9 @@ function Vendas() {
     function handleChangeTacaSundae(e: React.ChangeEvent<HTMLInputElement>) {
         const inputValue = parseFloat(e.target.value);
         if (!isNaN(inputValue) && inputValue !== 0) {
-            setQntBolas(inputValue);
+            formik.setFieldValue('qntdBolas', inputValue);
         } else {
-            setQntBolas(undefined);
+            formik.setFieldValue('qntdBolas', undefined);
             setKey(Math.random())
         }
     }
@@ -377,9 +343,12 @@ function Vendas() {
      * @param index - Índice do produto a ser removido.
      */
     function removedProdutoEscaneado(index: number) {
-        const remove = values.produtoEscaniado.filter((product, i) => i !== index)
+        const remove = values.produtoEscaniado.filter((_, i) => i !== index)
         setFieldValue('produtoEscaniado', remove);
     }
+
+    const suggestions: ProdutosModel[] = useDebouncedSuggestions<ProdutosModel>(formik.values.barcode ?? '', TableKey.Produtos, dispatch, "Produto", undefined, false);
+
     return (
         <Box sx={{ padding: '5rem 8rem' }}>
             <Typography variant="h4" gutterBottom>Painel de Vendas</Typography>
@@ -390,13 +359,12 @@ function Vendas() {
                             key={`multiplica${key}`}
                             label="multiplicar ?"
                             name="quantidadeVenda"
-                            value={multiplica}
-                            style={{ fontSize: 14 }}
-                            styleLabel={{ fontSize: 16 }}
-                            onChange={(e) => setMultiplica(isNaN(parseFloat(e.target.value)) ? undefined : parseFloat(e.target.value))}
-                            error={''}
+                            value={formik.values.multiplica}
+                            type='number'
+                            onWheel={(e) => e.currentTarget.blur()}
+                            onChange={(e) => formik.setFieldValue('multiplica', e.target.value)}
                             inputRef={inputRef}
-                            onKeyPress={handleMultiplicaKeyPress}
+                            onKeyDown={handleMultiplicaKeyPress}
                         />
                         <Button
                             label='Mesas'
@@ -415,44 +383,30 @@ function Vendas() {
                             />
                             : null
                     }
-                    <Input
-                        error={produtoNotFound ? 'Nome não encontrado, verifique o nome e tente novamente' : ''}
-                        label="Código do Produto:"
-                        name=""
-                        onChange={handleInputChange}
-                        value={barcode}
-                        inputRef={inputRefF3}
-                        onKeyDown={(e) => handleInputKeyDown(e, productSuggestion, selectSuggestion)}
-                        onKeyPress={handleMultiplicaKeyPress}
-                        heightDiv={'50px'}
+                    <Autocomplete
+                        freeSolo
+                        key={key}
+                        options={suggestions}
+                        value={suggestions.find((item: any) => item.nmProduto === formik.values.barcode) || null}
+                        getOptionLabel={(option: any) => option && option.nmProduto ? option.nmProduto : ""}
+                        onChange={(_, newValue, reason) => handleInputChange(_, newValue, reason)}
+
+                        onKeyUp={handleMultiplicaKeyPress}
+                        onInputChange={(_, newInputValue, reason) => {
+                            if (reason === 'clear') handleInputChange(_, null, 'clear');
+                            formik.setFieldValue('barcode', newInputValue);
+                        }}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                inputRef={inputRefF3}
+                                label="Buscar Produto"
+                                variant="standard"
+                                error={Boolean(formik.touched.barcode && formik.errors.barcode)}
+                                helperText={formik.touched.barcode && formik.errors.barcode ? formik.errors.barcode : ""}
+                            />
+                        )}
                     />
-                    {ShowSuggestion && (
-                        <Box sx={{ position: 'relative' }}>
-                            <Paper
-                                className='style-scrollbar'
-                                sx={{
-                                    position: 'absolute',
-                                    width: '100%',
-                                    maxHeight: 200,
-                                    overflow: 'auto',
-                                    zIndex: 2
-                                }}
-                                ref={suggestionsRef}
-                            >
-                                {productSuggestion.map((produto, index) => (
-                                    <ListItem
-                                        key={produto.id}
-                                        onClick={() => selectSuggestion(produto)}
-                                        sx={{
-                                            backgroundColor: index === selectedSuggestionIndex ? 'primary.light' : 'inherit',
-                                        }}
-                                    >
-                                        <ListItemText primary={produto.nmProduto} />
-                                    </ListItem>
-                                ))}
-                            </Paper>
-                        </Box>
-                    )}
                 </Grid>
                 <Grid item xs={12} mt={2}>
                     <Grid sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -460,26 +414,32 @@ function Vendas() {
                             <Grid>
                                 <Grid container direction="column" spacing={2}>
                                     <Grid item>
-                                        <MUIButton variant="contained" startIcon={<CgAddR />} onClick={() => addProduct('12')}>
+                                        <MUIButton variant="contained" startIcon={<CgAddR />} onClick={() => addProduct('cascao')}>
                                             Cascão
                                         </MUIButton>
                                     </Grid>
                                     <Grid item>
-                                        <MUIButton variant="contained" startIcon={<CgAddR />} onClick={() => addProduct('13')}>
+                                        <MUIButton variant="contained" startIcon={<CgAddR />} onClick={() => addProduct('casquinha')}>
                                             Casquinha
                                         </MUIButton>
                                     </Grid>
                                     <Grid item>
-                                        <MUIButton sx={{ minWidth: '11rem', justifyContent: 'flex-start' }} variant="contained" startIcon={<CgAddR />} onClick={() => addProduct('14', qntBolas, true)}>
+                                        <MUIButton
+                                            sx={{ minWidth: '11rem', justifyContent: 'flex-start' }}
+                                            variant="contained"
+                                            startIcon={<CgAddR />}
+                                            onClick={() => addProduct('taçasundae', true)}
+                                        >
                                             Taça Sundae
                                         </MUIButton>
                                         <Input
                                             name=""
                                             key={`bolasSundae${key}`}
-                                            error={isValidQntBolas ? 'Campo Obrigatório' : ''}
+                                            onBlur={formik.handleBlur}
+                                            error={formik.touched.qntdBolas && formik.errors.qntdBolas ? formik.errors.qntdBolas : ""}
                                             label="Qnt. bolas sundae?"
                                             onChange={handleChangeTacaSundae}
-                                            value={qntBolas}
+                                            value={formik.values.qntdBolas}
                                         />
                                     </Grid>
                                 </Grid>
@@ -491,8 +451,7 @@ function Vendas() {
                                     onBlur={handleBlur}
                                     inputRef={inputRefF4}
                                     value={values.vlRecebido !== 0 ? values.vlRecebido : ''}
-                                    maxLength={9}
-                                    onKeyPress={e => onKeyPressHandleSubmit(e, handleSubmit)}
+                                    onKeyDown={e => onKeyPressHandleSubmit(e, handleSubmit)}
                                     onChange={e => { setFieldValue('vlRecebido', formatCurrencyRealTime(e.target.value)) }}
                                 />
                                 <Typography variant="h6">Total: {values.vlTotal ? NumberFormatForBrazilianCurrency(values.vlTotal) : ''}</Typography>

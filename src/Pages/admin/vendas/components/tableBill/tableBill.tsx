@@ -1,65 +1,50 @@
 import * as Yup from 'yup';
 import { useFormik } from "formik";
-import { DivIcon } from "../../style";
 import { IoMdClose } from "react-icons/io";
 import { db } from "../../../../../firebase";
 import GetData from "../../../../../firebase/getData";
 import Button from "../../../../../Components/button";
 import { useDispatch, useSelector } from "react-redux";
 import { TableKey } from "../../../../../types/tableName";
-import { Autocomplete, Stack, TextField } from "@mui/material";
-import { TitleDefault } from "../../../cadastroClientes/style";
+import { Autocomplete, AutocompleteChangeReason, Box, Dialog, Divider, Grow, IconButton, Stack, TextField, Typography } from "@mui/material";
 import TableBillModel from "../../model/tableBill";
-import VendaModel, { ProdutoEscaniado } from "../../model/vendas";
+import VendaModel from "../../model/vendas";
 import useFormatCurrency from "../../../../../hooks/formatCurrency";
 import ProdutosModel from "../../../cadastroProdutos/model/produtos";
-import { BoxClose, DivClose, StyledAiOutlineClose, StyledMdDone } from "../../../../../Components/isEdit/style";
 import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
-import { State, setLoading } from "../../../../../store/reducer/reducer";
-import useHandleInputKeyPress from "../../../../../hooks/useHandleInputKeyPress";
-import {
-    ContainerComanda,
-    BoxAddProduct,
-    BoxList,
-    ContainerTitle,
-    Title,
-    BoxProduct,
-    DivLi,
-    TextTotal,
-    BoxButton,
-    BoxNameProduct,
-    LiValor
-} from "./styleTableBill";
-import FormAlert from '../../../../../Components/FormAlert/formAlert';
-import AlertDialog from '../../../../../Components/FormAlert/dialogForm';
+import { setError, setLoading } from "../../../../../store/reducer/reducer";
+import MUIButton from "@mui/material/Button";
+import AddIcon from '@mui/icons-material/Add';
+
+import { RootState } from '../../../../../store/reducer/store';
+import { SubProdutoModel } from '../../../cadastroProdutos/model/subprodutos';
+import CustomSnackBar, { StateSnackBar } from '../../../../../Components/snackBar/customsnackbar';
+import { theme } from '../../../../../theme';
+import CloseIcon from '@mui/icons-material/Close';
+import useDebouncedSuggestions from '../../../../../hooks/useDebouncedSuggestions';
 
 interface TableBillProps {
     nameTable: string;
-    dataTableProduto: ProdutosModel[];
-    produtoEscaniadoList: ProdutoEscaniado[];
+    produtoEscaniadoList: SubProdutoModel[];
     setShowTable: Dispatch<SetStateAction<boolean>>;
     setFecharComanda: Dispatch<SetStateAction<VendaModel>>;
     setShowTableManegement: Dispatch<React.SetStateAction<boolean>>;
 }
-export function TableBill({ dataTableProduto, nameTable, setShowTable, setFecharComanda, setShowTableManegement, produtoEscaniadoList }: TableBillProps) {
+
+interface TableBill {
+    nmProduto: string;
+}
+export function TableBill({ nameTable, setShowTable, setFecharComanda, setShowTableManegement, produtoEscaniadoList }: TableBillProps) {
     const [key, setKey] = useState<number>(0);
     const [openDialog, setOpenDialog] = useState<boolean>(false);
     const [openDialogVendas, setOpenDialogVendas] = useState<boolean>(false);
-    const [produtoEscaniado, setProdutoEscaniado] = useState<ProdutoEscaniado>();
-    const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
+    const [produtoEscaniado, setProdutoEscaniado] = useState<SubProdutoModel>();
     const dispatch = useDispatch();
-    const { inputRefF1 } = useHandleInputKeyPress();
-    const { loading } = useSelector((state: State) => state.user);
+    const { loading, error } = useSelector((state: RootState) => state.user);
+    const [openSnackBar, setOpenSnackBar] = useState<StateSnackBar>({ error: false, success: false });
     const { NumberFormatForBrazilianCurrency } = useFormatCurrency();
 
-    const initialValues: TableBillModel = ({
-        vlTotal: 0,
-        produtoEscaniado: [],
-        nmTable: nameTable,
-        quantidade: 0
-    });
-    const listProduct = dataTableProduto.filter(produto => produto.stMateriaPrima === false || produto.stMateriaPrima === undefined);
     const {
         dataTable: dataTableComanda,
     } = GetData(TableKey.Comanda, true) as { dataTable: TableBillModel[] };
@@ -67,7 +52,12 @@ export function TableBill({ dataTableProduto, nameTable, setShowTable, setFechar
     const { values, handleSubmit, setFieldValue, touched, errors, resetForm } = useFormik<TableBillModel>({
         validateOnBlur: true,
         validateOnChange: true,
-        initialValues,
+        initialValues: {
+            vlTotal: 0,
+            produtoEscaniado: [],
+            nmTable: nameTable,
+            quantidade: 0
+        },
         validationSchema: Yup.object().shape({
             quantidade: Yup.string().required("Campo Obrigatório").test('vlRecebido', 'Valor Invalido', (value) => {
                 const numericValue = value.replace(/[^\d]/g, '');
@@ -76,16 +66,20 @@ export function TableBill({ dataTableProduto, nameTable, setShowTable, setFechar
         }),
         onSubmit: handleSubmitForm,
     });
-    function handleAutoComplete(e: React.SyntheticEvent<Element, Event>, value: ProdutosModel | null) {
+    function handleAutoComplete(e: React.SyntheticEvent<Element, Event>, value: any, reason: AutocompleteChangeReason) {
+        if (reason === 'clear' || reason === 'removeOption') {
+            resetForm()
+            setKey(Math.random());
+        }
         if (value) {
-            const novoProduto: ProdutoEscaniado = {
+            const novoProduto: SubProdutoModel = {
                 nmProduto: value.nmProduto,
-                cdProduto: value.cdProduto,
-                tpProduto: value.tpProduto,
                 vlVendaProduto: value.vlVendaProduto,
                 vlTotalMult: 0,
-                quantidadeVenda: 0,
-                vlLucro: value.vlVendaProduto - value.vlUnitario
+                quantidade: 0,
+                vlLucro: value.vlVendaProduto - value.vlUnitario,
+                vlUnitario: value.vlUnitario,
+                valorItem: 0
             };
             setProdutoEscaniado(novoProduto)
         }
@@ -94,14 +88,19 @@ export function TableBill({ dataTableProduto, nameTable, setShowTable, setFechar
         if (produtoEscaniado && values.quantidade) {
             const quantidade = values.quantidade
             const updatedValues = { ...values };
-            const updatedProduct: ProdutoEscaniado = {
+            const updatedProduct: SubProdutoModel = {
                 ...produtoEscaniado,
-                quantidadeVenda: quantidade,
+                quantidade: quantidade,
                 vlTotalMult: quantidade * produtoEscaniado.vlVendaProduto,
-                vlLucro: quantidade * (produtoEscaniado.vlLucro ?? 0)
+                vlLucro: quantidade * (produtoEscaniado.vlLucro ?? 0),
+                valorItem: 0,
+                vlUnitario: 0,
+                nmProduto: formik.values.nmProduto,
+                vlVendaProduto: 0
             };
             updatedValues.produtoEscaniado.push(updatedProduct);
             resetForm();
+            formik.resetForm()
             setFieldValue('produtoEscaniado', [...updatedValues.produtoEscaniado]);
             setFieldValue('id', updatedValues.id);
             setKey(Math.random())
@@ -122,7 +121,7 @@ export function TableBill({ dataTableProduto, nameTable, setShowTable, setFechar
      * @param index - Índice do produto a ser removido.
      */
     function removedProdutoEscaneado(index: number) {
-        const remove = values.produtoEscaniado.filter((product, i) => i !== index)
+        const remove = values.produtoEscaniado.filter((_, i) => i !== index)
         setFieldValue('produtoEscaniado', remove);
     }
     /**
@@ -140,8 +139,8 @@ export function TableBill({ dataTableProduto, nameTable, setShowTable, setFechar
                     setShowTable(false)
                 }).catch(() => {
                     dispatch(setLoading(false))
-                    setSubmitForm(false);
-                    setTimeout(() => { setSubmitForm(undefined) }, 3000)
+                    dispatch(setError('Erro ao Atualizar Comanda'))
+                    setOpenSnackBar(prev => ({ ...prev, error: true }))
                 });
         } else {
             await addDoc(collection(db, TableKey.Comanda), {
@@ -151,8 +150,8 @@ export function TableBill({ dataTableProduto, nameTable, setShowTable, setFechar
                 setShowTable(false)
             }).catch(() => {
                 dispatch(setLoading(false))
-                setSubmitForm(false);
-                setTimeout(() => { setSubmitForm(undefined) }, 3000)
+                dispatch(setError('Erro ao Registrar Comanda'))
+                setOpenSnackBar(prev => ({ ...prev, error: true }))
             });
         }
     }
@@ -186,126 +185,156 @@ export function TableBill({ dataTableProduto, nameTable, setShowTable, setFechar
             }
         }
     }, [dataTableComanda])
+    const formik = useFormik<TableBill>({
+        initialValues: {
+            nmProduto: ''
+        },
+        onSubmit: () => { }
+    })
+    const suggestions: ProdutosModel[] = useDebouncedSuggestions<ProdutosModel>(formik.values.nmProduto ?? '', TableKey.Produtos, dispatch, "Produto", undefined, false);
     return (
-        <>
-            <ContainerComanda>
-                <BoxClose>
-                    <DivClose
-                        onClick={() => { setShowTable(false) }}
+        <Grow in={true} timeout={500}>
+            <Box
+                sx={{
+                    position: 'absolute',
+                    display: 'flex',
+                    width: '40%',
+                    height: '90%',
+                    top: '5%',
+                    left: '35%',
+                    backgroundColor: '#ffffff',
+                    borderRadius: 2,
+                    boxShadow: 3,
+                    justifyContent: 'space-around',
+                    alignItems: 'center',
+                    flexDirection: 'column',
+                    zIndex: 5,
+                }}
+            >
+                <Box sx={{ display: 'flex', width: '100%', justifyContent: 'flex-end' }}>
+                    <IconButton
+                        onClick={() => setShowTable(false)}
+                        sx={{ color: 'inherit' }}
                     >
-                        <StyledAiOutlineClose />
-                    </DivClose>
-                </BoxClose>
-                <TitleDefault style={{ margin: 0 }}>{nameTable}</TitleDefault>
-                <BoxAddProduct>
+                        <CloseIcon fontSize="medium" />
+                    </IconButton>
+                </Box>
+
+                <Typography variant="h6" sx={{ mt: '-1rem' }}>{nameTable}</Typography>
+
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', width: '90%', mb: 3 }}>
                     <Stack spacing={3} sx={{ width: 250 }}>
                         <Autocomplete
-                            ref={inputRefF1}
-                            key={`select-${key}`}
-                            id="tags-standard"
-                            options={listProduct}
-                            getOptionLabel={(item: ProdutosModel) => item.nmProduto}
-                            onChange={handleAutoComplete}
-                            onKeyDown={keyPressHandleSubmitForm}
+                            freeSolo
+                            key={key}
+                            options={suggestions}
+                            value={suggestions.find((item: any) => item.nmProduto === formik.values.nmProduto) || null}
+                            getOptionLabel={(option: any) => option && option.nmProduto ? option.nmProduto : ""}
+                            onChange={(_, newValue, reason) => handleAutoComplete(_, newValue, reason)}
+                            onKeyUp={keyPressHandleSubmitForm}
+                            onInputChange={(_, newInputValue, reason) => {
+                                if (reason === 'clear') handleAutoComplete(_, null, 'clear');
+                                formik.setFieldValue('nmProduto', newInputValue);
+                            }}
                             renderInput={(params) => (
                                 <TextField
                                     {...params}
+                                    label="Buscar Produto"
                                     variant="standard"
-                                    label={'Selecione os produtos'}
                                 />
                             )}
                         />
                     </Stack>
+
                     <TextField
                         value={values.quantidade !== 0 ? values.quantidade : ''}
                         onChange={(e) => { setFieldValue('quantidade', (parseFloat(e.target.value))) }}
                         label="Qntde"
+                        variant="standard"
                         onKeyDown={keyPressHandleSubmitForm}
                         error={Boolean(touched.quantidade && errors.quantidade)}
                         InputProps={{
-                            style: { width: '5rem' }
+                            sx: { width: '5rem' }
                         }}
                     />
-                    <div onClick={() => handleSubmit()}>
-                        <StyledMdDone />
-                    </div>
-                </BoxAddProduct>
-                <BoxList>
-                    <ContainerTitle>
-                        <Title>Descrição</Title>
-                        <Title>Quantidade</Title>
-                        <Title>Valor</Title>
-                    </ContainerTitle>
-                    <BoxProduct>
-                        {values.produtoEscaniado.map((prod, index) => (
-                            <>
-                                <ul>
-                                    <DivLi>
-                                        <BoxNameProduct>
-                                            <DivIcon onClick={() => removedProdutoEscaneado(index)}>
-                                                <IoMdClose color={'red'} />
-                                            </DivIcon>
-                                            <li style={{ width: '11rem' }}>{prod.nmProduto}</li>
-                                        </BoxNameProduct>
-                                        <li style={{ marginLeft: '-6rem' }}>{prod.quantidadeVenda}</li>
-                                        <LiValor>{NumberFormatForBrazilianCurrency(prod.vlTotalMult ?? 0)}</LiValor>
-                                    </DivLi>
-                                </ul>
-                            </>
-                        ))}
-                    </BoxProduct>
-                </BoxList>
-                <div>
-                    <TextTotal><b>Total:</b> {NumberFormatForBrazilianCurrency(values.vlTotal)}</TextTotal>
-                </div>
-                <AlertDialog
-                    open={openDialog}
-                    messege={
-                        <p>
-                            Ao clicar em <b>&quot;Continuar&quot;</b>, você estará finalizando esta comanda. Não será possível acessá-la novamente. Deseja continuar?
-                        </p>
-                    }
-                    labelButtonOk='Continuar'
-                    labelButtonCencel='Cancelar'
-                    onCancelClick={() => setOpenDialog(false)}
-                    title='Finalizar Comanda'
-                    onOKClick={() => { closeTableBill(values) }}
-                />
-                <AlertDialog
-                    open={openDialogVendas}
-                    messege={
-                        <p>
-                            Há uma venda em aberto. Você será direcionado para finalizá-la antes de retornar para fechar a comanda.
-                        </p>
-                    }
-                    labelButtonOk='Ok'
-                    title='Não é Possivel Finalizar Comanda'
-                    onOKClick={() => { setShowTable(false); setShowTableManegement(false) }}
-                />
-                <BoxButton>
-                    <Button
-                        label='Adicionar itens a Comanda'
-                        type="button"
-                        onClick={() => handleSubmitFormComanda(values)}
-                        style={{ height: 40, width: 310 }}
+                    <IconButton
+                        onClick={() => handleSubmit()}
                         disabled={loading}
-                    />
-                    <FormAlert
-                        name="Comanda"
-                        styleLoadingMarginTop='0.5rem'
-                        styleLoadingMarginLeft='0rem'
-                        submitForm={submitForm}
+                        sx={{ color: 'inherit' }}
+                    >
+                        <AddIcon fontSize="medium" />
+                    </IconButton>
+                </Box>
+
+                <Box sx={{ width: '90%' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: 1 }}>
+                        <Typography variant="subtitle2" sx={{ color: theme.paletteColor.tertiaryBlue, fontWeight: 'bold' }}>Descrição</Typography>
+                        <Typography variant="subtitle2" sx={{ color: theme.paletteColor.tertiaryBlue, fontWeight: 'bold' }}>Quantidade</Typography>
+                        <Typography variant="subtitle2" sx={{ color: theme.paletteColor.tertiaryBlue, fontWeight: 'bold' }}>Valor</Typography>
+                    </Box>
+
+                    <Box sx={{
+                        overflowY: 'auto',
+                        width: '100%',
+                        height: '13rem',
+                    }}>
+                        {values.produtoEscaniado.map((prod, index) => (
+                            <Box key={index} component="ul" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', color: theme.paletteColor.primaryGreen, fontWeight: 'bold' }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center' }} onClick={() => removedProdutoEscaneado(index)}>
+                                    <IoMdClose color={theme.paletteColor.error} />
+                                    <Typography component="li" sx={{ width: '11rem', ml: 1 }}>{prod.nmProduto}</Typography>
+                                </Box>
+                                <Typography component="li" sx={{ marginLeft: '-6rem' }}>{prod.quantidade}</Typography>
+                                <Typography component="li" sx={{ width: '5rem', display: 'flex', justifyContent: 'flex-end' }}>
+                                    {NumberFormatForBrazilianCurrency(prod.vlTotalMult ?? 0)}
+                                </Typography>
+                            </Box>
+                        ))}
+                    </Box>
+                </Box>
+
+                <Box sx={{ mt: 2 }}>
+                    <Typography variant="h6"><b>Total:</b> {NumberFormatForBrazilianCurrency(values.vlTotal)}</Typography>
+                </Box>
+
+                <Dialog open={openDialog}>
+                    <Typography variant="body1" component="p" sx={{ p: 3 }}>
+                        Ao clicar em <b>&quot;Continuar&quot;</b>, você estará finalizando esta comanda. Não será possível acessá-la novamente. Deseja continuar?
+                    </Typography>
+                    <Divider />
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 2 }}>
+                        <MUIButton onClick={() => setOpenDialog(false)}>Cancelar</MUIButton>
+                        <MUIButton onClick={() => closeTableBill(values)}>Continuar</MUIButton>
+                    </Box>
+                </Dialog>
+
+                <Dialog open={openDialogVendas}>
+                    <Typography variant="body1" component="p" sx={{ p: 3 }}>
+                        Há uma venda em aberto. Você será direcionado para finalizá-la antes de retornar para fechar a comanda.
+                    </Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+                        <MUIButton onClick={() => { setShowTable(false); setShowTableManegement(false); }}>Ok</MUIButton>
+                    </Box>
+                </Dialog>
+
+                <Box sx={{ height: '25%', display: 'flex', flexDirection: 'column', justifyContent: 'space-around', alignItems: 'center', mt: 2 }}>
+                    <Button
+                        label="Salvar Itens da Comanda"
+                        onClick={() => handleSubmitFormComanda(values)}
+                        disabled={loading}
+                        type='button'
+                        style={{ height: 40, width: 310 }}
                     />
                     <Button
-                        label='Fechar Comanda'
-                        type="button"
-                        onClick={() => { setOpenDialog(true) }}
+                        label="Fechar Comanda"
+                        onClick={() => setOpenDialog(true)}
                         style={{ height: 40, width: 310 }}
                         disabled={loading || !values.produtoEscaniado.length}
-
+                        type='button'
                     />
-                </BoxButton>
-            </ContainerComanda>
-        </>
-    )
+                </Box>
+                <CustomSnackBar message={error} open={openSnackBar} setOpen={setOpenSnackBar} />
+            </Box>
+        </Grow>
+    );
 }

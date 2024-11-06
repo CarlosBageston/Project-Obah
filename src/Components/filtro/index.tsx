@@ -2,9 +2,7 @@ import React, { Dispatch, SetStateAction, useState } from 'react';
 import { BiSearchAlt } from 'react-icons/bi'
 import { FormControl, Autocomplete, TextField, AutocompleteChangeReason } from '@mui/material';
 import { ContainerFilter, ContainerInput, ButtonFilter, ContainerButton } from './style'
-import { DocumentData, endAt, orderBy, QueryDocumentSnapshot, startAt } from 'firebase/firestore';
-import { getItemsByQuery } from '../../hooks/queryFirebase';
-import { useDispatch } from 'react-redux';
+import { DocumentData, QueryDocumentSnapshot, where } from 'firebase/firestore';
 
 interface FilterProps {
     label: string,
@@ -13,11 +11,12 @@ interface FilterProps {
 
 
 interface Props {
-    setFilteredData: (data: any[]) => void,
     carregarDados: React.Dispatch<React.SetStateAction<boolean>>,
     filter: FilterProps[],
     setLastVisible: Dispatch<SetStateAction<QueryDocumentSnapshot<DocumentData> | null>>
-    collectionName?: string
+    fetchPageData: (direction?: "next" | "previous", filters?: any) => Promise<void>
+    setAppliedFilters: Dispatch<SetStateAction<any[]>>
+    setPage: Dispatch<SetStateAction<number>>
 }
 
 /**
@@ -34,10 +33,9 @@ interface Props {
  * O componente também permite cancelar o filtro e redefinir os dados filtrados para os dados originais.
  */
 
-const GenericFilter = ({ setFilteredData, carregarDados, filter, setLastVisible, collectionName }: Props) => {
+const GenericFilter = ({ setPage, carregarDados, filter, setLastVisible, setAppliedFilters, fetchPageData }: Props) => {
     const [valueItem, setValueItem] = useState<string>('');
     const [objectSearch, setObjectSearch] = useState<FilterProps | undefined>();
-    const dispatch = useDispatch()
 
     /**
      * Função para chamar a filtragem com base no tipo especificado (cliente ou produto).
@@ -50,6 +48,8 @@ const GenericFilter = ({ setFilteredData, carregarDados, filter, setLastVisible,
     * Cancela a filtragem, restaurando os dados originais e redefinindo os valores relacionados.
     */
     const cancelFiltered = () => {
+        setAppliedFilters([]);
+        setPage(1);
         carregarDados(true)
         setLastVisible(null)
         setValueItem('')
@@ -67,24 +67,24 @@ const GenericFilter = ({ setFilteredData, carregarDados, filter, setLastVisible,
     }
 
     const filterByItem = async () => {
-        carregarDados(false)
+        carregarDados(false);
         if (!objectSearch?.values || !valueItem) {
             console.warn("Campos de busca ou valores inválidos.");
             return;
         }
-
-        try {
-            const constraints = [
-                orderBy(objectSearch.values),
-                startAt(valueItem),
-                endAt(valueItem + '\uf8ff')
-            ];
-
-            const { data } = await getItemsByQuery(collectionName ?? '', constraints, dispatch);
-            setFilteredData(data);
-        } catch (error) {
-            console.error('Erro ao filtrar itens:', error);
+        let nmField = objectSearch?.values
+        if (nmField === 'nmProduto') {
+            nmField = objectSearch?.values.concat("Formatted");
         }
+
+        const constraints = [
+            where(nmField, '>=', valueItem),
+            where(nmField, '<=', valueItem + '\uf8ff')
+        ];
+
+        setAppliedFilters(constraints);
+        setPage(1);
+        fetchPageData('next', constraints);
     };
 
     function handleAutoCompleteTypeFilter(newValue: any, reason: AutocompleteChangeReason) {

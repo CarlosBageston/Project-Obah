@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Table, TableBody, TableContainer, TableHead, TableRow, Paper, CircularProgress } from '@mui/material';
+import { Table, TableBody, TableContainer, TableHead, TableRow, Paper, CircularProgress, Box, IconButton, TableCell, Tooltip } from '@mui/material';
 import { CSSProperties, Dispatch, SetStateAction, useEffect, useState } from 'react';
 import {
     ContainerTable,
@@ -21,6 +21,8 @@ import GenericFilter from '../filtro';
 import { db } from '../../firebase';
 import ModalDelete from '../FormAlert/modalDelete';
 import SituacaoProduto from '../../enumeration/situacaoProduto';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
 type TableColumn = {
     name: string;
@@ -65,9 +67,12 @@ const GenericTable = <T,>({
     const [selectedRowId, setSelectedRowId] = useState<string | undefined>(undefined);
     const [selected, setSelected] = useState<T>();
     const [data, setData] = useState<any[]>([]);
+    const [dataTotal, setDataTotal] = useState<any[]>([]);
+    const [dataTotalFiltered, setDataTotalFiltered] = useState<any[]>([]);
+    const [appliedFilters, setAppliedFilters] = useState<any[]>([]);
     const [firstVisible, setFirstVisible] = useState<QueryDocumentSnapshot | null>(null);
     const [lastVisible, setLastVisible] = useState<QueryDocumentSnapshot | null>(null);
-    const [page, setPage] = useState(0);
+    const [page, setPage] = useState(1);
     const dispatch = useDispatch();
     const loading = useSelector((state: RootState) => state.loading.getItemPaginationLoading);
     const [recarregue, setRecarregue] = useState<boolean>(true);
@@ -94,11 +99,40 @@ const GenericTable = <T,>({
         }
     }, [recarregue]);
 
-    const fetchPageData = async (direction: 'next' | 'previous' = 'next') => {
+    const fetchPageData = async (direction: 'next' | 'previous' = 'next', filters: any[] = []) => {
         const cursor = direction === 'next' ? lastVisible : firstVisible;
-        const result = await getItemsByPage(collectionName ?? '', constraints ?? [], dispatch, pageSize ? pageSize : 5, cursor, direction);
+        const appliedQueryFilters = filters.length > 0 ? filters : appliedFilters;
+        const result = await getItemsByPage(
+            collectionName ?? '',
+            [...constraints ?? [], ...appliedQueryFilters],
+            dispatch, pageSize ? pageSize : 5,
+            cursor,
+            direction
+        );
 
-        setData(result.data);
+        setDataTotal((prevData) => [
+            ...prevData,
+            ...result.data.filter(item => !prevData.some(existingItem => existingItem.id === item.id))
+        ]);
+        if (appliedQueryFilters.length > 0) {
+            setDataTotalFiltered((prevData) => [
+                ...prevData,
+                ...result.data.filter(item => !prevData.some(existingItem => existingItem.id === item.id))
+            ]);
+        }
+        // Se filtros foram aplicados, usa os dados filtrados para a navegação
+        const dataSource = appliedQueryFilters.length > 0 ? dataTotalFiltered : dataTotal;
+
+
+        if (direction === 'next') {
+            setData(result.data);
+        } else {
+            const startIndex = (page - 2) * (pageSize ?? 5);
+            const endIndex = startIndex + (pageSize ?? 5);
+            const newData = dataSource.slice(startIndex, endIndex);
+            setData(newData);
+        }
+
         setFirstVisible(result.firstVisible);
         setLastVisible(result.lastVisible);
 
@@ -106,7 +140,7 @@ const GenericTable = <T,>({
 
     };
     useEffect(() => {
-        setHasPreviousPage(page > 0);
+        setHasPreviousPage(page > 1);
     }, [page])
     const handleNextPage = () => {
         setPage(prev => prev + 1);
@@ -136,6 +170,11 @@ const GenericTable = <T,>({
         }
         if (editData && !selected && data.length < 5) {
             setData(prov => [...prov, editData]);
+            setEditData && setEditData(undefined);
+            setSelectedRowId(undefined);
+            setSelected(undefined)
+        }
+        if (editData && !selected && data.length >= 5) {
             setEditData && setEditData(undefined);
             setSelectedRowId(undefined);
             setSelected(undefined)
@@ -187,9 +226,10 @@ const GenericTable = <T,>({
         <>
             <ContainerFilter>
                 <GenericFilter
-                    setFilteredData={setData}
                     carregarDados={setRecarregue}
-                    collectionName={collectionName}
+                    setAppliedFilters={setAppliedFilters}
+                    setPage={setPage}
+                    fetchPageData={fetchPageData}
                     filter={columnsToFilter.map(column => ({
                         label: column.label,
                         values: column.name
@@ -217,44 +257,66 @@ const GenericTable = <T,>({
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {data.map((row) => {
-                                const rowId = row.id;
-                                const isSelected = selectedRowId === rowId;
-                                return loading ? (
-                                    <>
+                            {loading ? (
+                                <TableRow>
+                                    <TableCell colSpan={columns.length} align="center">
                                         <CircularProgress />
-                                    </>
-                                ) : (
-                                    <StyledTableRow
-                                        key={Math.random()}
-                                        onClick={() => handleRowClick(rowId, row)}
-                                        selected={isSelected}
-                                    >
-                                        {columns.map((column) => (
-                                            <StyledTableCell key={column.name}>
-                                                {column.isCurrency
-                                                    ? (column.name.split('.').reduce((obj, key) => obj?.[key], row) != null
-                                                        ? NumberFormatForBrazilianCurrency(column.name.split('.').reduce((obj, key) => obj?.[key], row))
-                                                        : '-')
-                                                    : column.isInfinite && row.stEstoqueInfinito ? '∞'
-                                                        : column.name.split('.').reduce((obj, key) => obj?.[key], row)
-                                                }
-                                            </StyledTableCell>
-                                        ))}
-                                    </StyledTableRow>
-                                );
-                            })}
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                data.map((row) => {
+                                    const rowId = row.id;
+                                    const isSelected = selectedRowId === rowId;
+                                    return (
+                                        <StyledTableRow
+                                            key={rowId}  // Usando rowId para garantir que a chave seja única
+                                            onClick={() => handleRowClick(rowId, row)}
+                                            selected={isSelected}
+                                        >
+                                            {columns.map((column) => (
+                                                <StyledTableCell key={column.name}>
+                                                    {column.isCurrency
+                                                        ? (row[column.name] != null
+                                                            ? NumberFormatForBrazilianCurrency(row[column.name])
+                                                            : '-')
+                                                        : column.isInfinite && row.stEstoqueInfinito ? '∞'
+                                                            : row[column.name] || '-'}
+                                                </StyledTableCell>
+                                            ))}
+                                        </StyledTableRow>
+                                    );
+                                })
+                            )}
                         </TableBody>
                     </Table>
                 </TableContainer>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
-                    <button onClick={handlePreviousPage} disabled={!hasPreviousPage}>
-                        Anterior
-                    </button>
-                    <button onClick={handleNextPage} disabled={!hasNextPage}>
-                        Próximo
-                    </button>
-                </div>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        alignItems: 'center',
+                        mt: 2
+                    }}
+                >
+                    <IconButton
+                        onClick={handlePreviousPage}
+                        disabled={!hasPreviousPage}
+                        sx={{ mx: 1 }}
+                    >
+                        <Tooltip title="Anterior">
+                            <ChevronLeftIcon />
+                        </Tooltip>
+                    </IconButton>
+                    <IconButton
+                        onClick={handleNextPage}
+                        disabled={!hasNextPage}
+                        sx={{ mx: 1 }}
+                    >
+                        <Tooltip title="Proximo">
+                            <ChevronRightIcon />
+                        </Tooltip>
+                    </IconButton>
+                </Box>
             </ContainerTable>
         </>
     );

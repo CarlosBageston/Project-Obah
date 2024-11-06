@@ -1,4 +1,4 @@
-import { ProdutoEscaniado } from "./vendas"
+import { SubProdutoModel } from "../../cadastroProdutos/model/subprodutos"
 
 
 /**
@@ -8,11 +8,12 @@ import { ProdutoEscaniado } from "./vendas"
 */
 
 
+
 interface TableBillModel {
     id?: string,
     nmTable: string,
     vlTotal: number,
     quantidade?: number,
-    produtoEscaniado: ProdutoEscaniado[]
+    produtoEscaniado: SubProdutoModel[]
 }
 export default TableBillModel

@@ -1,29 +1,21 @@
-import SituacaoProduto from "../../../../enumeration/situacaoProduto"
 
 
 /**
- * Modelo de Entrega
+ * Modelo de Venda
 *
 * @author Carlos Bageston
 */
 
-export interface ProdutoEscaniado{
-            nmProduto: string,
-            cdProduto: string,
-            vlVendaProduto: number,
-            quantidadeVenda: number,
-            tpProduto: SituacaoProduto | null,
-            vlLucro?: number,
-            vlTotalMult?: number
-        }
+import { SubProdutoModel } from "../../cadastroProdutos/model/subprodutos"
+
 
 interface VendaModel {
+    id?: string,
     dtProduto: Date | null,
     vlLucroTotal: number,
     vlTotal: number ,
     vlRecebido: number,
-    vlTroco: number ,
-    id?: string,
-    produtoEscaniado: ProdutoEscaniado[]
+    vlTroco: number,
+    produtoEscaniado: SubProdutoModel[]
 }
 export default VendaModel

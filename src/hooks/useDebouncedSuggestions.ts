@@ -26,20 +26,20 @@ function useDebouncedSuggestions<T>(
 
             if (typeSearch === 'Cliente') {
                 constraints = [
-                    where('nmCliente', '>=', nmField),
-                    where('nmCliente', '<=', nmField + '\uf8ff')
+                    where('nmClienteFormatted', '>=', nmField),
+                    where('nmClienteFormatted', '<=', nmField + '\uf8ff')
                 ];
             } else {
                 if (tpProduto) {
                     constraints.push(where('tpProduto', '==', tpProduto));
                 }
-                if (stMateriaPrima) {
+                if (stMateriaPrima !== undefined) {
                     constraints.push(where('stMateriaPrima', '==', stMateriaPrima));
                 }
 
                 constraints.push(
-                    where('nmProduto', '>=', nmField),
-                    where('nmProduto', '<=', nmField + '\uf8ff')
+                    where('nmProdutoFormatted', '>=', nmField),
+                    where('nmProdutoFormatted', '<=', nmField + '\uf8ff')
                 );
             }
             const { data } = await getItemsByQuery<T>(

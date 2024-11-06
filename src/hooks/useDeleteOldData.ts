@@ -3,11 +3,13 @@ import { EntregaModel } from "../Pages/admin/entregas/model/entrega";
 import VendaModel from "../Pages/admin/vendas/model/vendas";
 import { deleteDoc, doc } from "firebase/firestore";
 import { db } from "../firebase";
-import { TableKey } from "../types/tableName";
+import { useTableKeys } from "./tableKey";
 
 
 export default function useDeleteOldData(){
    
+    //TODO: adicionar lógica para deletar Compras Antigas
+    const tableKeys = useTableKeys();
 
     function deleteVendas(dataTableVenda: VendaModel[]) {
         if (!dataTableVenda) return;
@@ -20,7 +22,7 @@ export default function useDeleteOldData(){
         });
         filteredVendas.forEach(async (item) => {
             const refID: string = item.id ?? '';
-            await deleteDoc(doc(db, TableKey.Vendas, refID))
+            await deleteDoc(doc(db, tableKeys.Vendas, refID))
         })
     }
 
@@ -36,7 +38,7 @@ export default function useDeleteOldData(){
 
         filteredEntregas.forEach(async (item) => {
             const refID: string = item.id ?? '';
-            await deleteDoc(doc(db, TableKey.Entregas, refID))
+            await deleteDoc(doc(db, tableKeys.Entregas, refID))
         })
     }
 

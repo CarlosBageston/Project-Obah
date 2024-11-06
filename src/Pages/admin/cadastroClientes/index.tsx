@@ -5,30 +5,35 @@ import { db } from '../../../firebase';
 import ClienteModel from './model/cliente';
 import Input from '../../../Components/input';
 import Button from '../../../Components/button';
-import { TableKey } from '../../../types/tableName';
 import GenericTable from '../../../Components/table';
 import { useDispatch, useSelector } from 'react-redux';
 import useFormatCurrency from '../../../hooks/formatCurrency';
 import formatPhone from '../../../Components/masks/maskTelefone';
-import { setError, setLoading } from '../../../store/reducer/reducer';
+import { setError } from '../../../store/reducer/reducer';
 import { addDoc, collection, doc, updateDoc } from 'firebase/firestore';
+import MUIButton from "@mui/material/Button";
 
 
 import CollapseListProduct from '../../../Components/collapse/collapseListProduct';
 import _ from 'lodash';
 import SituacaoProduto from '../../../enumeration/situacaoProduto';
-import { Box, Grid, Typography } from '@mui/material';
+import { Box, Dialog, Divider, Grid, Typography } from '@mui/material';
 import CustomSnackBar, { StateSnackBar } from '../../../Components/snackBar/customsnackbar';
 import { RootState } from '../../../store/reducer/store';
+import { formatDescription } from '../../../utils/formattedString';
+import { useTableKeys } from '../../../hooks/tableKey';
+import { setLoadingGlobal } from '../../../store/reducer/loadingSlice';
 
 function CadastroCliente() {
     const [key, setKey] = useState<number>(0);
     const [editData, setEditData] = useState<ClienteModel>();
     const [openSnackBar, setOpenSnackBar] = useState<StateSnackBar>({ error: false, success: false });
     const error = useSelector((state: RootState) => state.user.error);
-
+    const tableKeys = useTableKeys();
     const dispatch = useDispatch();
     const { convertToNumber } = useFormatCurrency();
+    const [openDialog, setOpenDialog] = useState(false);
+    const loadingGlobal = useSelector((state: RootState) => state.loading.loadingGlobal);
 
 
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<ClienteModel>({
@@ -41,7 +46,8 @@ function CadastroCliente() {
             nrCasaCliente: '',
             bairroCliente: '',
             cidadeCliente: '',
-            produtos: []
+            produtos: [],
+            nmClienteFormatted: ''
         },
         validationSchema: Yup.object().shape({
             nmCliente: Yup.string().required('Campo obrigatório'),
@@ -51,7 +57,7 @@ function CadastroCliente() {
             bairroCliente: Yup.string().required('Campo obrigatório'),
             cidadeCliente: Yup.string().required('Campo obrigatório'),
             produtos: Yup.array().test("array vazio", 'Obrigatório pelo menos 1 produto', function (value) {
-                if ((!value || value.length === 0)) return false;
+                if ((!value || value.length === 0)) return false
                 return true;
             }).nullable()
         }),
@@ -61,16 +67,15 @@ function CadastroCliente() {
     //editar uma linha da tabela e do banco de dados
     async function handleEditRow() {
         if (values) {
+            dispatch(setLoadingGlobal(true))
             const refID: string = values.id ?? '';
-            const refTable = doc(db, TableKey.Clientes, refID);
+            const refTable = doc(db, tableKeys.Clientes, refID);
             values.produtos.forEach(product => {
                 if (typeof product.vlVendaProduto === 'string') {
                     product.vlVendaProduto = convertToNumber(product.vlVendaProduto)
                 }
             })
-            console.log(_.isEqual(values, editData))
             if (!_.isEqual(values, editData)) {
-                console.log('entrou')
                 await updateDoc(refTable, { ...values })
                     .then(() => {
                         setEditData(values)
@@ -78,34 +83,37 @@ function CadastroCliente() {
             }
             resetForm()
             setKey(Math.random());
+            dispatch(setLoadingGlobal(false))
         }
     }
 
     //envia informações para o banco
     async function hundleSubmitForm() {
-        dispatch(setLoading(true))
+        dispatch(setLoadingGlobal(true))
         values.produtos.forEach((produto) => {
             produto.vlVendaProduto = convertToNumber(produto.vlVendaProduto.toString())
         })
-        await addDoc(collection(db, TableKey.Clientes), {
+        await addDoc(collection(db, tableKeys.Clientes), {
             ...values
         }).then(() => {
-            dispatch(setLoading(false))
             setOpenSnackBar(prev => ({ ...prev, success: true }))
             setEditData(values)
         }).catch(() => {
-            dispatch(setLoading(false))
             dispatch(setError('Erro ao Cadastrar Cliente'))
             setOpenSnackBar(prev => ({ ...prev, error: true }))
-        });
+        })
+            .finally(() => dispatch(setLoadingGlobal(false)));
         resetForm()
         setKey(Math.random());
     }
 
-    //TODO: Não ta exibindo o erro quando a lista de produtos ta vazia
+    function handleSubmitForm() {
+        if (!values.produtos.length) setOpenDialog(true)
+        else handleSubmit()
+    }
     return (
         <Box sx={{ padding: '5rem' }}>
-            <Typography variant="h4" gutterBottom>Cadastro De Novos Clientes</Typography>
+            <Typography variant="h4" gutterBottom>Cadastro de Novos Clientes</Typography>
             <Grid container spacing={2}>
                 <Grid item xs={4}>
                     <Input
@@ -114,19 +122,21 @@ function CadastroCliente() {
                         name="nmCliente"
                         onBlur={handleBlur}
                         value={values.nmCliente}
-                        onChange={(e) => setFieldValue(e.target.name, e.target.value)}
+                        onChange={(e) => {
+                            setFieldValue(e.target.name, e.target.value)
+                            setFieldValue('nmClienteFormatted', formatDescription(e.target.value));
+                        }}
                         error={touched.nmCliente && errors.nmCliente ? errors.nmCliente : ""}
                     />
                 </Grid>
                 <Grid item xs={4}>
                     <Input
                         key={`tfCliente-${key}`}
-                        maxLength={12}
                         label="Telefone"
                         name="tfCliente"
                         onBlur={handleBlur}
-                        value={formatPhone(values.tfCliente)}
-                        onChange={(e) => setFieldValue(e.target.name, e.target.value)}
+                        value={values.tfCliente}
+                        onChange={(e) => setFieldValue(e.target.name, formatPhone(e.target.value))}
                         error={touched.tfCliente && errors.tfCliente ? errors.tfCliente : ""}
                     />
                 </Grid>
@@ -168,6 +178,7 @@ function CadastroCliente() {
                         key={`nrCasaCliente-${key}`}
                         label="Número"
                         name="nrCasaCliente"
+                        type='number'
                         onBlur={handleBlur}
                         value={values.nrCasaCliente}
                         onChange={(e) => setFieldValue(e.target.name, e.target.value)}
@@ -180,7 +191,7 @@ function CadastroCliente() {
                 isVisible={true}
                 tpProdutoSearch={SituacaoProduto.FABRICADO}
                 nameArray="produtos"
-                collectionName={TableKey.Produtos}
+                collectionName={tableKeys.Produtos}
                 initialItems={values.produtos}
                 labelInput="Valor venda"
                 typeValueInput="currency"
@@ -190,12 +201,21 @@ function CadastroCliente() {
             <Box mt={3} display="flex" justifyContent="flex-end">
                 <Button
                     type="button"
-                    label="Cadastrar Cliente"
-                    onClick={handleSubmit}
+                    label={editData ? "Atualizar" : "Cadastrar"}
+                    onClick={() => handleSubmitForm()}
                     style={{ height: "4rem", width: "14rem" }}
+                    disabled={loadingGlobal}
                 />
             </Box>
-
+            <Dialog open={openDialog}>
+                <Typography variant="body1" component="p" sx={{ p: 3 }}>
+                    É Obrigatório ter pelo menos um produto cadastrado
+                </Typography>
+                <Divider />
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1 }}>
+                    <MUIButton onClick={() => setOpenDialog(false)}>OK</MUIButton>
+                </Box>
+            </Dialog>
             {/* Tabela */}
             <GenericTable
                 columns={[
@@ -217,11 +237,12 @@ function CadastroCliente() {
                     setFieldValue("cidadeCliente", row.cidadeCliente);
                     setFieldValue("produtos", row.produtos);
                     setFieldValue("id", row.id);
+                    setFieldValue("nmClienteFormatted", row.nmClienteFormatted);
                     setKey(Math.random());
                 }}
                 editData={editData}
                 setEditData={setEditData}
-                collectionName={TableKey.Clientes}
+                collectionName={tableKeys.Clientes}
             />
             <CustomSnackBar message={error ? error : "Cadastrado Cliente com sucesso"} open={openSnackBar} setOpen={setOpenSnackBar} />
         </Box>

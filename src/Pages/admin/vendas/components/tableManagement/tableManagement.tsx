@@ -5,7 +5,6 @@ import { TableBill } from "../tableBill/tableBill";
 import VendaModel from "../../model/vendas";
 import ButtonAdd from "../../../../../Components/button/buttonAdd/buttonAdd";
 import TableManagemenModel from "../../model/tableManagemen";
-import { TableKey } from "../../../../../types/tableName";
 import { Box, CircularProgress, Fade, IconButton, Paper, Typography } from "@mui/material";
 import { Timestamp, addDoc, collection, deleteDoc, doc } from "firebase/firestore";
 import { db } from "../../../../../firebase";
@@ -22,6 +21,7 @@ import MUIButton from "@mui/material/Button";
 import { getItemsByQuery } from '../../../../../hooks/queryFirebase';
 import CloseIcon from '@mui/icons-material/Close';
 import Input from '../../../../../Components/input';
+import { useTableKeys } from '../../../../../hooks/tableKey';
 
 
 
@@ -43,6 +43,7 @@ export function TableManagement({ setFecharComanda, setShowTableManegement, prod
     const { loading, error } = useSelector((state: RootState) => state.user);
     const { getItemsByQueryLoading } = useSelector((state: RootState) => state.loading);
     const [openSnackBar, setOpenSnackBar] = useState<StateSnackBar>({ error: false, success: false });
+    const tableKeys = useTableKeys();
 
     const initialValues: TableManagemenModel = ({
         nmTable: '',
@@ -62,7 +63,7 @@ export function TableManagement({ setFecharComanda, setShowTableManegement, prod
     });
     useEffect(() => {
         const getItem = async () => {
-            const { data } = await getItemsByQuery<TableManagemenModel>(TableKey.Mesas, [], dispatch, 100)
+            const { data } = await getItemsByQuery<TableManagemenModel>(tableKeys.Mesas, [], dispatch, 100)
             setDataTable(data)
         }
         if (recarregar)
@@ -81,7 +82,7 @@ export function TableManagement({ setFecharComanda, setShowTableManegement, prod
     async function handleSubmitForm(values: TableManagemenModel) {
         setRecarregar(false);
         dispatch(setLoading(true));
-        await addDoc(collection(db, TableKey.Mesas), {
+        await addDoc(collection(db, tableKeys.Mesas), {
             ...values,
             createdAt: Timestamp.now()
         }).then(() => {
@@ -101,7 +102,7 @@ export function TableManagement({ setFecharComanda, setShowTableManegement, prod
     async function handleDeleteItem(id: string | undefined) {
         setRecarregar(false);
         setShowModalDelete(undefined);
-        await deleteDoc(doc(db, TableKey.Mesas, id ?? '')).then(() => {
+        await deleteDoc(doc(db, tableKeys.Mesas, id ?? '')).then(() => {
             dispatch(setLoading(false))
         }).catch(() => {
             dispatch(setLoading(false))
@@ -184,7 +185,7 @@ export function TableManagement({ setFecharComanda, setShowTableManegement, prod
                                 zIndex: 5,
                             }}
                         >
-                            <Typography variant="h4">Adicionar mesa</Typography>
+                            <Typography variant="h5">Adicionar mesa</Typography>
                             <Input
                                 value={values.nmTable}
                                 error={touched.nmTable && errors.nmTable ? errors.nmTable : ""}

@@ -2,7 +2,6 @@ import { SHA256 } from 'crypto-js';
 import { Button } from "../../login/style";
 import { Bar, Line } from "react-chartjs-2";
 import GetData from "../../../firebase/getData";
-import { TableKey } from '../../../types/tableName';
 import ChartLine from "../../../Components/graficos/Line";
 import ChartBarVertical from "../../../Components/graficos/BarVertical";
 import ChartBarHorizontal from "../../../Components/graficos/BarHorizontal";
@@ -34,6 +33,7 @@ import { useFormik } from 'formik';
 import DashboardModel from './model/dashboard';
 import useFormatCurrency from '../../../hooks/formatCurrency';
 import PopUpReport from './components/pop-upReport';
+import { useTableKeys } from '../../../hooks/tableKey';
 
 
 function Dashboard() {
@@ -44,6 +44,7 @@ function Dashboard() {
     const { dataVertical, optionsVertical, vlLucro: vlLucroVertical, vlTotal: vlTotalVertical, dadosPorMes: DadosPorMesVertical } = ChartBarVertical(freeScreen);
     const { dataLine, optionsLine, ref, vlLucro: vlLucroLine, vlTotal: vlTotalLine, dadosPorMes: DadosPorMesLine } = ChartLine(freeScreen);
     const { dataHorizontal, optionsHotizontal } = ChartBarHorizontal(freeScreen)
+    const tableKeys = useTableKeys();
 
     const initialValues: DashboardModel = {
         error: '',
@@ -53,7 +54,7 @@ function Dashboard() {
     }
     const {
         dataTable
-    } = GetData(TableKey.Dashboard, true);
+    } = GetData(tableKeys.Dashboard, true);
     const { NumberFormatForBrazilianCurrency } = useFormatCurrency()
 
     const { values, setFieldValue } = useFormik<DashboardModel>({

@@ -8,10 +8,9 @@ import { useFormik } from 'formik';
 import { useState, useEffect } from "react";
 import EstoqueModel from '../estoque/model/estoque';
 import ComprasModel from '../compras/model/compras';
-import { TableKey } from '../../../types/tableName';
 import GenericTable from "../../../Components/table";
 import { useDispatch, useSelector } from 'react-redux';
-import { setError, setLoading } from '../../../store/reducer/reducer';
+import { setError } from '../../../store/reducer/reducer';
 import SituacaoProduto from "../../../enumeration/situacaoProduto";
 import { addDoc, collection, deleteDoc, doc, updateDoc, where } from "firebase/firestore";
 import { Box, Checkbox, FormControl, FormControlLabel, Grid, InputLabel, MenuItem, Select, Typography, } from "@mui/material";
@@ -26,7 +25,9 @@ import { RootState } from '../../../store/reducer/store';
 import { getItemsByQuery, getSingleItemByQuery } from '../../../hooks/queryFirebase';
 import CollapseListProduct from '../../../Components/collapse/collapseListProduct';
 import CustomSnackBar, { StateSnackBar } from '../../../Components/snackBar/customsnackbar';
-import { set } from 'lodash';
+import { formatDescription } from '../../../utils/formattedString';
+import { useTableKeys } from '../../../hooks/tableKey';
+import { setLoadingGlobal } from '../../../store/reducer/loadingSlice';
 
 
 function CadastroProduto() {
@@ -36,10 +37,12 @@ function CadastroProduto() {
     const [isVisibleTpProuto, setIsVisibleTpProduto] = useState<boolean>(false);
     const [deleteData, setDeleteData] = useState<boolean>();
     const [openSnackBar, setOpenSnackBar] = useState<StateSnackBar>({ error: false, success: false });
+    const loadingGlobal = useSelector((state: RootState) => state.loading.loadingGlobal);
+    const tableKeys = useTableKeys();
 
     const history = useNavigate();
     const dispatch = useDispatch();
-    const { loading, error } = useSelector((state: RootState) => state.user);
+    const { error } = useSelector((state: RootState) => state.user);
     const { convertToNumber, formatCurrency, formatCurrencyRealTime, NumberFormatForBrazilianCurrency } = useFormatCurrency();
 
 
@@ -56,7 +59,8 @@ function CadastroProduto() {
             stEntrega: false,
             mpFabricado: [],
             stMateriaPrima: false,
-            kgProduto: 1
+            kgProduto: 1,
+            nmProdutoFormatted: ''
         },
         validationSchema: Yup.object().shape({
             nmProduto: Yup.string().required('Campo obrigatório'),
@@ -65,7 +69,7 @@ function CadastroProduto() {
                 .test('valueUnique', 'Esse código já está cadastrado', async (value) => {
                     if (editData) return true;
                     if (!value) return false;
-                    const { data } = await getItemsByQuery(TableKey.Produtos, [where('cdProduto', '==', value)], dispatch);
+                    const { data } = await getItemsByQuery(tableKeys.Produtos, [where('cdProduto', '==', value)], dispatch);
                     if (data && data.length > 0) return false;
                     return true;
                 }),
@@ -90,12 +94,11 @@ function CadastroProduto() {
         }),
         onSubmit: editData ? handleEditRow : handleSubmitForm,
     });
-
     /**
      * Envia o formulário, realizando a lógica de conversão de moeda e atualizando o histórico de compras.
      */
     async function handleSubmitForm() {
-        dispatch(setLoading(true))
+        dispatch(setLoadingGlobal(true))
         values.vlVendaProduto = convertToNumber(values.vlVendaProduto.toString())
         values.vlUnitario = convertToNumber(values.vlUnitario.toString())
         if (values.mpFabricado.length > 0) {
@@ -104,23 +107,21 @@ function CadastroProduto() {
                 return mp.quantidade = quantidade;
             });
         }
-        await addDoc(collection(db, TableKey.Produtos), {
+        await addDoc(collection(db, tableKeys.Produtos), {
             ...values
         })
             .then(() => {
-                dispatch(setLoading(false))
                 setOpenSnackBar(prev => ({ ...prev, success: true }))
                 setEditData(values)
             })
             .catch(() => {
-                dispatch(setLoading(false))
                 dispatch(setError('Erro ao Cadastrar Produto'))
                 setOpenSnackBar(prev => ({ ...prev, error: true }))
-            });
+            })
+            .finally(() => dispatch(setLoadingGlobal(false)));
         resetForm()
         setFieldValue('tpProduto', null)
         setKey(Math.random());
-        setEditData(undefined)
     }
 
     /**
@@ -131,19 +132,16 @@ function CadastroProduto() {
      */
     async function handleDeleteRow(selected: ProdutoModel | undefined) {
         if (selected) {
+            dispatch(setLoadingGlobal(true))
             const refID: string = selected.id ?? '';
-            await deleteDoc(doc(db, TableKey.Produtos, refID));
-            const stock = await getSingleItemByQuery<EstoqueModel>(TableKey.Estoque, [where('nmProduto', '==', selected.nmProduto)], dispatch)
+            await deleteDoc(doc(db, tableKeys.Produtos, refID));
+            const stock = await getSingleItemByQuery<EstoqueModel>(tableKeys.Estoque, [where('nmProduto', '==', selected.nmProduto)], dispatch)
             if (stock) {
                 const refIdEstoque: string = stock.id ?? ''
-                await deleteDoc(doc(db, TableKey.Estoque, refIdEstoque))
-            }
-            const historyCompra = await getSingleItemByQuery<ComprasModel>(TableKey.CompraHistorico, [where('nmProduto', '==', selected.nmProduto)], dispatch)
-            if (historyCompra) {
-                const refIdHistory: string = historyCompra.id ?? ''
-                await deleteDoc(doc(db, TableKey.CompraHistorico, refIdHistory))
+                await deleteDoc(doc(db, tableKeys.Estoque, refIdEstoque))
             }
             setDeleteData(true)
+            dispatch(setLoadingGlobal(false))
         }
     }
     /**
@@ -153,8 +151,9 @@ function CadastroProduto() {
      * Após a edição, atualiza o estado da tabela.
      */
     async function handleEditRow() {
+        dispatch(setLoadingGlobal(true))
         const refID: string = values.id ?? '';
-        const refTable = doc(db, TableKey.Produtos, refID);
+        const refTable = doc(db, tableKeys.Produtos, refID);
         if (typeof values.vlUnitario === 'string') {
             values.vlUnitario = convertToNumber(values.vlUnitario)
         }
@@ -166,6 +165,7 @@ function CadastroProduto() {
         resetForm()
         setFieldValue('tpProduto', null)
         setKey(Math.random());
+        dispatch(setLoadingGlobal(false))
     }
 
     /**
@@ -179,10 +179,10 @@ function CadastroProduto() {
             let somaFormat = 0.00;
             try {
                 if (editData && values.mpFabricado.length > 0) {
-                    somaFormat = await calculateTotalValue(values.mpFabricado, dispatch);
+                    somaFormat = await calculateTotalValue(values.mpFabricado, dispatch, tableKeys);
                     setFieldValue('vlUnitario', formatCurrency(somaFormat.toString()));
                 } else if (values.mpFabricado.length > 0) {
-                    somaFormat = await calculateTotalValue(values.mpFabricado, dispatch);
+                    somaFormat = await calculateTotalValue(values.mpFabricado, dispatch, tableKeys);
                     setFieldValue('vlUnitario', formatCurrency(somaFormat.toString()));
                 }
             } catch (error) {
@@ -228,7 +228,10 @@ function CadastroProduto() {
                         name="nmProduto"
                         onBlur={handleBlur}
                         value={values.nmProduto}
-                        onChange={e => setFieldValue(e.target.name, e.target.value)}
+                        onChange={e => {
+                            setFieldValue(e.target.name, e.target.value)
+                            setFieldValue('nmProdutoFormatted', formatDescription(e.target.value));
+                        }}
                         error={touched.nmProduto && errors.nmProduto ? errors.nmProduto : ''}
                     />
                 </Grid>
@@ -322,7 +325,7 @@ function CadastroProduto() {
                 isVisible={isVisibleTpProuto}
                 searchMateriaPrima
                 nameArray='mpFabricado'
-                collectionName={TableKey.Produtos}
+                collectionName={tableKeys.Produtos}
                 initialItems={values.mpFabricado}
                 labelAutoComplete='Materia-Prima'
                 setFieldValueExterno={setFieldValue}
@@ -341,7 +344,7 @@ function CadastroProduto() {
                 <Button
                     label={editData ? 'Atualizar' : 'Cadastrar'}
                     type="button"
-                    disabled={loading}
+                    disabled={loadingGlobal}
                     onClick={handleSubmit}
                     style={{ width: '12rem', height: '4rem' }}
                 />
@@ -354,19 +357,20 @@ function CadastroProduto() {
                     { label: 'Valor Venda', name: 'vlVendaProduto', isCurrency: true },
                     { label: 'Valor Pago', name: 'vlUnitario', isCurrency: true },
                 ]}
-                collectionName={TableKey.Produtos}
+                collectionName={tableKeys.Produtos}
                 onEdit={(row: ProdutoModel | undefined) => {
                     if (!row) return;
                     setEditData(row);
                     setFieldValue('cdProduto', row.cdProduto);
                     setFieldValue('nmProduto', row.nmProduto);
-                    setFieldValue('vlVendaProduto', row.vlVendaProduto);
+                    setFieldValue('vlVendaProduto', NumberFormatForBrazilianCurrency(row.vlVendaProduto));
                     setFieldValue('vlUnitario', row.mpFabricado.length > 0 ? row.vlUnitario : NumberFormatForBrazilianCurrency(row.vlUnitario));
                     setFieldValue('kgProduto', row.kgProduto);
                     setFieldValue('tpProduto', row.tpProduto);
                     setFieldValue('stMateriaPrima', row.stMateriaPrima);
                     setFieldValue('mpFabricado', row.mpFabricado);
                     setFieldValue('id', row.id);
+                    setFieldValue('nmProdutoFormatted', row.nmProdutoFormatted);
                 }}
                 editData={editData}
                 setEditData={setEditData}

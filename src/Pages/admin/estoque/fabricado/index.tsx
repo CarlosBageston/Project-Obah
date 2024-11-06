@@ -1,11 +1,12 @@
 
 import { where } from "firebase/firestore";
 import GenericTable from "../../../../Components/table";
-import { TableKey } from "../../../../types/tableName";
 import SituacaoProduto from "../../../../enumeration/situacaoProduto";
 import { Box, Typography } from "@mui/material";
+import { useTableKeys } from "../../../../hooks/tableKey";
 
 function EstoqueFabricados() {
+    const tableKeys = useTableKeys();
 
     return (
         <Box sx={{ padding: '5rem' }}>
@@ -17,12 +18,12 @@ function EstoqueFabricados() {
                     { label: 'Quantidade', name: 'quantidade', isInfinite: true },
                     { label: 'Status', name: 'stEstoque' }
                 ]}
-                collectionName={TableKey.Estoque}
+                collectionName={tableKeys.Estoque}
                 constraints={[where('tpProduto', '==', SituacaoProduto.FABRICADO)]}
                 isVisibleEdit
                 isVisibledDelete
                 checkStock
-                pageSize={10}
+                pageSize={7}
             />
         </Box>
     );

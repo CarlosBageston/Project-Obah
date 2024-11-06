@@ -17,6 +17,7 @@ declare module 'styled-components' {
             primaryGreen: string,
             secundGreen: string,
             tertiaryGreen: string,
+            error: string
         },
         fontsDefault: {
             primaryFont: string,

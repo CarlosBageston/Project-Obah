@@ -9,7 +9,6 @@ import Input from "../../../Components/input";
 import Button from "../../../Components/button";
 import GetData from "../../../firebase/getData";
 import React, { useState, useEffect } from "react";
-import { TableKey } from '../../../types/tableName';
 import { useDispatch, useSelector } from 'react-redux';
 import { addDoc, collection, where } from "firebase/firestore";
 import VendaModel from "./model/vendas";
@@ -33,6 +32,8 @@ import CustomSnackBar, { StateSnackBar } from '../../../Components/snackBar/cust
 import { Autocomplete, AutocompleteChangeReason, Box, Grid, TextField, Typography } from '@mui/material';
 import { getSingleItemByQuery } from '../../../hooks/queryFirebase';
 import useDebouncedSuggestions from '../../../hooks/useDebouncedSuggestions';
+import { useTableKeys } from '../../../hooks/tableKey';
+import { formatDescription } from '../../../utils/formattedString';
 
 
 interface VendaProps {
@@ -58,20 +59,16 @@ function Vendas() {
     const dispatch = useDispatch();
     const { loading, error } = useSelector((state: RootState) => state.user);
     const [openSnackBar, setOpenSnackBar] = useState<StateSnackBar>({ error: false, success: false });
+    const tableKeys = useTableKeys();
 
     const { removedStock } = useEstoque();
     const { deleteVendas } = useDeleteOldData();
     const { NumberFormatForBrazilianCurrency, convertToNumber, formatCurrencyRealTime } = useFormatCurrency();
     const { calculateValueDashboard } = useCalculateValueDashboard(recarregueDashboard, setRecarregueDashboard);
 
-    //realizando busca no banco de dados
-    const {
-        dataTable: dataTableProduto,
-    } = GetData(TableKey.Produtos, true) as { dataTable: ProdutosModel[] };
-
     const {
         dataTable: dataTableVenda,
-    } = GetData(TableKey.Vendas, true) as { dataTable: VendaModel[] };
+    } = GetData(tableKeys.Vendas, true) as { dataTable: VendaModel[] };
 
     const initialValues: VendaModel = ({ ...objClean });
 
@@ -99,10 +96,20 @@ function Vendas() {
         validateOnChange: true,
         initialValues,
         validationSchema: Yup.object().shape({
-            vlRecebido: Yup.string().required("Campo Obrigatório").test('vlRecebido', 'Valor Invalido', (value) => {
-                const numericValue = value.replace(/[^\d]/g, '');
-                return parseFloat(numericValue) > 0;
-            })
+            vlRecebido: Yup.string().required("Campo Obrigatório")
+                .test('vlRecebido', 'Valor Invalido', (value) => {
+                    const numericValue = value.replace(/[^\d]/g, '');
+                    return parseFloat(numericValue) > 0;
+                })
+                .test('vlRecebidoMaiorQueVlTotal', 'Valor não deve ser menor que o total', function (value) {
+                    const numericValue = parseFloat(value.replace(/[^\d]/g, '')) / 100;
+                    let vlTotal = this.parent.vlTotal;
+                    if (typeof vlTotal === 'string') {
+                        vlTotal = parseFloat(vlTotal.replace(/[^\d]/g, '')) / 100;
+                    }
+                    if (isNaN(vlTotal)) return true;
+                    return numericValue >= vlTotal;
+                })
         }),
         onSubmit: handleSubmitForm,
     });
@@ -197,19 +204,6 @@ function Vendas() {
         setKey(Math.random());
     };
 
-    /**
-     * Função para limpar o estado do formulário.
-     */
-    function clearState() {
-        setFieldValue('vlTotal', null)
-        setFieldValue('dtProduto', '')
-        setFieldValue('vlRecebido', '')
-        setFieldValue('vlTroco', null)
-        setFieldValue('produtoEscaniado', [])
-        setFieldValue('tpProduto', SituacaoProduto.FABRICADO)
-        setKey(Math.random())
-    }
-
     useEffect(() => {
         /**
          * Função auxiliar para calcular o total de um campo específico
@@ -253,7 +247,7 @@ function Vendas() {
             vlRecebido: convertToNumber(values.vlRecebido.toString())
         };
         calculateValueDashboard(valuesUpdate.vlTotal, valuesUpdate.dtProduto, TelaDashboard.VENDA, valuesUpdate.vlLucroTotal)
-        await addDoc(collection(db, TableKey.Vendas), {
+        await addDoc(collection(db, tableKeys.Vendas), {
             ...valuesUpdate
         }).then(() => {
             dispatch(setLoading(false))
@@ -264,9 +258,10 @@ function Vendas() {
             dispatch(setError('Erro ao Cadastrar Venda'))
             setOpenSnackBar(prev => ({ ...prev, error: true }))
         });
-        clearState();
         resetForm()
         setRecarregueDashboard(true)
+        setKey(Math.random())
+
     }
 
     /**
@@ -278,7 +273,7 @@ function Vendas() {
      */
     async function addProduct(nomeProduto: string, isTaca?: boolean) {
         const produtoEncontrado = await getSingleItemByQuery<ProdutosModel>(
-            TableKey.Produtos,
+            tableKeys.Produtos,
             [where('nmProduto', '==', nomeProduto)],
             dispatch
         );
@@ -347,7 +342,7 @@ function Vendas() {
         setFieldValue('produtoEscaniado', remove);
     }
 
-    const suggestions: ProdutosModel[] = useDebouncedSuggestions<ProdutosModel>(formik.values.barcode ?? '', TableKey.Produtos, dispatch, "Produto", undefined, false);
+    const suggestions: ProdutosModel[] = useDebouncedSuggestions<ProdutosModel>(formatDescription(formik.values.barcode ?? ''), tableKeys.Produtos, dispatch, "Produto", undefined, false);
 
     return (
         <Box sx={{ padding: '5rem 8rem' }}>
@@ -376,7 +371,7 @@ function Vendas() {
                     {
                         showTableManegement ?
                             <TableManagement
-                                dataTableProduto={dataTableProduto}
+                                showTableManegement={showTableManegement}
                                 setFecharComanda={setFecharComanda}
                                 setShowTableManegement={setShowTableManegement}
                                 produtoEscaniadoList={values.produtoEscaniado}
@@ -433,7 +428,7 @@ function Vendas() {
                                             Taça Sundae
                                         </MUIButton>
                                         <Input
-                                            name=""
+                                            name="qntdBolas"
                                             key={`bolasSundae${key}`}
                                             onBlur={formik.handleBlur}
                                             error={formik.touched.qntdBolas && formik.errors.qntdBolas ? formik.errors.qntdBolas : ""}
@@ -448,6 +443,7 @@ function Vendas() {
                                     label="Valor Pago"
                                     error={touched.vlRecebido && errors.vlRecebido ? errors.vlRecebido : ''}
                                     name="vlRecebido"
+                                    heightDiv={'85px'}
                                     onBlur={handleBlur}
                                     inputRef={inputRefF4}
                                     value={values.vlRecebido !== 0 ? values.vlRecebido : ''}

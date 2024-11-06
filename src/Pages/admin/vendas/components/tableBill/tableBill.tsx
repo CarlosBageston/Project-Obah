@@ -2,17 +2,15 @@ import * as Yup from 'yup';
 import { useFormik } from "formik";
 import { IoMdClose } from "react-icons/io";
 import { db } from "../../../../../firebase";
-import GetData from "../../../../../firebase/getData";
 import Button from "../../../../../Components/button";
 import { useDispatch, useSelector } from "react-redux";
-import { TableKey } from "../../../../../types/tableName";
 import { Autocomplete, AutocompleteChangeReason, Box, Dialog, Divider, Grow, IconButton, Stack, TextField, Typography } from "@mui/material";
 import TableBillModel from "../../model/tableBill";
 import VendaModel from "../../model/vendas";
 import useFormatCurrency from "../../../../../hooks/formatCurrency";
 import ProdutosModel from "../../../cadastroProdutos/model/produtos";
 import { Dispatch, SetStateAction, useEffect, useState } from 'react';
-import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, updateDoc, where } from "firebase/firestore";
 import { setError, setLoading } from "../../../../../store/reducer/reducer";
 import MUIButton from "@mui/material/Button";
 import AddIcon from '@mui/icons-material/Add';
@@ -23,6 +21,9 @@ import CustomSnackBar, { StateSnackBar } from '../../../../../Components/snackBa
 import { theme } from '../../../../../theme';
 import CloseIcon from '@mui/icons-material/Close';
 import useDebouncedSuggestions from '../../../../../hooks/useDebouncedSuggestions';
+import { getDocumentById, getSingleItemByQuery } from '../../../../../hooks/queryFirebase';
+import { useTableKeys } from '../../../../../hooks/tableKey';
+import { formatDescription } from '../../../../../utils/formattedString';
 
 interface TableBillProps {
     nameTable: string;
@@ -44,10 +45,8 @@ export function TableBill({ nameTable, setShowTable, setFecharComanda, setShowTa
     const { loading, error } = useSelector((state: RootState) => state.user);
     const [openSnackBar, setOpenSnackBar] = useState<StateSnackBar>({ error: false, success: false });
     const { NumberFormatForBrazilianCurrency } = useFormatCurrency();
+    const tableKeys = useTableKeys();
 
-    const {
-        dataTable: dataTableComanda,
-    } = GetData(TableKey.Comanda, true) as { dataTable: TableBillModel[] };
 
     const { values, handleSubmit, setFieldValue, touched, errors, resetForm } = useFormik<TableBillModel>({
         validateOnBlur: true,
@@ -132,7 +131,7 @@ export function TableBill({ nameTable, setShowTable, setFecharComanda, setShowTa
         delete values.quantidade
         if (values.id) {
             const refID: string = values.id ?? '';
-            const refTable = doc(db, TableKey.Comanda, refID);
+            const refTable = doc(db, tableKeys.Comanda, refID);
             await updateDoc(refTable, { ...values })
                 .then(() => {
                     dispatch(setLoading(false))
@@ -143,7 +142,7 @@ export function TableBill({ nameTable, setShowTable, setFecharComanda, setShowTa
                     setOpenSnackBar(prev => ({ ...prev, error: true }))
                 });
         } else {
-            await addDoc(collection(db, TableKey.Comanda), {
+            await addDoc(collection(db, tableKeys.Comanda), {
                 ...values
             }).then(() => {
                 dispatch(setLoading(false))
@@ -169,29 +168,32 @@ export function TableBill({ nameTable, setShowTable, setFecharComanda, setShowTa
             vlLucroTotal: 0
         }
         setFecharComanda(objetoVenda)
-        const foundComanda = dataTableComanda.find(comanda => comanda.id === values.id)
-        if (foundComanda && foundComanda.id) {
-            await deleteDoc(doc(db, TableKey.Comanda, foundComanda.id))
+        const comanda = await getDocumentById<TableBillModel>(tableKeys.Comanda, values.id ?? '', dispatch)
+        if (comanda && comanda.id) {
+            await deleteDoc(doc(db, tableKeys.Comanda, comanda.id))
         }
         setShowTable(false)
         setShowTableManegement(false)
     }
+
     useEffect(() => {
-        if (dataTableComanda.length) {
-            const foundTable = dataTableComanda.find(table => table.nmTable === nameTable)
+        const setComanda = async () => {
+            const foundTable = await getSingleItemByQuery<TableBillModel>(tableKeys.Comanda, [where('nmTable', '==', nameTable)], dispatch)
             if (foundTable) {
                 setFieldValue('id', foundTable.id)
                 setFieldValue('produtoEscaniado', [...foundTable.produtoEscaniado])
             }
         }
-    }, [dataTableComanda])
+        setComanda()
+    }, [nameTable])
+
     const formik = useFormik<TableBill>({
         initialValues: {
             nmProduto: ''
         },
         onSubmit: () => { }
     })
-    const suggestions: ProdutosModel[] = useDebouncedSuggestions<ProdutosModel>(formik.values.nmProduto ?? '', TableKey.Produtos, dispatch, "Produto", undefined, false);
+    const suggestions: ProdutosModel[] = useDebouncedSuggestions<ProdutosModel>(formatDescription(formik.values.nmProduto ?? ''), tableKeys.Produtos, dispatch, "Produto", undefined, false);
     return (
         <Grow in={true} timeout={500}>
             <Box

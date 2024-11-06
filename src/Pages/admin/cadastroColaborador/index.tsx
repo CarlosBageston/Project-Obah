@@ -5,7 +5,6 @@ import { db } from "../../../firebase";
 import Input from "../../../Components/input";
 import Button from "../../../Components/button";
 import ColaboradorModel from "./model/colaborador";
-import { TableKey } from '../../../types/tableName';
 import { useDispatch, useSelector } from 'react-redux';
 import formatPhone from "../../../Components/masks/maskTelefone";
 import { setError, setLoading } from '../../../store/reducer/reducer';
@@ -15,13 +14,14 @@ import _ from 'lodash';
 import { RootState } from '../../../store/reducer/store';
 import CustomSnackBar, { StateSnackBar } from '../../../Components/snackBar/customsnackbar';
 import { Box, Grid, Typography } from '@mui/material';
+import { useTableKeys } from '../../../hooks/tableKey';
 
 function CadastroColaborador() {
     const [key, setKey] = useState<number>(0);
     const [editData, setEditData] = useState<ColaboradorModel>();
     const [openSnackBar, setOpenSnackBar] = useState<StateSnackBar>({ error: false, success: false });
     const error = useSelector((state: RootState) => state.user.error);
-
+    const tableKeys = useTableKeys();
     const dispatch = useDispatch();
 
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<ColaboradorModel>({
@@ -51,7 +51,7 @@ function CadastroColaborador() {
 
     async function handleEditRow() {
         const refID: string = values.id ?? '';
-        const refTable = doc(db, TableKey.Colaborador, refID);
+        const refTable = doc(db, tableKeys.Colaborador, refID);
         if (!_.isEqual(values, editData)) {
             await updateDoc(refTable, { ...values })
                 .then(() => {
@@ -64,7 +64,7 @@ function CadastroColaborador() {
 
     async function hundleSubmitForm() {
         dispatch(setLoading(true))
-        await addDoc(collection(db, TableKey.Colaborador), {
+        await addDoc(collection(db, tableKeys.Colaborador), {
             ...values
         }).then(() => {
             dispatch(setLoading(false))
@@ -197,7 +197,7 @@ function CadastroColaborador() {
                         setFieldValue('id', row.id);
                     }}
                     setEditData={setEditData}
-                    collectionName={TableKey.Colaborador}
+                    collectionName={tableKeys.Colaborador}
                     editData={editData}
                 />
                 <CustomSnackBar message={error ? error : "Cadastrado Colaborador com sucesso"} open={openSnackBar} setOpen={setOpenSnackBar} />

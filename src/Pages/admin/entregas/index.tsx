@@ -7,7 +7,6 @@ import { EntregaModel } from "./model/entrega";
 import GetData from "../../../firebase/getData";
 import Button from "../../../Components/button";
 import { AiTwotonePrinter } from 'react-icons/ai';
-import { TableKey } from '../../../types/tableName';
 import GenericTable from "../../../Components/table";
 import { useDispatch, useSelector } from 'react-redux';
 import React, { useState, useEffect } from "react";
@@ -27,6 +26,8 @@ import { useCalculateValueDashboard } from '../../../hooks/useCalculateValueDash
 import useDebouncedSuggestions from '../../../hooks/useDebouncedSuggestions';
 import CustomSnackBar, { StateSnackBar } from '../../../Components/snackBar/customsnackbar';
 import { RootState } from '../../../store/reducer/store';
+import { useTableKeys } from '../../../hooks/tableKey';
+import { formatDescription } from '../../../utils/formattedString';
 
 
 
@@ -43,11 +44,12 @@ function Entregas() {
     const { removedStock } = useEstoque();
     const { calculateValueDashboard } = useCalculateValueDashboard(recarregueDashboard, setRecarregueDashboard);
     const { deleteEntregas } = useDeleteOldData()
+    const tableKeys = useTableKeys();
 
     const {
         dataTable: dataTableEntregas,
         setDataTable: setDataTableEntregas
-    } = GetData(TableKey.Entregas, true) as { dataTable: EntregaModel[], setDataTable: (data: EntregaModel[]) => void };
+    } = GetData(tableKeys.Entregas, true) as { dataTable: EntregaModel[], setDataTable: (data: EntregaModel[]) => void };
 
 
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<EntregaModel>({
@@ -78,7 +80,7 @@ function Entregas() {
         values.vlEntrega = convertToNumber(values.vlEntrega.toString())
         values.vlLucro = convertToNumber(values.vlLucro.toString())
         calculateValueDashboard(values.vlEntrega, values.dtEntrega, TelaDashboard.ENTREGA, values.vlLucro)
-        await addDoc(collection(db, TableKey.Entregas), {
+        await addDoc(collection(db, tableKeys.Entregas), {
             ...values
         })
             .then(() => {
@@ -142,7 +144,8 @@ function Entregas() {
             deleteEntregas(dataTableEntregas)
     }, [dataTableEntregas])
 
-    const suggestions: ClienteModel[] = useDebouncedSuggestions<ClienteModel>(values.nmCliente, TableKey.Clientes, dispatch, 'Cliente');
+    const suggestions: ClienteModel[] = useDebouncedSuggestions<ClienteModel>(formatDescription(values.nmCliente), tableKeys.Clientes, dispatch, 'Cliente');
+    console.log(values.produtos)
     return (
         <Box sx={{ padding: '5rem' }}>
             <Typography variant="h4" gutterBottom>
@@ -224,13 +227,13 @@ function Entregas() {
                                         values.produtos.map((produto, index) => (
                                             <TableRow key={produto.nmProduto}>
                                                 <TableCell>{produto.nmProduto}</TableCell>
-                                                <TableCell>{produto.vlUnitario}</TableCell>
-                                                <TableCell>{produto.vlVendaProduto}</TableCell>
+                                                <TableCell>{NumberFormatForBrazilianCurrency(produto.vlUnitario)}</TableCell>
+                                                <TableCell>{NumberFormatForBrazilianCurrency(produto.vlVendaProduto)}</TableCell>
 
                                                 {/* Célula Editável */}
                                                 <TableCell>
                                                     <TextField
-                                                        value={produto.quantidade || 0} // Adicionando || 0 para evitar undefined
+                                                        value={produto.quantidade || null}
                                                         onChange={(e) => {
                                                             const newQuantity = Number(e.target.value);
                                                             const updatedList = [...values.produtos];
@@ -247,13 +250,13 @@ function Entregas() {
                                                         fullWidth
                                                     />
                                                 </TableCell>
-                                                <TableCell>
-                                                    {produto.quantidade ? (produto.quantidade * produto.vlVendaProduto).toFixed(2) : 0} {/* Cálculo do total */}
+                                                <TableCell sx={{ width: '7rem', textAlign: 'center' }}>
+                                                    {NumberFormatForBrazilianCurrency(produto.quantidade ? (produto.quantidade * produto.vlVendaProduto) : 0)}
                                                 </TableCell>
                                             </TableRow>
                                         ))
                                     ) : (
-                                        <TableRow>
+                                        <TableRow >
                                             <TableCell colSpan={5} align="center">Selecione um Cliente</TableCell>
                                         </TableRow>
                                     )}
@@ -295,7 +298,7 @@ function Entregas() {
                     { label: 'Valor Total', name: 'vlEntrega', isCurrency: true },
                     { label: 'Lucro', name: 'vlLucro', isCurrency: true },
                 ]}
-                collectionName={TableKey.Entregas}
+                collectionName={tableKeys.Entregas}
                 isVisibleEdit
                 editData={editData}
                 setEditData={setEditData}

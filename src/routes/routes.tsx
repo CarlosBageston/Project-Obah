@@ -5,14 +5,15 @@ import logo from '../assets/Image/logo.png';
 
 const Login = lazy(() => import('../Pages/login'));
 const Vendas = lazy(() => import('../Pages/admin/vendas'));
-const Estoque = lazy(() => import('../Pages/admin/estoque'));
 const Entregas = lazy(() => import('../Pages/admin/entregas'));
 const Dashboard = lazy(() => import('../Pages/admin/dashboard'));
-const PrivateRoute = lazy(() => import('../store/reducer/private'));
+const PrivateRoute = lazy(() => import('../hooks/auth/private'));
 const CartaoPonto = lazy(() => import('../Pages/admin/cartaoPonto'));
 const AtualizarEstoque = lazy(() => import('../Pages/admin/compras'));
 const CadastroProduto = lazy(() => import('../Pages/admin/cadastroProdutos'));
 const CadastroCliente = lazy(() => import('../Pages/admin/cadastroClientes'));
+const EstoqueComprados = lazy(() => import('../Pages/admin/estoque/comprado'));
+const EstoqueFabricados = lazy(() => import('../Pages/admin/estoque/fabricado'));
 const CadastroColaborador = lazy(() => import('../Pages/admin/cadastroColaborador'));
 
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
@@ -44,9 +45,10 @@ export default function Router() {
                         <Route path='/cadastro-produto' element={<CadastroProduto />} />
                         <Route path='/entregas' element={<Entregas />} />
                         <Route path='/atualizar-estoque' element={<AtualizarEstoque />} />
-                        <Route path='/estoque' element={<Estoque />} />
                         <Route path='/colaborador' element={<CadastroColaborador />} />
                         <Route path='/cartao-ponto' element={<CartaoPonto />} />
+                        <Route path='/estoque-fabricado' element={<EstoqueFabricados />} />
+                        <Route path='/estoque-comprado' element={<EstoqueComprados />} />
                     </Route>
                 </Routes>
             </Suspense>

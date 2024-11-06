@@ -9,6 +9,7 @@ import ComprasModel from "../../compras/model/compras"
 interface ProdutosModel {
     id?: string,
     nmProduto: string,
+    nmProdutoFormatted: string,
     cdProduto: string,
     vlUnitario: number,
     vlVendaProduto: number,

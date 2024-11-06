@@ -12,6 +12,7 @@ import {
     startAfter,
     QueryDocumentSnapshot,
     Query,
+    getDoc,
     endBefore
 } from 'firebase/firestore';
 import { Dispatch } from 'redux';
@@ -95,6 +96,31 @@ export async function getItemsByQuery<T = DocumentData>(
         dispatch(setGetItemsByQueryLoading(false));
     }
 }
+export async function getDocumentById<T = DocumentData>(
+    collectionName: string,
+    docId: string,
+    dispatch: Dispatch
+  ): Promise<T | null> {
+    try {
+      dispatch(setGetItemsByQueryLoading(true));
+  
+      // Referência ao documento usando o ID do Firestore
+      const docRef = doc(db, collectionName, docId);
+      const docSnap = await getDoc(docRef);
+  
+      if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() } as T;
+      } else {
+        console.log("Nenhum documento encontrado com esse ID.");
+        return null;
+      }
+    } catch (error) {
+      console.error("Erro ao buscar documento:", error);
+      throw new Error("Erro ao buscar documento.");
+    } finally {
+      dispatch(setGetItemsByQueryLoading(false));
+    }
+  }
 export async function getSingleItemByQuery<T = DocumentData>(
     collectionName: string,
     constraints: QueryConstraint[],

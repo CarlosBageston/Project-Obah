@@ -13,6 +13,7 @@ import ProdutosModel from "../../cadastroProdutos/model/produtos"
 interface ClienteModel {
     id?: string,
     nmCliente: string,
+    nmClienteFormatted: string,
     tfCliente: string,
     ruaCliente: string,
     bairroCliente: string,

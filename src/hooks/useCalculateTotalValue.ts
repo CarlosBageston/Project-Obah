@@ -3,9 +3,9 @@ import ComprasModel from "../Pages/admin/compras/model/compras";
 import useFormatCurrency from "./formatCurrency";
 import { getItemsByQuery } from "./queryFirebase";
 import { foundKgProduto } from "./useFoundProductKg";
-import { TableKey } from "../types/tableName";
 import { Dispatch } from 'redux';
 import ProdutosModel from "../Pages/admin/cadastroProdutos/model/produtos";
+import { useTableKeys } from "./tableKey";
 
 const { convertToNumber } = useFormatCurrency();
 
@@ -35,10 +35,12 @@ export class ProdutosSemQuantidadeError {
  */
 export async function calculateTotalValue(
     mpList: ComprasModel[], 
-    dispatch: Dispatch
+    dispatch: Dispatch,
+    tableKeys: ReturnType<typeof useTableKeys>
 ): Promise<number> {
     let soma = 0;
     const produtosSemQuantidade: string[] = [];
+
     const verificarProdutosSemQuantidade = (produtos: ProdutosModel[]) => {
         return produtos.reduce((acc: string[], compra) => {
             if (!compra.stMateriaPrima) return acc;
@@ -48,13 +50,13 @@ export async function calculateTotalValue(
     };
 
     const { data } = await getItemsByQuery<ProdutosModel>(
-        TableKey.Produtos,
+        tableKeys.Produtos,
         [where('stMateriaPrima', '==', true)],
         dispatch
     );
-
+    
     produtosSemQuantidade.push(...verificarProdutosSemQuantidade(data));
-
+    
     if (produtosSemQuantidade.length > 0) {
         throw new ProdutosSemQuantidadeError(produtosSemQuantidade.join(', '));
     }

@@ -21,7 +21,7 @@ interface EstoqueModel {
 }
 
 export interface Versao {
-    versao: number,
+    idVersao?: string,
     vrQntd: number
 }
 

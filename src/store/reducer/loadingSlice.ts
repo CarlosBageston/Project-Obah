@@ -8,6 +8,7 @@ export interface LoadingState {
     updateItemLoading: boolean;
     deleteItemLoading: boolean;
     getItemPaginationLoading: boolean;
+    loadingGlobal: boolean;
 }
 
 const initialState: LoadingState = {
@@ -18,6 +19,7 @@ const initialState: LoadingState = {
     updateItemLoading: false,
     deleteItemLoading: false,
     getItemPaginationLoading: false,
+    loadingGlobal: false,
 };
 
 const loadingSlice = createSlice({
@@ -43,7 +45,10 @@ const loadingSlice = createSlice({
             state.deleteItemLoading = action.payload;
         },
         setGetItemPaginationLoading(state, action: PayloadAction<boolean>) {
-            state.deleteItemLoading = action.payload;
+            state.getItemPaginationLoading = action.payload;
+        },
+        setLoadingGlobal(state, action: PayloadAction<boolean>) {
+            state.loadingGlobal = action.payload;
         },
     },
 });
@@ -55,7 +60,8 @@ export const {
     setAddItemLoading,
     setUpdateItemLoading,
     setDeleteItemLoading,
-    setGetItemPaginationLoading
+    setGetItemPaginationLoading,
+    setLoadingGlobal
 } = loadingSlice.actions;
 
 export default loadingSlice.reducer;

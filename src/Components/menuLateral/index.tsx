@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { Link, Outlet } from 'react-router-dom';
+import { Link, Outlet, useNavigate } from 'react-router-dom';
 import List from '@mui/material/List';
 import Divider from '@mui/material/Divider';
 import Tooltip from '@mui/material/Tooltip';
 import { Theme, CSSObject } from '@mui/material/styles';
 import { styled as muiStyled } from '@mui/material/styles';
 import ListItemIcon from '@mui/material/ListItemIcon';
-import { Box, Collapse } from '@mui/material';
+import { Box, Collapse, IconButton, LinearProgress } from '@mui/material';
 import MuiAppBar, { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
 import MuiDrawer from '@mui/material/Drawer';
 
@@ -21,7 +21,7 @@ import produto from '../../assets/Icon/add-product.png';
 import entrega from '../../assets/Icon/entrega-rapida.png';
 import gestao from '../../assets/Icon/gestao.png';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
-
+import LogoutIcon from '@mui/icons-material/Logout';
 
 import {
     Button,
@@ -29,6 +29,12 @@ import {
     StyledListItemButton,
     Image,
 } from './style';
+import { signOut } from 'firebase/auth';
+import { auth } from '../../firebase';
+import { useDispatch, useSelector } from 'react-redux';
+import { setError } from '../../store/reducer/reducer';
+import { RootState } from '../../store/reducer/store';
+import CustomSnackBar, { StateSnackBar } from '../snackBar/customsnackbar';
 
 const drawerWidth = 240;
 
@@ -131,6 +137,11 @@ const Drawer = muiStyled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'ope
 export default function MenuLateral() {
     const [open, setOpen] = useState(false);
     const [openSubOptions, setOpenSubOptions] = useState<{ [key: string]: boolean }>({});
+    const [openSnackBar, setOpenSnackBar] = useState<StateSnackBar>({ error: false, success: false });
+    const isLoading = useSelector((state: RootState) => state.loading.loadingGlobal);
+    const error = useSelector((state: RootState) => state.user.error);
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
 
     const toggleSubmenu = (label: string) => {
         setOpen(true)
@@ -146,6 +157,16 @@ export default function MenuLateral() {
         setOpen(false);
         setOpenSubOptions({});
     };
+
+    const handleLogout = async () => {
+        try {
+            await signOut(auth);
+            navigate('/');
+        } catch (error) {
+            dispatch(setError("Erro ao sair. Tente novamente."))
+            setOpenSnackBar(prev => ({ ...prev, error: true }))
+        }
+    }
 
     const renderMenuItems = () => (
         <List>
@@ -189,7 +210,6 @@ export default function MenuLateral() {
             ))}
         </List>
     );
-
     return (
         <Box sx={{ display: 'flex' }}>
             <AppBar position="fixed" open={open}>
@@ -225,7 +245,26 @@ export default function MenuLateral() {
                 {renderMenuItems()}
             </Drawer>
             <Box component="main" sx={{ flexGrow: 1, p: 3 }} onClick={handleDrawerClose}>
+                <Box sx={{ position: 'fixed', top: 0, left: 0, width: '100vw', zIndex: 1 }}>
+                    {isLoading && <LinearProgress />}
+                </Box>
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        top: 8,
+                        right: '5rem',
+                        zIndex: 10,
+                        cursor: 'pointer'
+                    }}
+                >
+                    <Tooltip title={'Sair'}>
+                        <IconButton onClick={handleLogout}>
+                            <LogoutIcon fontSize='inherit' />
+                        </IconButton>
+                    </Tooltip>
+                </Box>
                 <Outlet />
+                <CustomSnackBar message={error} open={openSnackBar} setOpen={setOpenSnackBar} />
             </Box>
         </Box>
     );

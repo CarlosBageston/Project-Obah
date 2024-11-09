@@ -19,10 +19,8 @@ import { Autocomplete, AutocompleteChangeReason, Box, FormControlLabel, Grid, Sw
 
 //hooks
 import useEstoque from '../../../hooks/useEstoque';
-import useFormatCurrency from '../../../hooks/formatCurrency';
 import { foundKgProduto } from '../../../hooks/useFoundProductKg';
 import useHandleInputKeyPress from '../../../hooks/useHandleInputKeyPress';
-import { useCalculateValueDashboard } from '../../../hooks/useCalculateValueDashboard';
 import useDebouncedSuggestions from '../../../hooks/useDebouncedSuggestions';
 import { getItemsByQuery, getSingleItemByQuery } from '../../../hooks/queryFirebase';
 import CustomSnackBar, { StateSnackBar } from '../../../Components/snackBar/customsnackbar';
@@ -31,6 +29,8 @@ import { setError } from '../../../store/reducer/reducer';
 import { useTableKeys } from '../../../hooks/tableKey';
 import { formatDescription } from '../../../utils/formattedString';
 import { setLoadingGlobal } from '../../../store/reducer/loadingSlice';
+import { DashboardCompraModel, updateAddDashboardCompra } from '../../../hooks/useCalculateValueDashboard';
+import { convertToNumber, formatCurrency, formatCurrencyRealTime, NumberFormatForBrazilianCurrency } from '../../../hooks/formatCurrency';
 
 
 
@@ -39,15 +39,12 @@ function AtualizarEstoque() {
     const [openSnackBar, setOpenSnackBar] = useState<StateSnackBar>({ error: false, success: false });
     const error = useSelector((state: RootState) => state.user.error);
     const loadingGlobal = useSelector((state: RootState) => state.loading.loadingGlobal);
-    const [recarregueDashboard, setRecarregueDashboard] = useState<boolean>(true);
     const [deleteData, setDeleteData] = useState<boolean>();
     const [editData, setEditData] = useState<ComprasModel>();
     const tableKeys = useTableKeys();
     const dispatch = useDispatch();
-    const { convertToNumber, formatCurrency, formatCurrencyRealTime, NumberFormatForBrazilianCurrency } = useFormatCurrency();
     const { removedStockCompras, updateStock } = useEstoque();
     const { onKeyPressHandleSubmit } = useHandleInputKeyPress();
-    const { calculateValueDashboard } = useCalculateValueDashboard(recarregueDashboard, setRecarregueDashboard);
 
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<ComprasModel>({
         validateOnBlur: true,
@@ -61,6 +58,7 @@ function AtualizarEstoque() {
             totalPago: null,
             tpProduto: null,
             qntMinima: null,
+            nmProdutoFormatted: ''
         },
         validationSchema: Yup.object().shape({
             nmProduto: Yup.string().required('Campo obrigatório'),
@@ -285,9 +283,13 @@ function AtualizarEstoque() {
                         await updateDoc(refTable, updatedData);
                     }
                 }
-                if (valuesUpdate.totalPago) {
-                    calculateValueDashboard(valuesUpdate.totalPago, valuesUpdate.dtCompra, TelaDashboard.COMPRA)
+                const newValue: DashboardCompraModel = {
+                    nmProduto: valuesUpdate.nmProduto,
+                    dtProduto: valuesUpdate.dtCompra?.toString(),
+                    vlTotal: valuesUpdate.totalPago ?? 0,
+                    qntdTotal: valuesUpdate.quantidade
                 }
+                updateAddDashboardCompra(newValue, tableKeys.DashboardCompra, dispatch)
             }
             if (values.tpProduto === SituacaoProduto.FABRICADO) {
                 if (valuesUpdate.stEstoqueInfinito) {
@@ -310,7 +312,6 @@ function AtualizarEstoque() {
         }
         resetForm()
         setKey(Math.random());
-        setRecarregueDashboard(true)
     }
 
     /**
@@ -377,6 +378,7 @@ function AtualizarEstoque() {
             setFieldValue('vlUnitario', formatCurrency(newValue.vlUnitario.toString()));
             setFieldValue('qntMinima', newValue.qntMinima);
             setFieldValue('nmProduto', newValue.nmProduto);
+            setFieldValue('nmProdutoFormatted', newValue.nmProdutoFormatted);
             setFieldValue('kgProduto', newValue.kgProduto);
             setFieldValue('dtCompra', moment(new Date()).format('DD/MM/YYYY'))
             if (newValue.stMateriaPrima) {

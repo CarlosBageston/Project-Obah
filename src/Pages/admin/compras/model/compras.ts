@@ -8,6 +8,7 @@ interface ComprasModel {
     id?: string,
     dtCompra: Date | null,
     nmProduto: string,
+    nmProdutoFormatted: string,
     cdProduto: string,
     vlUnitario: number,
     quantidade: number,

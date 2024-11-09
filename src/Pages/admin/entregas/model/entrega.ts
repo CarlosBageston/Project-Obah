@@ -1,4 +1,3 @@
-import ClienteModel from "../../cadastroClientes/model/cliente";
 import { SubProdutoModel } from "../../cadastroProdutos/model/subprodutos";
 
 /**
@@ -10,11 +9,9 @@ export interface EntregaModel {
     id?: string,
     vlEntrega: number;
     vlLucro: number;
-    cliente: ClienteModel | null;
     nmCliente: string;
     produtos: SubProdutoModel[];
     dtEntrega: Date | null;
-    quantidades: []
 }
 
 

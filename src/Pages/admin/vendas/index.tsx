@@ -15,15 +15,12 @@ import VendaModel from "./model/vendas";
 import TelaDashboard from '../../../enumeration/telaDashboard';
 import ProdutosModel from "../cadastroProdutos/model/produtos";
 import { setError, setLoading } from '../../../store/reducer/reducer';
-import SituacaoProduto from "../../../enumeration/situacaoProduto";
 import iceCreamSad from '../../../assets/Image/drawingSadIceCream.png';
 import MUIButton from "@mui/material/Button";
 
 //hooks
 import useEstoque from '../../../hooks/useEstoque';
-import useFormatCurrency from '../../../hooks/formatCurrency';
 import useHandleInputKeyPress from '../../../hooks/useHandleInputKeyPress';
-import { useCalculateValueDashboard } from '../../../hooks/useCalculateValueDashboard';
 import useDeleteOldData from '../../../hooks/useDeleteOldData';
 import { TableManagement } from './components/tableManagement/tableManagement';
 import { RootState } from '../../../store/reducer/store';
@@ -34,6 +31,8 @@ import { getSingleItemByQuery } from '../../../hooks/queryFirebase';
 import useDebouncedSuggestions from '../../../hooks/useDebouncedSuggestions';
 import { useTableKeys } from '../../../hooks/tableKey';
 import { formatDescription } from '../../../utils/formattedString';
+import { convertToNumber, formatCurrencyRealTime, NumberFormatForBrazilianCurrency } from '../../../hooks/formatCurrency';
+import { DashboardCompraModel, updateAddDashboardVendasEntregas } from '../../../hooks/useCalculateValueDashboard';
 
 
 interface VendaProps {
@@ -63,8 +62,6 @@ function Vendas() {
 
     const { removedStock } = useEstoque();
     const { deleteVendas } = useDeleteOldData();
-    const { NumberFormatForBrazilianCurrency, convertToNumber, formatCurrencyRealTime } = useFormatCurrency();
-    const { calculateValueDashboard } = useCalculateValueDashboard(recarregueDashboard, setRecarregueDashboard);
 
     const {
         dataTable: dataTableVenda,
@@ -89,7 +86,7 @@ function Vendas() {
         inputRef,
         inputRefF4,
         inputRefF3
-    } = useHandleInputKeyPress(formik.setFieldValue);
+    } = useHandleInputKeyPress();
 
     const { values, handleSubmit, setFieldValue, touched, errors, handleBlur, resetForm } = useFormik<VendaModel>({
         validateOnBlur: true,
@@ -190,7 +187,10 @@ function Vendas() {
         const { valorTotal, formatTotalLucro } = calcularTotais(vlVendaProduto, quantidade, vlUnitario);
 
         const novoProduto: SubProdutoModel = {
-            ...produto,
+            nmProduto: produto.nmProduto,
+            valorItem: 0,
+            vlUnitario: produto.vlUnitario,
+            vlVendaProduto: produto.vlVendaProduto,
             vlTotalMult: valorTotal,
             quantidade,
             vlLucro: formatTotalLucro
@@ -246,10 +246,12 @@ function Vendas() {
             ...values,
             vlRecebido: convertToNumber(values.vlRecebido.toString())
         };
-        calculateValueDashboard(valuesUpdate.vlTotal, valuesUpdate.dtProduto, TelaDashboard.VENDA, valuesUpdate.vlLucroTotal)
-        await addDoc(collection(db, tableKeys.Vendas), {
-            ...valuesUpdate
-        }).then(() => {
+        updateAddDashboardVendasEntregas(
+            valuesUpdate.produtoEscaniado,
+            values.dtProduto?.toString() ?? '',
+            tableKeys.DashboardVendas,
+            dispatch
+        ).then(() => {
             dispatch(setLoading(false))
             removedStock(values.produtoEscaniado)
             setOpenSnackBar(prev => ({ ...prev, success: true }))
@@ -357,7 +359,7 @@ function Vendas() {
                             value={formik.values.multiplica}
                             type='number'
                             onWheel={(e) => e.currentTarget.blur()}
-                            onChange={(e) => formik.setFieldValue('multiplica', e.target.value)}
+                            onChange={(e) => formik.setFieldValue('multiplica', Number(e.target.value))}
                             inputRef={inputRef}
                             onKeyDown={handleMultiplicaKeyPress}
                         />

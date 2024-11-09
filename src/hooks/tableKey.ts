@@ -12,7 +12,9 @@ export const useTableKeys = () => {
     return {
         Produtos: `UsersData/${user.uid}/Produtos`,
         Vendas: `UsersData/${user.uid}/Vendas`,
-        DadosDashboard: `UsersData/${user.uid}/Dados Dashboard`,
+        DashboardCompra: `UsersData/${user.uid}/DashboardCompra`,
+        DashboardVendas: `UsersData/${user.uid}/DashboardVendas`,
+        DashboardEntregas: `UsersData/${user.uid}/DashboardEntregas`,
         Estoque: `UsersData/${user.uid}/Estoque`,
         Compras: `UsersData/${user.uid}/Compras`,
         Clientes: `UsersData/${user.uid}/Clientes`,

@@ -29,7 +29,6 @@ function Login() {
     const [initialLoad, setInitialLoad] = useState<boolean>(true);
     const userLogado = useSelector((state: RootState) => state.user.userLogado)
     const error = useSelector((state: RootState) => state.user.error)
-    console.log(userLogado)
     useEffect(() => {
         const checkAuthStatus = async () => {
             if (userLogado) {

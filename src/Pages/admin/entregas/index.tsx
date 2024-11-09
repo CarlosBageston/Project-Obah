@@ -13,21 +13,20 @@ import React, { useState, useEffect } from "react";
 import { NotaFiscal } from '../../../Components/notaFiscal';
 import ClienteModel from "../cadastroClientes/model/cliente";
 import formatDate from "../../../Components/masks/formatDate";
-import TelaDashboard from '../../../enumeration/telaDashboard';
 import { setError, setLoading } from '../../../store/reducer/reducer';
 import { addDoc, collection } from "firebase/firestore";
 import { Autocomplete, AutocompleteChangeReason, Box, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from "@mui/material";
 
 //hooks
 import useEstoque from '../../../hooks/useEstoque';
-import useFormatCurrency from '../../../hooks/formatCurrency';
 import useDeleteOldData from '../../../hooks/useDeleteOldData';
-import { useCalculateValueDashboard } from '../../../hooks/useCalculateValueDashboard';
 import useDebouncedSuggestions from '../../../hooks/useDebouncedSuggestions';
 import CustomSnackBar, { StateSnackBar } from '../../../Components/snackBar/customsnackbar';
 import { RootState } from '../../../store/reducer/store';
 import { useTableKeys } from '../../../hooks/tableKey';
 import { formatDescription } from '../../../utils/formattedString';
+import { convertToNumber, NumberFormatForBrazilianCurrency } from '../../../hooks/formatCurrency';
+import { updateAddDashboardVendasEntregas } from '../../../hooks/useCalculateValueDashboard';
 
 
 
@@ -35,14 +34,11 @@ function Entregas() {
     const [key, setKey] = useState<number>(0);
     const [editData, setEditData] = useState<EntregaModel>();
     const [shouldShow, setShouldShow] = useState<boolean>(false);
-    const [recarregueDashboard, setRecarregueDashboard] = useState<boolean>(true);
     const [openSnackBar, setOpenSnackBar] = useState<StateSnackBar>({ error: false, success: false });
     const error = useSelector((state: RootState) => state.user.error);
 
     const dispatch = useDispatch();
-    const { NumberFormatForBrazilianCurrency, convertToNumber } = useFormatCurrency();
     const { removedStock } = useEstoque();
-    const { calculateValueDashboard } = useCalculateValueDashboard(recarregueDashboard, setRecarregueDashboard);
     const { deleteEntregas } = useDeleteOldData()
     const tableKeys = useTableKeys();
 
@@ -59,8 +55,6 @@ function Entregas() {
             vlLucro: 0,
             vlEntrega: 0,
             dtEntrega: null,
-            quantidades: [],
-            cliente: null,
             nmCliente: '',
             produtos: [],
         },
@@ -79,7 +73,8 @@ function Entregas() {
         removedStock(values.produtos)
         values.vlEntrega = convertToNumber(values.vlEntrega.toString())
         values.vlLucro = convertToNumber(values.vlLucro.toString())
-        calculateValueDashboard(values.vlEntrega, values.dtEntrega, TelaDashboard.ENTREGA, values.vlLucro)
+        values.produtos = values.produtos.filter(produto => produto.quantidade !== null)
+        updateAddDashboardVendasEntregas(values.produtos, values.dtEntrega?.toString() ?? '', tableKeys.DashboardEntregas, dispatch)
         await addDoc(collection(db, tableKeys.Entregas), {
             ...values
         })
@@ -96,7 +91,6 @@ function Entregas() {
             });
         resetForm()
         setKey(Math.random());
-        setRecarregueDashboard(true)
     }
 
     //manupulando evento de onchange do Select
@@ -145,7 +139,7 @@ function Entregas() {
     }, [dataTableEntregas])
 
     const suggestions: ClienteModel[] = useDebouncedSuggestions<ClienteModel>(formatDescription(values.nmCliente), tableKeys.Clientes, dispatch, 'Cliente');
-    console.log(values.produtos)
+
     return (
         <Box sx={{ padding: '5rem' }}>
             <Typography variant="h4" gutterBottom>

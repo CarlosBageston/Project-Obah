@@ -3,6 +3,7 @@ import { BiSearchAlt } from 'react-icons/bi'
 import { FormControl, Autocomplete, TextField, AutocompleteChangeReason } from '@mui/material';
 import { ContainerFilter, ContainerInput, ButtonFilter, ContainerButton } from './style'
 import { DocumentData, QueryDocumentSnapshot, where } from 'firebase/firestore';
+import useHandleInputKeyPress from '../../hooks/useHandleInputKeyPress';
 
 interface FilterProps {
     label: string,
@@ -36,6 +37,7 @@ interface Props {
 const GenericFilter = ({ setPage, carregarDados, filter, setLastVisible, setAppliedFilters, fetchPageData }: Props) => {
     const [valueItem, setValueItem] = useState<string>('');
     const [objectSearch, setObjectSearch] = useState<FilterProps | undefined>();
+    const { onKeyPressHandleSubmit } = useHandleInputKeyPress();
 
     /**
      * Função para chamar a filtragem com base no tipo especificado (cliente ou produto).
@@ -54,17 +56,6 @@ const GenericFilter = ({ setPage, carregarDados, filter, setLastVisible, setAppl
         setLastVisible(null)
         setValueItem('')
     };
-
-    /**
-     * Função chamada ao pressionar a tecla Enter no input, realiza a filtragem conforme o tipo especificado.
-     * @param e - Evento de teclado associado à entrada de texto.
-     */
-    function onKeyPressCallFilter(e: React.KeyboardEvent<HTMLInputElement>) {
-        if (e.key === 'Enter') {
-            filterByItem();
-        }
-
-    }
 
     const filterByItem = async () => {
         carregarDados(false);
@@ -114,7 +105,7 @@ const GenericFilter = ({ setPage, carregarDados, filter, setLastVisible, setAppl
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
-                                        onKeyDown={onKeyPressCallFilter}
+                                        onKeyDown={(e) => onKeyPressHandleSubmit(e, filterByItem)}
                                         variant="standard"
                                         label="Tipo de Filtro"
                                         placeholder="Selecione..."
@@ -129,7 +120,7 @@ const GenericFilter = ({ setPage, carregarDados, filter, setLastVisible, setAppl
                                 variant="standard"
                                 value={valueItem}
                                 onChange={(e) => setValueItem(e.target.value)}
-                                onKeyDown={onKeyPressCallFilter}
+                                onKeyDown={(e) => onKeyPressHandleSubmit(e, filterByItem)}
                             />
                         </ContainerInput>
                         <ContainerButton>

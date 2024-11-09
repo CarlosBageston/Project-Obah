@@ -22,6 +22,7 @@ import { getItemsByQuery } from '../../../../../hooks/queryFirebase';
 import CloseIcon from '@mui/icons-material/Close';
 import Input from '../../../../../Components/input';
 import { useTableKeys } from '../../../../../hooks/tableKey';
+import useHandleInputKeyPress from '../../../../../hooks/useHandleInputKeyPress';
 
 
 
@@ -44,6 +45,8 @@ export function TableManagement({ setFecharComanda, setShowTableManegement, prod
     const { getItemsByQueryLoading } = useSelector((state: RootState) => state.loading);
     const [openSnackBar, setOpenSnackBar] = useState<StateSnackBar>({ error: false, success: false });
     const tableKeys = useTableKeys();
+    const { onKeyPressHandleSubmit } = useHandleInputKeyPress();
+
 
     const initialValues: TableManagemenModel = ({
         nmTable: '',
@@ -122,10 +125,6 @@ export function TableManagement({ setFecharComanda, setShowTableManegement, prod
         }
     }, [dataTable]);
 
-    function keyPressHandleSubmitForm(e: React.KeyboardEvent<HTMLDivElement>) {
-        if (e.key === 'Enter') return handleSubmit();
-    }
-
     return (
         <Fade in={showTableManegement}>
             <Box
@@ -191,7 +190,7 @@ export function TableManagement({ setFecharComanda, setShowTableManegement, prod
                                 error={touched.nmTable && errors.nmTable ? errors.nmTable : ""}
                                 onChange={(e) => setFieldValue('nmTable', e.target.value)}
                                 label="Nome/Numero Da Mesa"
-                                onKeyDown={keyPressHandleSubmitForm}
+                                onKeyUp={(e) => { onKeyPressHandleSubmit(e, handleSubmit) }}
                             />
                             <MUIButton variant='contained' onClick={() => handleSubmit()} disabled={loading}>
                                 Adicionar

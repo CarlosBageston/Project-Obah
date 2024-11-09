@@ -7,7 +7,6 @@ import Input from '../../../Components/input';
 import Button from '../../../Components/button';
 import GenericTable from '../../../Components/table';
 import { useDispatch, useSelector } from 'react-redux';
-import useFormatCurrency from '../../../hooks/formatCurrency';
 import formatPhone from '../../../Components/masks/maskTelefone';
 import { setError } from '../../../store/reducer/reducer';
 import { addDoc, collection, doc, updateDoc } from 'firebase/firestore';
@@ -23,6 +22,7 @@ import { RootState } from '../../../store/reducer/store';
 import { formatDescription } from '../../../utils/formattedString';
 import { useTableKeys } from '../../../hooks/tableKey';
 import { setLoadingGlobal } from '../../../store/reducer/loadingSlice';
+import { convertToNumber } from '../../../hooks/formatCurrency';
 
 function CadastroCliente() {
     const [key, setKey] = useState<number>(0);
@@ -31,7 +31,6 @@ function CadastroCliente() {
     const error = useSelector((state: RootState) => state.user.error);
     const tableKeys = useTableKeys();
     const dispatch = useDispatch();
-    const { convertToNumber } = useFormatCurrency();
     const [openDialog, setOpenDialog] = useState(false);
     const loadingGlobal = useSelector((state: RootState) => state.loading.loadingGlobal);
 

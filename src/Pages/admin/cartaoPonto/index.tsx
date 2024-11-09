@@ -28,8 +28,8 @@ import {
     DivTableTitle,
     DivTableRow
 } from "./style";
-import useFormatCurrency from '../../../hooks/formatCurrency';
 import { useTableKeys } from '../../../hooks/tableKey';
+import { formatCurrency } from '../../../hooks/formatCurrency';
 
 const objClean: CartaoPontoModel = {
     dtInicio: '',
@@ -49,7 +49,6 @@ function CartaoPonto() {
     const [dataRealTime, setDataRealTime] = useState<CartaoPontoModel[]>([])
     const tableKeys = useTableKeys();
 
-    const { formatCurrency } = useFormatCurrency();
     //realizando busca no banco de dados
     const {
         dataTable: dataTableColabroador,

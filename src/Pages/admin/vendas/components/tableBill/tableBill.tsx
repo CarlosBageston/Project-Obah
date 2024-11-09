@@ -7,7 +7,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { Autocomplete, AutocompleteChangeReason, Box, Dialog, Divider, Grow, IconButton, Stack, TextField, Typography } from "@mui/material";
 import TableBillModel from "../../model/tableBill";
 import VendaModel from "../../model/vendas";
-import useFormatCurrency from "../../../../../hooks/formatCurrency";
 import ProdutosModel from "../../../cadastroProdutos/model/produtos";
 import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { addDoc, collection, deleteDoc, doc, updateDoc, where } from "firebase/firestore";
@@ -24,6 +23,8 @@ import useDebouncedSuggestions from '../../../../../hooks/useDebouncedSuggestion
 import { getDocumentById, getSingleItemByQuery } from '../../../../../hooks/queryFirebase';
 import { useTableKeys } from '../../../../../hooks/tableKey';
 import { formatDescription } from '../../../../../utils/formattedString';
+import useHandleInputKeyPress from '../../../../../hooks/useHandleInputKeyPress';
+import { NumberFormatForBrazilianCurrency } from '../../../../../hooks/formatCurrency';
 
 interface TableBillProps {
     nameTable: string;
@@ -44,8 +45,8 @@ export function TableBill({ nameTable, setShowTable, setFecharComanda, setShowTa
     const dispatch = useDispatch();
     const { loading, error } = useSelector((state: RootState) => state.user);
     const [openSnackBar, setOpenSnackBar] = useState<StateSnackBar>({ error: false, success: false });
-    const { NumberFormatForBrazilianCurrency } = useFormatCurrency();
     const tableKeys = useTableKeys();
+    const { onKeyPressHandleSubmit } = useHandleInputKeyPress();
 
 
     const { values, handleSubmit, setFieldValue, touched, errors, resetForm } = useFormik<TableBillModel>({
@@ -106,9 +107,6 @@ export function TableBill({ nameTable, setShowTable, setFecharComanda, setShowTa
         }
     }
 
-    function keyPressHandleSubmitForm(e: React.KeyboardEvent<HTMLDivElement>) {
-        if (e.key === 'Enter') handleSubmit()
-    }
     useEffect(() => {
         setFieldValue('vlTotal', values.produtoEscaniado.reduce((acc, value) => {
             return acc + (value.vlTotalMult ?? 0);
@@ -233,7 +231,7 @@ export function TableBill({ nameTable, setShowTable, setFecharComanda, setShowTa
                             value={suggestions.find((item: any) => item.nmProduto === formik.values.nmProduto) || null}
                             getOptionLabel={(option: any) => option && option.nmProduto ? option.nmProduto : ""}
                             onChange={(_, newValue, reason) => handleAutoComplete(_, newValue, reason)}
-                            onKeyUp={keyPressHandleSubmitForm}
+                            onKeyUp={(e) => { onKeyPressHandleSubmit(e, handleSubmit) }}
                             onInputChange={(_, newInputValue, reason) => {
                                 if (reason === 'clear') handleAutoComplete(_, null, 'clear');
                                 formik.setFieldValue('nmProduto', newInputValue);
@@ -253,7 +251,7 @@ export function TableBill({ nameTable, setShowTable, setFecharComanda, setShowTa
                         onChange={(e) => { setFieldValue('quantidade', (parseFloat(e.target.value))) }}
                         label="Qntde"
                         variant="standard"
-                        onKeyDown={keyPressHandleSubmitForm}
+                        onKeyDown={(e) => { onKeyPressHandleSubmit(e, handleSubmit) }}
                         error={Boolean(touched.quantidade && errors.quantidade)}
                         InputProps={{
                             sx: { width: '5rem' }

@@ -1,13 +1,12 @@
 import { where } from "firebase/firestore";
 import ComprasModel from "../Pages/admin/compras/model/compras";
-import useFormatCurrency from "./formatCurrency";
 import { getItemsByQuery } from "./queryFirebase";
 import { foundKgProduto } from "./useFoundProductKg";
 import { Dispatch } from 'redux';
 import ProdutosModel from "../Pages/admin/cadastroProdutos/model/produtos";
 import { useTableKeys } from "./tableKey";
+import { convertToNumber } from "./formatCurrency";
 
-const { convertToNumber } = useFormatCurrency();
 
 /**
  * Classe de erro para representar uma exceção quando há produtos sem quantidade durante o cálculo do valor total.

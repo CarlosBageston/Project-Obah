@@ -18,7 +18,6 @@ import { Box, Checkbox, FormControl, FormControlLabel, Grid, InputLabel, MenuIte
 
 //hooks
 import { useNavigate } from 'react-router-dom';
-import useFormatCurrency from '../../../hooks/formatCurrency';
 import AlertDialog from '../../../Components/FormAlert/dialogForm';
 import { ProdutosSemQuantidadeError, calculateTotalValue } from '../../../hooks/useCalculateTotalValue';
 import { RootState } from '../../../store/reducer/store';
@@ -28,6 +27,7 @@ import CustomSnackBar, { StateSnackBar } from '../../../Components/snackBar/cust
 import { formatDescription } from '../../../utils/formattedString';
 import { useTableKeys } from '../../../hooks/tableKey';
 import { setLoadingGlobal } from '../../../store/reducer/loadingSlice';
+import { convertToNumber, formatCurrency, formatCurrencyRealTime, NumberFormatForBrazilianCurrency } from '../../../hooks/formatCurrency';
 
 
 function CadastroProduto() {
@@ -43,7 +43,6 @@ function CadastroProduto() {
     const history = useNavigate();
     const dispatch = useDispatch();
     const { error } = useSelector((state: RootState) => state.user);
-    const { convertToNumber, formatCurrency, formatCurrencyRealTime, NumberFormatForBrazilianCurrency } = useFormatCurrency();
 
 
 

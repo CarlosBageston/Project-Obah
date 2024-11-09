@@ -12,7 +12,6 @@ import {
     FiEditStyled,
     ContainerFilter
 } from './style';
-import useFormatCurrency from '../../hooks/formatCurrency';
 import { getItemsByPage } from '../../hooks/queryFirebase';
 import { deleteDoc, doc, QueryConstraint, QueryDocumentSnapshot } from 'firebase/firestore';
 import { useDispatch, useSelector } from 'react-redux';
@@ -23,6 +22,7 @@ import ModalDelete from '../FormAlert/modalDelete';
 import SituacaoProduto from '../../enumeration/situacaoProduto';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import { NumberFormatForBrazilianCurrency } from '../../hooks/formatCurrency';
 
 type TableColumn = {
     name: string;
@@ -81,7 +81,6 @@ const GenericTable = <T,>({
     const [hasNextPage, setHasNextPage] = useState(false);
     const [hasPreviousPage, setHasPreviousPage] = useState(false);
 
-    const { NumberFormatForBrazilianCurrency } = useFormatCurrency();
 
     const handleRowClick = (rowId: string, row: any) => {
         if (rowId === selectedRowId) {

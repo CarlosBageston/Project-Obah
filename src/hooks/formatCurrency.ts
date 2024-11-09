@@ -1,18 +1,10 @@
-
-/**
- * Hook personalizado para formatação de valores monetários em reais (BRL).
- *
- * @returns Objeto contendo funções para formatação e conversão de valores monetários.
- */
-export default function useFormatCurrency(){
-
     /**
      * Formata um valor monetário brasileiro a partir de uma string.
      *
      * @param valor - A string contendo o valor a ser formatado.
      * @returns O valor formatado como moeda brasileira (R$).
      */
-    function formatCurrency(valor: string) {
+    export function formatCurrency(valor: string) {
         // Remove todos os caracteres não numéricos
         const cleanedValue = valor.replace(/[^\d.,]/g, '').replace(',', '.');
         
@@ -37,7 +29,7 @@ export default function useFormatCurrency(){
      * @returns Uma string formatada como moeda brasileira (R$), em tempo real.
      * 
      */
-    function formatCurrencyRealTime(valor: string) {
+    export function formatCurrencyRealTime(valor: string) {
         const inputText = valor.replace(/\D/g, "");
         let formattedText = "";
         if (inputText.length <= 2) {
@@ -55,7 +47,7 @@ export default function useFormatCurrency(){
      * @param valor - O valor a ser formatado.
      * @returns O valor formatado como moeda brasileira (R$).
      */
-    function NumberFormatForBrazilianCurrency (valor: number) {
+    export function NumberFormatForBrazilianCurrency (valor: number) {
         // Formata como moeda brasileira (R$)
         const formattedText = valor.toLocaleString('pt-BR', {
             style: 'currency',
@@ -71,18 +63,10 @@ export default function useFormatCurrency(){
      * @param valor - A string contendo o valor a ser convertido.
      * @returns O valor convertido para número de ponto flutuante.
      */
-    function convertToNumber(valor: string) {
+    export function convertToNumber(valor: string) {
         // Remove letras e substitui ponto por vírgula
         const cleanedValue = valor.replace(/[^0-9,.]/g, '').replace(/[.]/g, '');
 
         // Converte a string de números para um número de ponto flutuante
         return parseFloat(cleanedValue.replace(',', '.')) || 0;
     }
-
-    return {
-        formatCurrency,
-        NumberFormatForBrazilianCurrency,
-        convertToNumber,
-        formatCurrencyRealTime
-    }
-}

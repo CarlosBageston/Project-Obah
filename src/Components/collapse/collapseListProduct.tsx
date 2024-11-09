@@ -5,19 +5,22 @@ import Input from '../input';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import { useDispatch } from 'react-redux';
-import useFormatCurrency from '../../hooks/formatCurrency';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import useDebouncedSuggestions from '../../hooks/useDebouncedSuggestions';
 import SituacaoProduto from '../../enumeration/situacaoProduto';
+import { formatDescription } from '../../utils/formattedString';
+import useHandleInputKeyPress from '../../hooks/useHandleInputKeyPress';
+import { convertToNumber, formatCurrencyRealTime, NumberFormatForBrazilianCurrency } from '../../hooks/formatCurrency';
 
 interface CollapseListProductProps<T> {
     initialItems: T[];
     nameArray: string;
     isVisible: boolean;
     collectionName: string;
-    tpProdutoSearch: SituacaoProduto,
     setFieldValueExterno: (field: string, value: any) => any;
+    searchMateriaPrima?: boolean,
+    tpProdutoSearch?: SituacaoProduto,
     labelInput?: string
     labelAutoComplete?: string
     typeValueInput?: 'number' | 'currency',
@@ -40,13 +43,14 @@ const CollapseListProduct = <T,>({
     labelAutoComplete,
     typeValueInput,
     labelInput,
-    tpProdutoSearch
+    tpProdutoSearch,
+    searchMateriaPrima = false
 }: CollapseListProductProps<T>) => {
     const [items, setItems] = useState<T[]>(initialItems ?? []);
     const [editItem, setEditItem] = useState<T | null>(null);
     const dispatch = useDispatch();
-    const { convertToNumber, formatCurrencyRealTime, NumberFormatForBrazilianCurrency } = useFormatCurrency();
     const [key, setKey] = useState<number>(0);
+    const { onKeyPressHandleSubmit } = useHandleInputKeyPress();
 
     const handleAddItem = (values: ItemProps) => {
         if (values.nmProduto && (values.quantidade || values.vlVendaProduto)) {
@@ -86,9 +90,11 @@ const CollapseListProduct = <T,>({
         validationSchema: Yup.object({
             nmProduto: Yup.string()
                 .required('O nome do produto é obrigatório.')
-                .test('valid-product', 'O produto inserido não é válido.', value => {
-                    return !value || (suggestions?.find((i: any) => i.nmProduto === value) ? true : false);
-                })
+                // .test('valid-product', 'O produto inserido não é válido.', value => {
+                //     console.log(value)
+                //     console.log(suggestions)
+                //     return !value || (suggestions?.find((i: any) => i.nmProduto === value) ? true : false);
+                // })
                 .test('unique-product', 'esse Item ja existe na lista.', value => {
                     if (editItem) return true;
                     if (!value) return true;
@@ -109,7 +115,7 @@ const CollapseListProduct = <T,>({
         }),
         onSubmit: handleAddItem
     });
-    const suggestions: ItemProps[] = useDebouncedSuggestions<ItemProps>(values.nmProduto, collectionName, dispatch, 'Produto', tpProdutoSearch);
+    const suggestions: ItemProps[] = useDebouncedSuggestions<ItemProps>(formatDescription(values.nmProduto), collectionName, dispatch, "Produto", tpProdutoSearch, searchMateriaPrima);
 
 
     useEffect(() => {
@@ -170,9 +176,8 @@ const CollapseListProduct = <T,>({
         </Box>
     );
 
-
     return (
-        <div style={{ marginLeft: '4%' }}>
+        <div>
             <Collapse in={isVisible}>
                 <Box mb={2}>
                     <Grid container spacing={2} alignItems="center">
@@ -209,6 +214,7 @@ const CollapseListProduct = <T,>({
                                     if (typeValueInput === 'currency') setFieldValue('vlVendaProduto', formatCurrencyRealTime(e.target.value))
                                     else setFieldValue('quantidade', e.target.value.replace('.', ','))
                                 }}
+                                onKeyUp={(e) => { onKeyPressHandleSubmit(e, handleSubmit) }}
                                 label={labelInput || 'Quantidade'}
                                 error={(touched.vlVendaProduto && errors.vlVendaProduto ? errors.vlVendaProduto : '') || (touched.quantidade && errors.quantidade ? errors.quantidade : '')}
                                 name=''

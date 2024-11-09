@@ -5,8 +5,8 @@ import { EntregaModel } from "../../Pages/admin/entregas/model/entrega";
 import { Table, TableHead, TableRow, TableCell, TableBody, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Typography, Box } from "@mui/material";
 
 
-import useFormatCurrency from "../../hooks/formatCurrency";
 import printJS from "print-js";
+import { NumberFormatForBrazilianCurrency } from "../../hooks/formatCurrency";
 
 interface Props {
     values: EntregaModel,
@@ -19,7 +19,6 @@ export function NotaFiscal({ values, setShouldShow, handleSubmit }: Props) {
     const [registerProduct, setRegisterProduct] = useState<boolean>(false);
 
     const ref = useRef<HTMLDivElement>(null);
-    const { NumberFormatForBrazilianCurrency } = useFormatCurrency();
 
     useEffect(() => {
         const data = new Date();

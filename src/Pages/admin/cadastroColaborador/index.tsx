@@ -7,7 +7,7 @@ import Button from "../../../Components/button";
 import ColaboradorModel from "./model/colaborador";
 import { useDispatch, useSelector } from 'react-redux';
 import formatPhone from "../../../Components/masks/maskTelefone";
-import { setError, setLoading } from '../../../store/reducer/reducer';
+import { setMessage } from '../../../store/reducer/reducer';
 import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
 import GenericTable from '../../../Components/table';
 import _ from 'lodash';
@@ -15,14 +15,16 @@ import { RootState } from '../../../store/reducer/store';
 import CustomSnackBar, { StateSnackBar } from '../../../Components/snackBar/customsnackbar';
 import { Box, Grid, Typography } from '@mui/material';
 import { useTableKeys } from '../../../hooks/tableKey';
+import { setLoadingGlobal } from '../../../store/reducer/loadingSlice';
 
 function CadastroColaborador() {
     const [key, setKey] = useState<number>(0);
     const [editData, setEditData] = useState<ColaboradorModel>();
     const [openSnackBar, setOpenSnackBar] = useState<StateSnackBar>({ error: false, success: false });
-    const error = useSelector((state: RootState) => state.user.error);
+    const message = useSelector((state: RootState) => state.user.message);
     const tableKeys = useTableKeys();
     const dispatch = useDispatch();
+    const loadingGlobal = useSelector((state: RootState) => state.loading.loadingGlobal);
 
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<ColaboradorModel>({
         validateOnBlur: true,
@@ -63,16 +65,16 @@ function CadastroColaborador() {
     }
 
     async function hundleSubmitForm() {
-        dispatch(setLoading(true))
+        dispatch(setLoadingGlobal(true))
         await addDoc(collection(db, tableKeys.Colaborador), {
             ...values
         }).then(() => {
-            dispatch(setLoading(false))
+            dispatch(setLoadingGlobal(false))
             setEditData(values);
             setOpenSnackBar(prev => ({ ...prev, success: true }))
         }).catch(() => {
-            dispatch(setLoading(false))
-            dispatch(setError('Erro ao Cadastrar Colaborador'))
+            dispatch(setLoadingGlobal(false))
+            dispatch(setMessage('Erro ao Cadastrar Colaborador'))
             setOpenSnackBar(prev => ({ ...prev, error: true }))
         });
         resetForm()
@@ -167,6 +169,7 @@ function CadastroColaborador() {
                 <Box mt={4} display="flex" justifyContent="flex-end">
                     <Button
                         type={'button'}
+                        disabled={loadingGlobal}
                         label={editData ? 'Editar Colaborador' : 'Cadastrar Colaborador'}
                         onClick={handleSubmit}
                         style={{ width: '12rem', height: '4rem' }}
@@ -200,7 +203,7 @@ function CadastroColaborador() {
                     collectionName={tableKeys.Colaborador}
                     editData={editData}
                 />
-                <CustomSnackBar message={error ? error : "Cadastrado Colaborador com sucesso"} open={openSnackBar} setOpen={setOpenSnackBar} />
+                <CustomSnackBar message={message ? message : "Cadastrado Colaborador com sucesso"} open={openSnackBar} setOpen={setOpenSnackBar} />
             </Box>
         </>
     )

@@ -18,7 +18,7 @@ import {
 import { Dispatch } from 'redux';
 import { setAddItemLoading, setDeleteItemLoading, setGetAllItemsLoading, setGetItemPaginationLoading, setGetItemsByQueryLoading, setGetSumLoading, setUpdateItemLoading } from '../store/reducer/loadingSlice';
 import { db } from '../firebase';
-import { setError } from '../store/reducer/reducer';
+import { setMessage } from '../store/reducer/reducer';
 
 // Função para obter todos os itens de uma coleção
 export async function getAllItems<T = DocumentData>(
@@ -244,7 +244,7 @@ export async function addItem<T extends DocumentData>(
         await addDoc(collectionRef, item);
     } catch (error) {
         console.error('Erro ao adicionar item:', error);
-        dispatch(setError("Erro ao adicionar Item"))
+        dispatch(setMessage("Erro ao adicionar Item"))
     } finally {
         dispatch(setAddItemLoading(false));
     }
@@ -263,7 +263,7 @@ export async function updateItem(
         await updateDoc(docRef, updates);
     } catch (error) {
         console.error('Erro ao atualizar item:', error);
-        dispatch(setError("Erro ao Editar Item"))
+        dispatch(setMessage("Erro ao Editar Item"))
     } finally {
         dispatch(setUpdateItemLoading(false));
     }

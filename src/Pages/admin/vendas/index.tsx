@@ -2,26 +2,22 @@
 import * as Yup from 'yup';
 import { format } from "date-fns";
 import { useFormik } from 'formik';
-import { db } from "../../../firebase";
 import { CgAddR } from 'react-icons/cg';
 import { IoMdClose } from "react-icons/io";
 import Input from "../../../Components/input";
 import Button from "../../../Components/button";
-import GetData from "../../../firebase/getData";
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from 'react-redux';
-import { addDoc, collection, where } from "firebase/firestore";
+import { where } from "firebase/firestore";
 import VendaModel from "./model/vendas";
-import TelaDashboard from '../../../enumeration/telaDashboard';
 import ProdutosModel from "../cadastroProdutos/model/produtos";
-import { setError, setLoading } from '../../../store/reducer/reducer';
+import { setMessage } from '../../../store/reducer/reducer';
 import iceCreamSad from '../../../assets/Image/drawingSadIceCream.png';
 import MUIButton from "@mui/material/Button";
 
 //hooks
 import useEstoque from '../../../hooks/useEstoque';
 import useHandleInputKeyPress from '../../../hooks/useHandleInputKeyPress';
-import useDeleteOldData from '../../../hooks/useDeleteOldData';
 import { TableManagement } from './components/tableManagement/tableManagement';
 import { RootState } from '../../../store/reducer/store';
 import { SubProdutoModel } from '../cadastroProdutos/model/subprodutos';
@@ -32,7 +28,8 @@ import useDebouncedSuggestions from '../../../hooks/useDebouncedSuggestions';
 import { useTableKeys } from '../../../hooks/tableKey';
 import { formatDescription } from '../../../utils/formattedString';
 import { convertToNumber, formatCurrencyRealTime, NumberFormatForBrazilianCurrency } from '../../../hooks/formatCurrency';
-import { DashboardCompraModel, updateAddDashboardVendasEntregas } from '../../../hooks/useCalculateValueDashboard';
+import { updateAddDashboardVendasEntregas } from '../../../hooks/useCalculateValueDashboard';
+import { setLoadingGlobal } from '../../../store/reducer/loadingSlice';
 
 
 interface VendaProps {
@@ -52,20 +49,15 @@ const objClean: VendaModel = {
 }
 function Vendas() {
     const [key, setKey] = useState<number>(0);
-    const [recarregueDashboard, setRecarregueDashboard] = useState<boolean>(true);
     const [showTableManegement, setShowTableManegement] = useState<boolean>(false);
     const [fecharComanda, setFecharComanda] = useState<VendaModel>({ ...objClean })
     const dispatch = useDispatch();
-    const { loading, error } = useSelector((state: RootState) => state.user);
+    const { message: error } = useSelector((state: RootState) => state.user);
     const [openSnackBar, setOpenSnackBar] = useState<StateSnackBar>({ error: false, success: false });
+    const loadingGlobal = useSelector((state: RootState) => state.loading.loadingGlobal);
     const tableKeys = useTableKeys();
 
     const { removedStock } = useEstoque();
-    const { deleteVendas } = useDeleteOldData();
-
-    const {
-        dataTable: dataTableVenda,
-    } = GetData(tableKeys.Vendas, true) as { dataTable: VendaModel[] };
 
     const initialValues: VendaModel = ({ ...objClean });
 
@@ -110,10 +102,7 @@ function Vendas() {
         }),
         onSubmit: handleSubmitForm,
     });
-    useEffect(() => {
-        if (dataTableVenda.length)
-            deleteVendas(dataTableVenda)
-    }, [dataTableVenda])
+
     /**
      * atualizar a data em tempo real.
      * 
@@ -241,7 +230,7 @@ function Vendas() {
      * Função para enviar os valores para o banco de dados.
      */
     async function handleSubmitForm() {
-        dispatch(setLoading(true))
+        dispatch(setLoadingGlobal(true))
         const valuesUpdate: VendaModel = {
             ...values,
             vlRecebido: convertToNumber(values.vlRecebido.toString())
@@ -252,16 +241,15 @@ function Vendas() {
             tableKeys.DashboardVendas,
             dispatch
         ).then(() => {
-            dispatch(setLoading(false))
+            dispatch(setLoadingGlobal(false))
             removedStock(values.produtoEscaniado)
             setOpenSnackBar(prev => ({ ...prev, success: true }))
         }).catch(() => {
-            dispatch(setLoading(false))
-            dispatch(setError('Erro ao Cadastrar Venda'))
+            dispatch(setLoadingGlobal(false))
+            dispatch(setMessage('Erro ao Cadastrar Venda'))
             setOpenSnackBar(prev => ({ ...prev, error: true }))
         });
         resetForm()
-        setRecarregueDashboard(true)
         setKey(Math.random())
 
     }
@@ -458,7 +446,7 @@ function Vendas() {
                             <Grid mt={2}>
                                 <Button
                                     label='Finalizar venda'
-                                    disabled={values.produtoEscaniado.length === 0 || loading}
+                                    disabled={values.produtoEscaniado.length === 0 || loadingGlobal}
                                     type="button"
                                     onClick={handleSubmit}
                                     style={{ height: 80, width: 200 }}

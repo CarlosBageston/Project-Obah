@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import List from '@mui/material/List';
 import Divider from '@mui/material/Divider';
@@ -32,9 +32,11 @@ import {
 import { signOut } from 'firebase/auth';
 import { auth } from '../../firebase';
 import { useDispatch, useSelector } from 'react-redux';
-import { setError } from '../../store/reducer/reducer';
+import { setMessage } from '../../store/reducer/reducer';
 import { RootState } from '../../store/reducer/store';
 import CustomSnackBar, { StateSnackBar } from '../snackBar/customsnackbar';
+import Admin from '../../Pages/signup/authentication';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 
 const drawerWidth = 240;
 
@@ -139,9 +141,11 @@ export default function MenuLateral() {
     const [openSubOptions, setOpenSubOptions] = useState<{ [key: string]: boolean }>({});
     const [openSnackBar, setOpenSnackBar] = useState<StateSnackBar>({ error: false, success: false });
     const isLoading = useSelector((state: RootState) => state.loading.loadingGlobal);
-    const error = useSelector((state: RootState) => state.user.error);
+    const message = useSelector((state: RootState) => state.user.message);
+    const empresa = useSelector((state: RootState) => state.empresaOnline);
     const navigate = useNavigate();
     const dispatch = useDispatch();
+    const [isAdmin, setIsAdmin] = useState(false);
 
     const toggleSubmenu = (label: string) => {
         setOpen(true)
@@ -163,10 +167,15 @@ export default function MenuLateral() {
             await signOut(auth);
             navigate('/');
         } catch (error) {
-            dispatch(setError("Erro ao sair. Tente novamente."))
+            dispatch(setMessage("Erro ao sair. Tente novamente."))
             setOpenSnackBar(prev => ({ ...prev, error: true }))
         }
     }
+    useEffect(() => {
+        if (empresa) {
+            empresa.isAdmin ? setIsAdmin(true) : setIsAdmin(false)
+        }
+    }, [empresa])
 
     const renderMenuItems = () => (
         <List>
@@ -257,6 +266,12 @@ export default function MenuLateral() {
                         cursor: 'pointer'
                     }}
                 >
+                    {isAdmin && <Admin />}
+                    <Tooltip title={'Perfil'} sx={{ mr: 2 }}>
+                        <IconButton onClick={() => navigate('/perfil')}>
+                            <PersonOutlineIcon fontSize='inherit' />
+                        </IconButton>
+                    </Tooltip>
                     <Tooltip title={'Sair'}>
                         <IconButton onClick={handleLogout}>
                             <LogoutIcon fontSize='inherit' />
@@ -264,7 +279,7 @@ export default function MenuLateral() {
                     </Tooltip>
                 </Box>
                 <Outlet />
-                <CustomSnackBar message={error} open={openSnackBar} setOpen={setOpenSnackBar} />
+                <CustomSnackBar message={message} open={openSnackBar} setOpen={setOpenSnackBar} />
             </Box>
         </Box>
     );

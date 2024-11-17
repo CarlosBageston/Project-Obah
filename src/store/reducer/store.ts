@@ -1,10 +1,12 @@
 import { configureStore } from '@reduxjs/toolkit';
 import userReducer, { UserState } from './reducer';
 import loadingSlice, { LoadingState } from './loadingSlice';
+import empresaOnline, { EmpresaState } from './empresaOnline';
 
 export interface RootState {
     user: UserState;
     loading: LoadingState;
+    empresaOnline: EmpresaState;
   }
 
 /**
@@ -16,6 +18,7 @@ const store = configureStore({
   reducer: {
     user: userReducer,
     loading: loadingSlice,
+    empresaOnline: empresaOnline
   },
 });
 

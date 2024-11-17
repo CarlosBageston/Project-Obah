@@ -10,7 +10,7 @@ import VendaModel from "../../model/vendas";
 import ProdutosModel from "../../../cadastroProdutos/model/produtos";
 import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { addDoc, collection, deleteDoc, doc, updateDoc, where } from "firebase/firestore";
-import { setError, setLoading } from "../../../../../store/reducer/reducer";
+import { setMessage } from "../../../../../store/reducer/reducer";
 import MUIButton from "@mui/material/Button";
 import AddIcon from '@mui/icons-material/Add';
 
@@ -25,6 +25,7 @@ import { useTableKeys } from '../../../../../hooks/tableKey';
 import { formatDescription } from '../../../../../utils/formattedString';
 import useHandleInputKeyPress from '../../../../../hooks/useHandleInputKeyPress';
 import { NumberFormatForBrazilianCurrency } from '../../../../../hooks/formatCurrency';
+import { setLoadingGlobal } from '../../../../../store/reducer/loadingSlice';
 
 interface TableBillProps {
     nameTable: string;
@@ -43,11 +44,11 @@ export function TableBill({ nameTable, setShowTable, setFecharComanda, setShowTa
     const [openDialogVendas, setOpenDialogVendas] = useState<boolean>(false);
     const [produtoEscaniado, setProdutoEscaniado] = useState<SubProdutoModel>();
     const dispatch = useDispatch();
-    const { loading, error } = useSelector((state: RootState) => state.user);
+    const { message: error } = useSelector((state: RootState) => state.user);
     const [openSnackBar, setOpenSnackBar] = useState<StateSnackBar>({ error: false, success: false });
     const tableKeys = useTableKeys();
     const { onKeyPressHandleSubmit } = useHandleInputKeyPress();
-
+    const loadingGlobal = useSelector((state: RootState) => state.loading.loadingGlobal);
 
     const { values, handleSubmit, setFieldValue, touched, errors, resetForm } = useFormik<TableBillModel>({
         validateOnBlur: true,
@@ -125,29 +126,29 @@ export function TableBill({ nameTable, setShowTable, setFecharComanda, setShowTa
      * Função para enviar os valores para o banco de dados.
      */
     async function handleSubmitFormComanda(values: TableBillModel) {
-        dispatch(setLoading(true))
+        dispatch(setLoadingGlobal(true))
         delete values.quantidade
         if (values.id) {
             const refID: string = values.id ?? '';
             const refTable = doc(db, tableKeys.Comanda, refID);
             await updateDoc(refTable, { ...values })
                 .then(() => {
-                    dispatch(setLoading(false))
+                    dispatch(setLoadingGlobal(false))
                     setShowTable(false)
                 }).catch(() => {
-                    dispatch(setLoading(false))
-                    dispatch(setError('Erro ao Atualizar Comanda'))
+                    dispatch(setLoadingGlobal(false))
+                    dispatch(setMessage('Erro ao Atualizar Comanda'))
                     setOpenSnackBar(prev => ({ ...prev, error: true }))
                 });
         } else {
             await addDoc(collection(db, tableKeys.Comanda), {
                 ...values
             }).then(() => {
-                dispatch(setLoading(false))
+                dispatch(setLoadingGlobal(false))
                 setShowTable(false)
             }).catch(() => {
-                dispatch(setLoading(false))
-                dispatch(setError('Erro ao Registrar Comanda'))
+                dispatch(setLoadingGlobal(false))
+                dispatch(setMessage('Erro ao Registrar Comanda'))
                 setOpenSnackBar(prev => ({ ...prev, error: true }))
             });
         }
@@ -259,7 +260,7 @@ export function TableBill({ nameTable, setShowTable, setFecharComanda, setShowTa
                     />
                     <IconButton
                         onClick={() => handleSubmit()}
-                        disabled={loading}
+                        disabled={loadingGlobal}
                         sx={{ color: 'inherit' }}
                     >
                         <AddIcon fontSize="medium" />
@@ -321,7 +322,7 @@ export function TableBill({ nameTable, setShowTable, setFecharComanda, setShowTa
                     <Button
                         label="Salvar Itens da Comanda"
                         onClick={() => handleSubmitFormComanda(values)}
-                        disabled={loading}
+                        disabled={loadingGlobal}
                         type='button'
                         style={{ height: 40, width: 310 }}
                     />
@@ -329,7 +330,7 @@ export function TableBill({ nameTable, setShowTable, setFecharComanda, setShowTa
                         label="Fechar Comanda"
                         onClick={() => setOpenDialog(true)}
                         style={{ height: 40, width: 310 }}
-                        disabled={loading || !values.produtoEscaniado.length}
+                        disabled={loadingGlobal || !values.produtoEscaniado.length}
                         type='button'
                     />
                 </Box>

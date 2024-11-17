@@ -7,6 +7,8 @@ import { Table, TableHead, TableRow, TableCell, TableBody, Dialog, DialogTitle, 
 
 import printJS from "print-js";
 import { NumberFormatForBrazilianCurrency } from "../../hooks/formatCurrency";
+import { useSelector } from "react-redux";
+import { RootState } from "../../store/reducer/store";
 
 interface Props {
     values: EntregaModel,
@@ -17,9 +19,8 @@ interface Props {
 export function NotaFiscal({ values, setShouldShow, handleSubmit }: Props) {
     const [horaAtual, setHoraAtual] = useState<string>('');
     const [registerProduct, setRegisterProduct] = useState<boolean>(false);
-
     const ref = useRef<HTMLDivElement>(null);
-
+    const empresa = useSelector((state: RootState) => state.empresaOnline);
     useEffect(() => {
         const data = new Date();
         const dataFormatada = format(data, 'HH:mm');
@@ -96,14 +97,13 @@ export function NotaFiscal({ values, setShouldShow, handleSubmit }: Props) {
                             <Box>
                                 <Typography variant="h4" align="center">SORVETERIA OBAH</Typography>
                                 <Typography align="center" sx={{ fontWeight: "bold", fontSize: "22px", margin: "8px 0" }}>
-                                    R. Uruguai, 115 - Santa Luzia, Dois Vizinhos - PR, 85660-000
+                                    {`${empresa.ruaEmpresa}, ${empresa.numeroEmpresa} - ${empresa.bairroEmpresa}, ${empresa.cidadeEmpresa} - ${empresa.estadoEmpresa}, ${empresa.cepEmpresa}`}
                                 </Typography>
-                                <Typography align="center" sx={{ fontWeight: "bold", fontSize: "22px", marginBottom: "8px" }}>Telefone: (46) 99935-8718</Typography>
 
                                 <Box display="flex" justifyContent="space-between" sx={{ margin: "1rem 0", height: "10rem", flexDirection: "column" }}>
                                     <Box>
-                                        <Typography sx={{ fontWeight: "bold", fontSize: "22px" }}>CNPJ: 52.193.214/0001-25</Typography>
-                                        <Typography sx={{ fontWeight: "bold", fontSize: "22px" }}>IE: Isento</Typography>
+                                        <Typography sx={{ fontWeight: "bold", fontSize: "22px" }}>CNPJ: {empresa.cnpjEmpresa}</Typography>
+                                        <Typography sx={{ fontWeight: "bold", fontSize: "22px" }}>Telefone: {empresa.tfEmpresa}</Typography>
                                     </Box>
                                     <Box>
                                         <Typography sx={{ fontWeight: "bold", fontSize: "22px" }}>Data e Hora da venda</Typography>

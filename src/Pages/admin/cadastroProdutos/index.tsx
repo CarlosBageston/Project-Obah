@@ -10,7 +10,7 @@ import EstoqueModel from '../estoque/model/estoque';
 import ComprasModel from '../compras/model/compras';
 import GenericTable from "../../../Components/table";
 import { useDispatch, useSelector } from 'react-redux';
-import { setError } from '../../../store/reducer/reducer';
+import { setMessage } from '../../../store/reducer/reducer';
 import SituacaoProduto from "../../../enumeration/situacaoProduto";
 import { addDoc, collection, deleteDoc, doc, updateDoc, where } from "firebase/firestore";
 import { Box, Checkbox, FormControl, FormControlLabel, Grid, InputLabel, MenuItem, Select, Typography, } from "@mui/material";
@@ -42,7 +42,7 @@ function CadastroProduto() {
 
     const history = useNavigate();
     const dispatch = useDispatch();
-    const { error } = useSelector((state: RootState) => state.user);
+    const { message: error } = useSelector((state: RootState) => state.user);
 
 
 
@@ -114,7 +114,7 @@ function CadastroProduto() {
                 setEditData(values)
             })
             .catch(() => {
-                dispatch(setError('Erro ao Cadastrar Produto'))
+                dispatch(setMessage('Erro ao Cadastrar Produto'))
                 setOpenSnackBar(prev => ({ ...prev, error: true }))
             })
             .finally(() => dispatch(setLoadingGlobal(false)));

@@ -25,7 +25,7 @@ import useDebouncedSuggestions from '../../../hooks/useDebouncedSuggestions';
 import { getItemsByQuery, getSingleItemByQuery } from '../../../hooks/queryFirebase';
 import CustomSnackBar, { StateSnackBar } from '../../../Components/snackBar/customsnackbar';
 import { RootState } from '../../../store/reducer/store';
-import { setError } from '../../../store/reducer/reducer';
+import { setMessage } from '../../../store/reducer/reducer';
 import { useTableKeys } from '../../../hooks/tableKey';
 import { formatDescription } from '../../../utils/formattedString';
 import { setLoadingGlobal } from '../../../store/reducer/loadingSlice';
@@ -37,7 +37,7 @@ import { convertToNumber, formatCurrency, formatCurrencyRealTime, NumberFormatFo
 function AtualizarEstoque() {
     const [key, setKey] = useState<number>(0);
     const [openSnackBar, setOpenSnackBar] = useState<StateSnackBar>({ error: false, success: false });
-    const error = useSelector((state: RootState) => state.user.error);
+    const message = useSelector((state: RootState) => state.user.message);
     const loadingGlobal = useSelector((state: RootState) => state.loading.loadingGlobal);
     const [deleteData, setDeleteData] = useState<boolean>();
     const [editData, setEditData] = useState<ComprasModel>();
@@ -306,7 +306,7 @@ function AtualizarEstoque() {
             setOpenSnackBar(prev => ({ ...prev, success: true }))
             dispatch(setLoadingGlobal(false))
         } catch (error) {
-            dispatch(setError("Erro ao Atualizar Estoque"))
+            dispatch(setMessage("Erro ao Atualizar Estoque"))
             setOpenSnackBar(prev => ({ ...prev, error: true }))
             return;
         }
@@ -568,7 +568,7 @@ function AtualizarEstoque() {
                 editData={editData}
                 onDelete={(selected: ComprasModel | undefined) => { handleDeleteRow(selected) }}
             />
-            <CustomSnackBar message={error ? error : "Atualizado Estoque com sucesso"} open={openSnackBar} setOpen={setOpenSnackBar} />
+            <CustomSnackBar message={message ? message : "Atualizado Estoque com sucesso"} open={openSnackBar} setOpen={setOpenSnackBar} />
         </Box>
     );
 }

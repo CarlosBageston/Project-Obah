@@ -4,7 +4,9 @@ import Footer from '../Pages/Footer';
 import logo from '../assets/Image/logo.png';
 
 const Login = lazy(() => import('../Pages/login'));
+const SignUp = lazy(() => import('../Pages/signup'));
 const Vendas = lazy(() => import('../Pages/admin/vendas'));
+const Profile = lazy(() => import('../Pages/admin/profile'));
 const Entregas = lazy(() => import('../Pages/admin/entregas'));
 const Dashboard = lazy(() => import('../Pages/admin/dashboard'));
 const PrivateRoute = lazy(() => import('../hooks/auth/private'));
@@ -33,10 +35,8 @@ export default function Router() {
                 </BoxLoading>
             }>
                 <Routes>
-                    <Route path='/' element={
-                        <Login />
-                    }
-                    />
+                    <Route path='/' element={<Login />} />
+                    <Route path='/register' element={<SignUp />} />
 
                     <Route element={<PrivateRoute />}>
                         <Route path='dashboard' element={<Dashboard />} />
@@ -49,6 +49,7 @@ export default function Router() {
                         <Route path='/cartao-ponto' element={<CartaoPonto />} />
                         <Route path='/estoque-fabricado' element={<EstoqueFabricados />} />
                         <Route path='/estoque-comprado' element={<EstoqueComprados />} />
+                        <Route path='/perfil' element={<Profile />} />
                     </Route>
                 </Routes>
             </Suspense>

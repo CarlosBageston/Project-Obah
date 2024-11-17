@@ -2,7 +2,7 @@ import { Alert, IconButton, Snackbar } from "@mui/material";
 import { Dispatch, SetStateAction, useEffect } from "react";
 import CloseIcon from '@mui/icons-material/Close';
 import { useDispatch } from "react-redux";
-import { setError } from "../../store/reducer/reducer";
+import { setMessage } from "../../store/reducer/reducer";
 
 interface SnackBarProps {
     message: string;
@@ -22,7 +22,7 @@ function CustomSnackBar({ message, open, setOpen }: SnackBarProps) {
         if (open) {
             const timer = setTimeout(() => {
                 setOpen({ error: false, success: false });
-                dispatch(setError(''))
+                dispatch(setMessage(''))
             }, 6000);
 
             return () => clearTimeout(timer);
@@ -39,8 +39,7 @@ function CustomSnackBar({ message, open, setOpen }: SnackBarProps) {
                 vertical: 'bottom',
                 horizontal: 'left',
             }}
-            open={open.error || open.success}
-            autoHideDuration={6000}
+            open={open.error || open.success && message !== ''}
             message={message}
         >
             <Alert

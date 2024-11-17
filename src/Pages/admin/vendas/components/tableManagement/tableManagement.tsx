@@ -9,7 +9,7 @@ import { Box, CircularProgress, Fade, IconButton, Paper, Typography } from "@mui
 import { Timestamp, addDoc, collection, deleteDoc, doc } from "firebase/firestore";
 import { db } from "../../../../../firebase";
 import { useDispatch, useSelector } from "react-redux";
-import { setError, setLoading } from "../../../../../store/reducer/reducer";
+import { setMessage } from "../../../../../store/reducer/reducer";
 import { useFormik } from "formik";
 import { BsTrash } from "react-icons/bs";
 import ModalDelete from '../../../../../Components/FormAlert/modalDelete';
@@ -23,6 +23,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import Input from '../../../../../Components/input';
 import { useTableKeys } from '../../../../../hooks/tableKey';
 import useHandleInputKeyPress from '../../../../../hooks/useHandleInputKeyPress';
+import { setLoadingGlobal } from '../../../../../store/reducer/loadingSlice';
 
 
 
@@ -41,12 +42,12 @@ export function TableManagement({ setFecharComanda, setShowTableManegement, prod
     const [dataTableOrder, setDataTableOrder] = useState<TableManagemenModel[]>([]);
     const [dataTable, setDataTable] = useState<TableManagemenModel[]>([]);
     const dispatch = useDispatch();
-    const { loading, error } = useSelector((state: RootState) => state.user);
+    const { message: error } = useSelector((state: RootState) => state.user);
     const { getItemsByQueryLoading } = useSelector((state: RootState) => state.loading);
     const [openSnackBar, setOpenSnackBar] = useState<StateSnackBar>({ error: false, success: false });
     const tableKeys = useTableKeys();
     const { onKeyPressHandleSubmit } = useHandleInputKeyPress();
-
+    const loadingGlobal = useSelector((state: RootState) => state.loading.loadingGlobal);
 
     const initialValues: TableManagemenModel = ({
         nmTable: '',
@@ -84,16 +85,16 @@ export function TableManagement({ setFecharComanda, setShowTableManegement, prod
      */
     async function handleSubmitForm(values: TableManagemenModel) {
         setRecarregar(false);
-        dispatch(setLoading(true));
+        dispatch(setLoadingGlobal(true));
         await addDoc(collection(db, tableKeys.Mesas), {
             ...values,
             createdAt: Timestamp.now()
         }).then(() => {
-            dispatch(setLoading(false))
+            dispatch(setLoadingGlobal(false))
             setShowNewTable(false)
         }).catch(() => {
-            dispatch(setLoading(false))
-            dispatch(setError('Erro ao Registrar Mesa'))
+            dispatch(setLoadingGlobal(false))
+            dispatch(setMessage('Erro ao Registrar Mesa'))
             setOpenSnackBar(prev => ({ ...prev, error: true }))
         });
         resetForm();
@@ -106,10 +107,10 @@ export function TableManagement({ setFecharComanda, setShowTableManegement, prod
         setRecarregar(false);
         setShowModalDelete(undefined);
         await deleteDoc(doc(db, tableKeys.Mesas, id ?? '')).then(() => {
-            dispatch(setLoading(false))
+            dispatch(setLoadingGlobal(false))
         }).catch(() => {
-            dispatch(setLoading(false))
-            dispatch(setError('Erro ao Deletar Mesa'))
+            dispatch(setLoadingGlobal(false))
+            dispatch(setMessage('Erro ao Deletar Mesa'))
             setOpenSnackBar(prev => ({ ...prev, error: true }))
         });
         setRecarregar(true);
@@ -192,7 +193,7 @@ export function TableManagement({ setFecharComanda, setShowTableManegement, prod
                                 label="Nome/Numero Da Mesa"
                                 onKeyUp={(e) => { onKeyPressHandleSubmit(e, handleSubmit) }}
                             />
-                            <MUIButton variant='contained' onClick={() => handleSubmit()} disabled={loading}>
+                            <MUIButton variant='contained' onClick={() => handleSubmit()} disabled={loadingGlobal}>
                                 Adicionar
                             </MUIButton>
                         </Paper>

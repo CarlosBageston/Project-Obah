@@ -8,7 +8,7 @@ import Button from '../../../Components/button';
 import GenericTable from '../../../Components/table';
 import { useDispatch, useSelector } from 'react-redux';
 import formatPhone from '../../../Components/masks/maskTelefone';
-import { setError } from '../../../store/reducer/reducer';
+import { setMessage } from '../../../store/reducer/reducer';
 import { addDoc, collection, doc, updateDoc } from 'firebase/firestore';
 import MUIButton from "@mui/material/Button";
 
@@ -28,7 +28,7 @@ function CadastroCliente() {
     const [key, setKey] = useState<number>(0);
     const [editData, setEditData] = useState<ClienteModel>();
     const [openSnackBar, setOpenSnackBar] = useState<StateSnackBar>({ error: false, success: false });
-    const error = useSelector((state: RootState) => state.user.error);
+    const message = useSelector((state: RootState) => state.user.message);
     const tableKeys = useTableKeys();
     const dispatch = useDispatch();
     const [openDialog, setOpenDialog] = useState(false);
@@ -98,7 +98,7 @@ function CadastroCliente() {
             setOpenSnackBar(prev => ({ ...prev, success: true }))
             setEditData(values)
         }).catch(() => {
-            dispatch(setError('Erro ao Cadastrar Cliente'))
+            dispatch(setMessage('Erro ao Cadastrar Cliente'))
             setOpenSnackBar(prev => ({ ...prev, error: true }))
         })
             .finally(() => dispatch(setLoadingGlobal(false)));
@@ -243,7 +243,7 @@ function CadastroCliente() {
                 setEditData={setEditData}
                 collectionName={tableKeys.Clientes}
             />
-            <CustomSnackBar message={error ? error : "Cadastrado Cliente com sucesso"} open={openSnackBar} setOpen={setOpenSnackBar} />
+            <CustomSnackBar message={message ? message : "Cadastrado Cliente com sucesso"} open={openSnackBar} setOpen={setOpenSnackBar} />
         </Box>
     )
 }

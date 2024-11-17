@@ -13,7 +13,7 @@ import React, { useState, useEffect } from "react";
 import { NotaFiscal } from '../../../Components/notaFiscal';
 import ClienteModel from "../cadastroClientes/model/cliente";
 import formatDate from "../../../Components/masks/formatDate";
-import { setError, setLoading } from '../../../store/reducer/reducer';
+import { setMessage } from '../../../store/reducer/reducer';
 import { addDoc, collection } from "firebase/firestore";
 import { Autocomplete, AutocompleteChangeReason, Box, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from "@mui/material";
 
@@ -27,19 +27,19 @@ import { useTableKeys } from '../../../hooks/tableKey';
 import { formatDescription } from '../../../utils/formattedString';
 import { convertToNumber, NumberFormatForBrazilianCurrency } from '../../../hooks/formatCurrency';
 import { updateAddDashboardVendasEntregas } from '../../../hooks/useCalculateValueDashboard';
-
-
+import { setLoadingGlobal } from '../../../store/reducer/loadingSlice';
 
 function Entregas() {
     const [key, setKey] = useState<number>(0);
     const [editData, setEditData] = useState<EntregaModel>();
     const [shouldShow, setShouldShow] = useState<boolean>(false);
     const [openSnackBar, setOpenSnackBar] = useState<StateSnackBar>({ error: false, success: false });
-    const error = useSelector((state: RootState) => state.user.error);
+    const message = useSelector((state: RootState) => state.user.message);
+    const loadingGlobal = useSelector((state: RootState) => state.loading.loadingGlobal);
 
     const dispatch = useDispatch();
     const { removedStock } = useEstoque();
-    const { deleteEntregas } = useDeleteOldData()
+    const { deleteEntregas } = useDeleteOldData();
     const tableKeys = useTableKeys();
 
     const {
@@ -69,7 +69,7 @@ function Entregas() {
 
     //enviando formulario
     async function hundleSubmitForm() {
-        dispatch(setLoading(true))
+        dispatch(setLoadingGlobal(true))
         removedStock(values.produtos)
         values.vlEntrega = convertToNumber(values.vlEntrega.toString())
         values.vlLucro = convertToNumber(values.vlLucro.toString())
@@ -79,14 +79,14 @@ function Entregas() {
             ...values
         })
             .then(() => {
-                dispatch(setLoading(false))
+                dispatch(setLoadingGlobal(false))
                 setDataTableEntregas([...dataTableEntregas, values])
                 setEditData(values)
                 setOpenSnackBar(prev => ({ ...prev, success: true }))
             })
             .catch(() => {
-                dispatch(setLoading(false))
-                dispatch(setError('Erro ao Cadastrar Entrega'))
+                dispatch(setLoadingGlobal(false))
+                dispatch(setMessage('Erro ao Cadastrar Entrega'))
                 setOpenSnackBar(prev => ({ ...prev, error: true }))
             });
         resetForm()
@@ -278,7 +278,7 @@ function Entregas() {
                             label='Cadastrar Entrega'
                             type="button"
                             onClick={handleSubmit}
-                            disabled={!values.dtEntrega}
+                            disabled={!values.dtEntrega || loadingGlobal}
                             style={{ width: '12rem', height: '4rem' }}
                         />
                     </Box>
@@ -298,7 +298,7 @@ function Entregas() {
                 setEditData={setEditData}
             />
             <CustomSnackBar
-                message={error || "Cadastrado Entrega com sucesso"}
+                message={message || "Cadastrado Entrega com sucesso"}
                 open={openSnackBar}
                 setOpen={setOpenSnackBar}
             />

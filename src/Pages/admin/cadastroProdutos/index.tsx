@@ -4,97 +4,86 @@ import { db } from "../../../firebase";
 import ProdutoModel from "./model/produtos";
 import Input from "../../../Components/input";
 import Button from "../../../Components/button";
-import GetData from "../../../firebase/getData";
-import { FormikTouched, useFormik } from 'formik';
-import { useState, useEffect, lazy } from "react";
-import { BoxTitleDefault } from "../estoque/style";
+import { useFormik } from 'formik';
+import { useState, useEffect } from "react";
 import EstoqueModel from '../estoque/model/estoque';
 import ComprasModel from '../compras/model/compras';
-import { TableKey } from '../../../types/tableName';
 import GenericTable from "../../../Components/table";
-import FiltroGeneric from "../../../Components/filtro";
 import { useDispatch, useSelector } from 'react-redux';
-import FormAlert from "../../../Components/FormAlert/formAlert";
-import { InputConfig } from "../../../Components/isEdit/isEdit";
-import { State, setLoading } from '../../../store/reducer/reducer';
+import { setMessage } from '../../../store/reducer/reducer';
 import SituacaoProduto from "../../../enumeration/situacaoProduto";
-import ModalDelete from '../../../Components/FormAlert/modalDelete';
-import CompraHistoricoModel from '../compras/model/comprahistoricoModel';
-import { addDoc, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
-import { Checkbox, FormControl, FormControlLabel, InputLabel, MenuItem, Select, } from "@mui/material";
+import { addDoc, collection, deleteDoc, doc, updateDoc, where } from "firebase/firestore";
+import { Box, Checkbox, FormControl, FormControlLabel, FormHelperText, Grid, InputLabel, MenuItem, Select, Typography, } from "@mui/material";
 
-const IsEdit = lazy(() => import('../../../Components/isEdit/isEdit'));
-const IsAdding = lazy(() => import('../../../Components/isAdding/isAdding'));
-
-import {
-    Box,
-    Title,
-    DivInput,
-    ContainerInputs,
-    ContainerButton,
-    DivSituacaoProduto,
-} from './style';
 
 //hooks
 import { useNavigate } from 'react-router-dom';
-import { useUniqueNames } from '../../../hooks/useUniqueName';
-import useFormatCurrency from '../../../hooks/formatCurrency';
 import AlertDialog from '../../../Components/FormAlert/dialogForm';
 import { ProdutosSemQuantidadeError, calculateTotalValue } from '../../../hooks/useCalculateTotalValue';
+import { RootState } from '../../../store/reducer/store';
+import { getItemsByQuery, getSingleItemByQuery } from '../../../hooks/queryFirebase';
+import CollapseListProduct from '../../../Components/collapse/collapseListProduct';
+import CustomSnackBar, { StateSnackBar } from '../../../Components/snackBar/customsnackbar';
+import { formatDescription } from '../../../utils/formattedString';
+import { useTableKeys } from '../../../hooks/tableKey';
+import { setLoadingGlobal } from '../../../store/reducer/loadingSlice';
+import { convertToNumber, formatCurrency, formatCurrencyRealTime, NumberFormatForBrazilianCurrency } from '../../../hooks/formatCurrency';
+import useHandleInputKeyPress from '../../../hooks/useHandleInputKeyPress';
+import { theme } from '../../../theme';
 
-const objClean: ProdutoModel = {
-    cdProduto: '',
-    nmProduto: '',
-    vlUnitario: 0,
-    vlVendaProduto: 0,
-    tpProduto: null,
-    stEntrega: false,
-    mpFabricado: [],
-    stMateriaPrima: false,
-    kgProduto: 1
-}
 
 function CadastroProduto() {
     const [key, setKey] = useState<number>(0);
-    const [error, setError] = useState<string>();
-    const [isEdit, setIsEdit] = useState<boolean>(false);
-    const [recarregue, setRecarregue] = useState<boolean>(true);
-    const [openDelete, setOpenDelete] = useState<boolean>(false);
-    const [selected, setSelected] = useState<ProdutoModel | undefined>();
+    const [errorQuantidade, setErrorQuantidade] = useState<string>();
+    const [editData, setEditData] = useState<ProdutoModel>();
     const [isVisibleTpProuto, setIsVisibleTpProduto] = useState<boolean>(false);
-    const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
-    const [initialValues, setInitialValues] = useState<ProdutoModel>({ ...objClean });
+    const [deleteData, setDeleteData] = useState<boolean>();
+    const [openSnackBar, setOpenSnackBar] = useState<StateSnackBar>({ error: false, success: false });
+    const loadingGlobal = useSelector((state: RootState) => state.loading.loadingGlobal);
+    const tableKeys = useTableKeys();
+    const { onKeyPressHandleSubmit } = useHandleInputKeyPress();
 
     const history = useNavigate();
     const dispatch = useDispatch();
-    const { loading } = useSelector((state: State) => state.user);
-    const { convertToNumber, formatCurrency, formatCurrencyRealTime } = useFormatCurrency();
+    const { message: error } = useSelector((state: RootState) => state.user);
 
-    //realizando busca no banco de dados
-    const {
-        dataTable,
-        loading: isLoading,
-        setDataTable
-    } = GetData(TableKey.Produtos, recarregue) as { dataTable: ProdutoModel[], loading: boolean, setDataTable: (data: ProdutoModel[]) => void };
-    const {
-        dataTable: dataTableCompraHistorico,
-    } = GetData(TableKey.CompraHistorico, recarregue) as { dataTable: ComprasModel[] };
 
-    const {
-        dataTable: dataTableEstoque,
-    } = GetData(TableKey.Estoque, recarregue) as { dataTable: EstoqueModel[] };
 
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<ProdutoModel>({
         validateOnBlur: true,
         validateOnChange: true,
-        initialValues,
+        initialValues: {
+            cdProduto: '',
+            nmProduto: '',
+            vlUnitario: 0,
+            vlVendaProduto: 0,
+            tpProduto: null,
+            stEntrega: false,
+            mpFabricado: [],
+            stMateriaPrima: false,
+            kgProduto: 1,
+            nmProdutoFormatted: '',
+            qntMinima: null
+        },
         validationSchema: Yup.object().shape({
-            nmProduto: Yup.string().required('Campo obrigatório'),
-            cdProduto: Yup.string().required('Campo obrigatório').test('valueUnique', 'Esse código já está cadastrado', value => {
-                const cod = dataTable.find(cod => cod.cdProduto === value)
-                if (cod) return false
-                return true
-            }),
+            nmProduto: Yup.string().required('Campo obrigatório')
+                .test('valueUniqueProduto', 'Esse produto ja está cadastrado', async (value) => {
+                    if (editData) return true;
+                    if (!value) return false;
+                    const { data } = await getItemsByQuery(tableKeys.Produtos, [where('nmProdutoFormatted', '==', formatDescription(value))], dispatch);
+                    if (data && data.length > 0) return false;
+                    return true;
+                })
+                .max(30, 'O nome do produto deve ter no maximo 30 caracteres'),
+            cdProduto: Yup.string()
+                .required('Campo obrigatório')
+                .test('valueUnique', 'Esse código já está cadastrado', async (value) => {
+                    if (editData) return true;
+                    if (!value) return false;
+                    const { data } = await getItemsByQuery(tableKeys.Produtos, [where('cdProduto', '==', value)], dispatch);
+                    if (data && data.length > 0) return false;
+                    return true;
+                }),
             vlUnitario: Yup.string().required('Campo obrigatório').test('stMateriaPrima1', 'Campo obrigatório', function (value, context) {
                 const { parent } = context;
                 if (parent.stMateriaPrima) return true
@@ -112,66 +101,16 @@ function CadastroProduto() {
                 const tpProduto = this.resolve(Yup.ref('tpProduto'));
                 if (tpProduto === SituacaoProduto.FABRICADO && (!value || value.length === 0)) return false;
                 return true;
-            }).nullable()
+            }).nullable(),
+            qntMinima: Yup.number().required('Campo obrigatório').typeError('Campo obrigatório'),
         }),
-        onSubmit: handleSubmitForm,
+        onSubmit: editData ? handleEditRow : handleSubmitForm,
     });
-
-    /**
-     * Limpa o estado, redefinindo os valores iniciais e gerando uma nova chave aleatória.
-     */
-    function cleanState() {
-        setInitialValues({
-            cdProduto: '',
-            nmProduto: '',
-            vlUnitario: 0,
-            vlVendaProduto: 0,
-            tpProduto: null,
-            stEntrega: false,
-            mpFabricado: [],
-            stMateriaPrima: false,
-            kgProduto: 1
-        })
-        setKey(Math.random());
-    }
-
-    /**
-     * Configuração dos campos de entrada para o formulário.
-     */
-    const inputsConfig: InputConfig[] = [
-        { label: 'Nome', propertyName: 'nmProduto' },
-        { label: 'Código do Produto', propertyName: 'cdProduto' },
-        { label: 'Rendimento Em Kg', propertyName: 'kgProduto', isDisable: selected?.kgProduto === undefined },
-        { label: 'Valor de Venda', propertyName: 'vlVendaProduto', isCurrency: true },
-        { label: 'Valor Pago', propertyName: 'vlUnitario', isCurrency: true, isDisable: selected?.tpProduto === SituacaoProduto.FABRICADO },
-    ];
-
-    /**
-     * Salva um Historico de Compras para que essa tabela tenha todos os produtos salvos e com valores atualizados.
-     * @param valuesUpdate objeto que ta sendo atualizado o estoque
-     */
-    async function savePurchaseHistory(valuesUpdate: ProdutoModel) {
-        const filteredValuesUpdate: CompraHistoricoModel = {
-            nmProduto: valuesUpdate.nmProduto,
-            cdProduto: valuesUpdate.cdProduto,
-            vlUnitario: valuesUpdate.vlUnitario,
-            mpFabricado: valuesUpdate.mpFabricado ? valuesUpdate.mpFabricado : [],
-            qntMinima: null,
-            tpProduto: valuesUpdate.tpProduto,
-            stMateriaPrima: valuesUpdate.stMateriaPrima,
-            kgProduto: valuesUpdate.kgProduto,
-            nrOrdem: 1
-        }
-        await addDoc(collection(db, TableKey.CompraHistorico), {
-            ...filteredValuesUpdate
-        })
-    }
-
     /**
      * Envia o formulário, realizando a lógica de conversão de moeda e atualizando o histórico de compras.
      */
     async function handleSubmitForm() {
-        dispatch(setLoading(true))
+        dispatch(setLoadingGlobal(true))
         values.vlVendaProduto = convertToNumber(values.vlVendaProduto.toString())
         values.vlUnitario = convertToNumber(values.vlUnitario.toString())
         if (values.mpFabricado.length > 0) {
@@ -180,24 +119,21 @@ function CadastroProduto() {
                 return mp.quantidade = quantidade;
             });
         }
-        savePurchaseHistory(values)
-        await addDoc(collection(db, TableKey.Produtos), {
+        await addDoc(collection(db, tableKeys.Produtos), {
             ...values
         })
             .then(() => {
-                dispatch(setLoading(false))
-                setSubmitForm(true);
-                setDataTable([...dataTable, values]);
-                setTimeout(() => { setSubmitForm(undefined) }, 3000)
+                setOpenSnackBar(prev => ({ ...prev, success: true }))
+                setEditData(values)
             })
             .catch(() => {
-                dispatch(setLoading(false))
-                setSubmitForm(false);
-                setTimeout(() => { setSubmitForm(undefined) }, 3000)
-            });
+                dispatch(setMessage('Erro ao Cadastrar Produto'))
+                setOpenSnackBar(prev => ({ ...prev, error: true }))
+            })
+            .finally(() => dispatch(setLoadingGlobal(false)));
         resetForm()
         setFieldValue('tpProduto', null)
-        cleanState()
+        setKey(Math.random());
     }
 
     /**
@@ -206,28 +142,20 @@ function CadastroProduto() {
      * Este método exclui a entrada correspondente na coleção "Produtos" e, se aplicável, na coleção "Estoque".
      * Após a exclusão, atualiza o estado da tabela.
      */
-    async function handleDeleteRow() {
-        setOpenDelete(false)
+    async function handleDeleteRow(selected: ProdutoModel | undefined) {
         if (selected) {
+            dispatch(setLoadingGlobal(true))
             const refID: string = selected.id ?? '';
-            await deleteDoc(doc(db, TableKey.Produtos, refID)).then(() => {
-                const newDataTable = dataTable.filter(row => row.id !== selected.id);
-                setDataTable(newDataTable);
-            });
-            const stock = dataTableEstoque.find(stock => stock.nmProduto === selected.nmProduto)
+            await deleteDoc(doc(db, tableKeys.Produtos, refID));
+            const stock = await getSingleItemByQuery<EstoqueModel>(tableKeys.Estoque, [where('nmProduto', '==', selected.nmProduto)], dispatch)
             if (stock) {
                 const refIdEstoque: string = stock.id ?? ''
-                await deleteDoc(doc(db, TableKey.Estoque, refIdEstoque))
+                await deleteDoc(doc(db, tableKeys.Estoque, refIdEstoque))
             }
-            const historyCompra = dataTableCompraHistorico.find(history => history.nmProduto === selected.nmProduto)
-            if (historyCompra) {
-                const refIdHistory: string = historyCompra.id ?? ''
-                await deleteDoc(doc(db, TableKey.CompraHistorico, refIdHistory))
-            }
+            setDeleteData(true)
+            dispatch(setLoadingGlobal(false))
         }
-        setSelected(undefined)
     }
-
     /**
      * Edita uma linha da tabela e do banco de dados.
      * 
@@ -235,29 +163,21 @@ function CadastroProduto() {
      * Após a edição, atualiza o estado da tabela.
      */
     async function handleEditRow() {
-        if (selected) {
-            const refID: string = selected.id ?? '';
-            const refTable = doc(db, TableKey.Produtos, refID);
-
-            if (JSON.stringify(selected) !== JSON.stringify(initialValues)) {
-                if (typeof selected.vlUnitario === 'string') {
-                    selected.vlUnitario = convertToNumber(selected.vlUnitario)
-                }
-                selected.vlVendaProduto = convertToNumber(selected.vlVendaProduto.toString())
-                await updateDoc(refTable, { ...selected })
-                    .then(() => {
-                        const index = dataTable.findIndex((item) => item.id === selected.id);
-                        const updatedDataTable = [
-                            ...dataTable.slice(0, index),
-                            selected,
-                            ...dataTable.slice(index + 1)
-                        ];
-                        setDataTable(updatedDataTable);
-                    });
-            }
+        dispatch(setLoadingGlobal(true))
+        const refID: string = values.id ?? '';
+        const refTable = doc(db, tableKeys.Produtos, refID);
+        if (typeof values.vlUnitario === 'string') {
+            values.vlUnitario = convertToNumber(values.vlUnitario)
         }
-        setIsEdit(false)
-        setSelected(undefined)
+        values.vlVendaProduto = convertToNumber(values.vlVendaProduto.toString())
+        await updateDoc(refTable, { ...values })
+            .then(() => {
+                setEditData(values)
+            });
+        resetForm()
+        setFieldValue('tpProduto', null)
+        setKey(Math.random());
+        dispatch(setLoadingGlobal(false))
     }
 
     /**
@@ -267,24 +187,25 @@ function CadastroProduto() {
      * Se ocorrer um erro durante o cálculo, como a ausência de quantidade em produtos, ele captura e trata a exceção.
      */
     useEffect(() => {
-        let somaFormat = 0.00;
-        if (isEdit && selected && selected.mpFabricado.length > 0) {
-            somaFormat = calculateTotalValue(selected.mpFabricado, dataTableCompraHistorico);
-            setSelected((prevSelected) => ({
-                ...prevSelected,
-                vlUnitario: parseFloat(somaFormat.toFixed(2)),
-            } as ProdutoModel | undefined));
-        } else {
+        const calcularValorTotal = async () => {
+            let somaFormat = 0.00;
             try {
-                somaFormat = calculateTotalValue(values.mpFabricado, dataTableCompraHistorico);
-                setFieldValue('vlUnitario', formatCurrency(somaFormat.toString()));
+                if (editData && values.mpFabricado.length > 0) {
+                    somaFormat = await calculateTotalValue(values.mpFabricado, dispatch, tableKeys);
+                    setFieldValue('vlUnitario', formatCurrency(somaFormat.toString()));
+                } else if (values.mpFabricado.length > 0) {
+                    somaFormat = await calculateTotalValue(values.mpFabricado, dispatch, tableKeys);
+                    setFieldValue('vlUnitario', formatCurrency(somaFormat.toString()));
+                }
             } catch (error) {
                 if (error instanceof ProdutosSemQuantidadeError) {
-                    setError(error.produtosSemQuantidade)
+                    setErrorQuantidade(error.produtosSemQuantidade);
                 }
             }
-        }
-    }, [values.mpFabricado, isEdit, selected?.mpFabricado]);
+        };
+
+        calcularValorTotal();
+    }, [values.mpFabricado, editData]);
 
     /**
      * controla a visibilidade do tipo de produto.
@@ -303,27 +224,30 @@ function CadastroProduto() {
      * atualizando o campo correspondente no formulário.
      */
     useEffect(() => {
+        if (values.tpProduto === SituacaoProduto.FABRICADO) return;
         if (values.stMateriaPrima) { setFieldValue('tpProduto', SituacaoProduto.COMPRADO); }
-        else { setFieldValue('tpProduto', null); }
     }, [values.stMateriaPrima])
 
 
     return (
-        <Box>
-            <Title>Cadastro de Novos Produtos</Title>
-            <ContainerInputs>
-                <DivInput>
+        <Box sx={{ padding: '5rem' }}>
+            <Typography variant="h4" gutterBottom>Cadastro de Novos Produtos</Typography>
+            <Grid container spacing={2}>
+                <Grid item xs={4}>
                     <Input
                         key={`nmProduto-${key}`}
                         label="Nome"
                         name="nmProduto"
                         onBlur={handleBlur}
                         value={values.nmProduto}
-                        onChange={e => setFieldValue(e.target.name, e.target.value)}
+                        onChange={e => {
+                            setFieldValue(e.target.name, e.target.value)
+                            setFieldValue('nmProdutoFormatted', formatDescription(e.target.value));
+                        }}
                         error={touched.nmProduto && errors.nmProduto ? errors.nmProduto : ''}
-                        styleDiv={{ marginTop: 4 }}
-                        style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                     />
+                </Grid>
+                <Grid item xs={2}>
                     <Input
                         key={`cdProduto-${key}`}
                         name="cdProduto"
@@ -332,63 +256,23 @@ function CadastroProduto() {
                         value={values.cdProduto}
                         onChange={e => setFieldValue(e.target.name, e.target.value)}
                         error={touched.cdProduto && errors.cdProduto ? errors.cdProduto : ''}
-                        styleDiv={{ marginTop: 4 }}
-                        style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                     />
-                    <DivSituacaoProduto>
-                        <FormControl
-                            variant="standard"
-                            sx={{ mb: 2, minWidth: 120 }}
-                            style={{ width: '13rem', display: 'flex', justifyContent: 'center', marginRight: '12px' }}
-                        >
-                            <InputLabel style={{ color: '#4d68af', fontWeight: 'bold', paddingLeft: 4 }} id="standard-label">Situação do produto</InputLabel>
-                            <Select
-                                key={`tpProduto-${key}`}
-                                name='tpProduto'
-                                id="standard"
-                                onBlur={handleBlur}
-                                label="Selecione..."
-                                labelId="standard-label"
-                                onChange={e => setFieldValue(e.target.name, e.target.value)}
-                                value={values.tpProduto ?? ''}
-                                style={{ borderBottom: '1px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
-                            >
-                                <MenuItem
-                                    value={SituacaoProduto.FABRICADO}
-                                >
-                                    Fabricado
-                                </MenuItem>
-                                <MenuItem
-                                    value={SituacaoProduto.COMPRADO}
-                                >
-                                    Comprado
-                                </MenuItem>
-                            </Select>
-                            {touched.tpProduto && errors.tpProduto && (
-                                <div style={{ color: 'red' }}>{errors.tpProduto}</div>
-                            )}
-                        </FormControl>
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={values.stEntrega}
-                                    onChange={(e) => setFieldValue("stEntrega", e.target.checked)}
-                                />
-                            }
-                            label="Venda no atacado?"
-                        />
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={values.stMateriaPrima}
-                                    onChange={(e) => setFieldValue("stMateriaPrima", e.target.checked)}
-                                />
-                            }
-                            label="Matéria-Prima ?"
-                        />
-                    </DivSituacaoProduto>
-                </DivInput>
-                <DivInput>
+                </Grid>
+
+
+                <Grid item xs={3}>
+                    <Input
+                        key={`vlUnitario-${key}`}
+                        label="Valor Pago"
+                        onBlur={handleBlur}
+                        name="vlUnitario"
+                        disabled={values.tpProduto === SituacaoProduto.FABRICADO || values.stMateriaPrima}
+                        value={values.vlUnitario && values.vlUnitario.toString() !== "R$ 0,00" ? values.vlUnitario : ''}
+                        onChange={e => setFieldValue(e.target.name, formatCurrencyRealTime(e.target.value))}
+                        error={touched.vlUnitario && errors.vlUnitario ? errors.vlUnitario : ''}
+                    />
+                </Grid>
+                <Grid item xs={3}>
                     <Input
                         key={`vlVendaProduto-${key}`}
                         label="Valor Venda"
@@ -397,118 +281,130 @@ function CadastroProduto() {
                         value={values.vlVendaProduto ? values.vlVendaProduto : ''}
                         onChange={e => setFieldValue(e.target.name, formatCurrencyRealTime(e.target.value))}
                         error={touched.vlVendaProduto && errors.vlVendaProduto ? errors.vlVendaProduto : ''}
-                        styleDiv={{ marginTop: 4 }}
-                        style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
                         disabled={values.stMateriaPrima}
                     />
-                    <Input
-                        key={`vlUnitario-${key}`}
-                        label="Valor Pago"
-                        onBlur={handleBlur}
-                        name="vlUnitario"
-                        disabled={values.tpProduto === SituacaoProduto.FABRICADO || values.stMateriaPrima}
-                        raisedLabel={values.tpProduto === SituacaoProduto.FABRICADO}
-                        value={values.vlUnitario && values.vlUnitario.toString() !== "R$ 0,00" ? values.vlUnitario : ''}
-                        onChange={e => setFieldValue(e.target.name, formatCurrencyRealTime(e.target.value))}
-                        error={touched.vlUnitario && errors.vlUnitario ? errors.vlUnitario : ''}
-                        styleDiv={{ marginTop: 4 }}
-                        style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
-                    />
-                    {values.tpProduto === SituacaoProduto.FABRICADO ?
-                        <FormControl
-                            variant="standard"
-                            style={{ width: '13rem', display: 'flex', justifyContent: 'center', marginTop: '10px' }}
+                </Grid>
+                <Grid item xs={2}>
+                    <FormControl fullWidth variant="standard">
+                        <InputLabel id="standard-label">Situação produto</InputLabel>
+                        <Select
+                            key={`tpProduto-${key}`}
+                            name='tpProduto'
+                            id="standard"
+                            onBlur={handleBlur}
+                            label="Selecione..."
+                            labelId="standard-label"
+                            onChange={e => setFieldValue(e.target.name, e.target.value)}
+                            value={values.tpProduto ?? ''}
                         >
-                            <InputLabel style={{ color: '#4d68af', fontWeight: 'bold' }}>Redimento Em Kg</InputLabel>
-                            <Select
-                                style={{ borderBottom: '1px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
-                                value={values.kgProduto}
-                                label="Age"
-                                onChange={e => setFieldValue('kgProduto', e.target.value)}
-                            >
-                                {Array.from({ length: 15 }, (_, index) => index + 1).map(value => (
-                                    <MenuItem key={value} value={value}>{`${value} Kg`}</MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                        : null
-                    }
-                </DivInput>
-            </ContainerInputs>
-            {/*Adicionando Produto */}
-            <IsAdding
-                addingScreen="Produto"
-                data={useUniqueNames(dataTableCompraHistorico, values.tpProduto, SituacaoProduto.COMPRADO)}
-                isAdding={isVisibleTpProuto}
-                products={values.mpFabricado}
-                setFieldValue={setFieldValue}
-                setIsVisibleTpProduto={setIsVisibleTpProduto}
-                errors={errors.mpFabricado as FormikTouched<any> | undefined}
-                touched={touched}
+                            <MenuItem value={SituacaoProduto.FABRICADO}>Fabricado</MenuItem>
+                            <MenuItem value={SituacaoProduto.COMPRADO}>Comprado</MenuItem>
+                        </Select>
+                        {errors.tpProduto && touched.tpProduto && (
+                            <FormHelperText style={{ color: theme.paletteColor.error }}>{errors.tpProduto}</FormHelperText>
+                        )}
+                    </FormControl>
+                </Grid>
+                <Grid item xs={2} >
+                    <FormControl fullWidth variant="standard">
+                        <InputLabel>Rendimento Em Kg</InputLabel>
+                        <Select
+                            disabled={values.tpProduto === null || values.tpProduto === SituacaoProduto.COMPRADO}
+                            value={values.kgProduto}
+                            onChange={e => setFieldValue('kgProduto', e.target.value)}
+                        >
+                            {Array.from({ length: 15 }, (_, index) => index + 1).map(value => (
+                                <MenuItem key={value} value={value}>{`${value} Kg`}</MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                </Grid>
+                <Grid item xs={2}>
+                    <Input
+                        key={`qntMinima - ${key}`}
+                        label="Quant. mínima em estoque"
+                        onBlur={handleBlur}
+                        name="qntMinima"
+                        value={values.qntMinima || ''}
+                        type='number'
+                        onChange={e => setFieldValue(e.target.name, Number(e.target.value))}
+                        maxLength={5}
+                        error={touched.qntMinima && errors.qntMinima ? errors.qntMinima : ''}
+                        onKeyDown={e => onKeyPressHandleSubmit(e, handleSubmit)}
+                    />
+                </Grid>
+                <Grid item xs={5} >
+                    <FormControlLabel
+                        style={{ height: '70px' }}
+                        control={<Checkbox checked={values.stEntrega} onChange={(e) => setFieldValue("stEntrega", e.target.checked)} />}
+                        label="Venda atacado?"
+                    />
+                    <FormControlLabel
+                        style={{ height: '70px' }}
+                        control={<Checkbox checked={values.stMateriaPrima} onChange={(e) => setFieldValue("stMateriaPrima", e.target.checked)} />}
+                        label="Matéria-Prima ?"
+                    />
+                </Grid>
+            </Grid>
+
+            <CollapseListProduct<ComprasModel>
+                isVisible={isVisibleTpProuto}
+                searchMateriaPrima
+                nameArray='mpFabricado'
+                collectionName={tableKeys.Produtos}
+                initialItems={values.mpFabricado}
+                labelAutoComplete='Materia-Prima'
+                setFieldValueExterno={setFieldValue}
+                typeValueInput='number'
             />
 
-            {/* Editar o Produto */}
-            <IsEdit
-                editingScreen='Produto'
-                setSelected={setSelected}
-                selected={selected}
-                handleEditRow={handleEditRow}
-                inputsConfig={inputsConfig}
-                isEdit={isEdit}
-                products={selected ? selected.mpFabricado : []}
-                setIsEdit={setIsEdit}
-                newData={useUniqueNames(dataTableCompraHistorico, values.tpProduto, SituacaoProduto.COMPRADO, isEdit)}
-            />
-            <ModalDelete open={openDelete} onDeleteClick={handleDeleteRow} onCancelClick={() => setOpenDelete(false)} />
             <AlertDialog
-                open={error ? true : false}
-                messege={
-                    <p>
-                        Produtos <b>{error}</b> estão com o estoque vazio. Por favor, Atualize o estoque desses produtos antes de continuar.
-                    </p>
-                }
+                open={errorQuantidade ? true : false}
+                messege={<p>Produtos <b>{errorQuantidade}</b> estão com o estoque vazio. Por favor, Atualize o estoque desses produtos antes de continuar.</p>}
                 labelButtonOk='Ok'
                 title='Alerta'
-                onOKClick={() => { setError(undefined); history('/atualizar-estoque') }}
+                onOKClick={() => { setErrorQuantidade(undefined); history('/atualizar-estoque') }}
             />
-            <ContainerButton>
+
+            <Box mt={4} display="flex" justifyContent="flex-end">
                 <Button
-                    label='Cadastrar Produto'
+                    label={editData ? 'Atualizar' : 'Cadastrar'}
                     type="button"
-                    disabled={loading}
+                    disabled={loadingGlobal}
                     onClick={handleSubmit}
-                    style={{ margin: '1rem 4rem 2rem 95%', height: '4rem', width: '12rem' }}
+                    style={{ width: '12rem', height: '4rem' }}
                 />
+            </Box>
 
-                <FormAlert submitForm={submitForm} name={'Produto'} styleLoadingMarginTop='-7rem' />
-            </ContainerButton>
-
-            {/*Tabala */}
-
-            <BoxTitleDefault>
-                <div>
-                    <FiltroGeneric data={dataTable} setFilteredData={setDataTable} carregarDados={setRecarregue} type="produto" />
-                </div>
-            </BoxTitleDefault>
-            <GenericTable
+            <GenericTable<ProdutoModel>
                 columns={[
-                    { label: 'Código', name: 'cdProduto' },
-                    { label: 'Nome', name: 'nmProduto' },
+                    { label: 'Código', name: 'cdProduto', shouldApplyFilter: true },
+                    { label: 'Nome', name: 'nmProduto', shouldApplyFilter: true },
                     { label: 'Valor Venda', name: 'vlVendaProduto', isCurrency: true },
                     { label: 'Valor Pago', name: 'vlUnitario', isCurrency: true },
                 ]}
-                data={dataTable}
-                isLoading={isLoading}
-                isdisabled={selected ? false : true}
-                onSelectedRow={setSelected}
-                onEdit={() => {
-                    if (selected) {
-                        setIsEdit(true)
-                        setInitialValues(selected)
-                    }
+                collectionName={tableKeys.Produtos}
+                onEdit={(row: ProdutoModel | undefined) => {
+                    if (!row) return;
+                    setEditData(row);
+                    setFieldValue('cdProduto', row.cdProduto);
+                    setFieldValue('nmProduto', row.nmProduto);
+                    setFieldValue('vlVendaProduto', NumberFormatForBrazilianCurrency(row.vlVendaProduto));
+                    setFieldValue('vlUnitario', row.mpFabricado.length > 0 ? row.vlUnitario : NumberFormatForBrazilianCurrency(row.vlUnitario));
+                    setFieldValue('kgProduto', row.kgProduto);
+                    setFieldValue('tpProduto', row.tpProduto);
+                    setFieldValue('stMateriaPrima', row.stMateriaPrima);
+                    setFieldValue('mpFabricado', row.mpFabricado);
+                    setFieldValue('id', row.id);
+                    setFieldValue('nmProdutoFormatted', row.nmProdutoFormatted);
+                    setFieldValue('qntMinima', row.qntMinima);
                 }}
-                onDelete={() => setOpenDelete(true)}
+                editData={editData}
+                setEditData={setEditData}
+                deleteData={deleteData}
+                onDelete={(selected: ProdutoModel | undefined) => handleDeleteRow(selected)}
             />
+            <CustomSnackBar message={error ? error : "Cadastrado Produto com sucesso"} open={openSnackBar} setOpen={setOpenSnackBar} />
         </Box>
     );
 }

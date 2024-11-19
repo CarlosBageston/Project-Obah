@@ -1,10 +1,12 @@
-import CompraHistoricoModel from "../Pages/admin/compras/model/comprahistoricoModel";
+import { where } from "firebase/firestore";
 import ComprasModel from "../Pages/admin/compras/model/compras";
-import SituacaoProduto from "../enumeration/situacaoProduto";
-import useFormatCurrency from "./formatCurrency";
+import { getItemsByQuery } from "./queryFirebase";
 import { foundKgProduto } from "./useFoundProductKg";
+import { Dispatch } from 'redux';
+import ProdutosModel from "../Pages/admin/cadastroProdutos/model/produtos";
+import { useTableKeys } from "./tableKey";
+import { convertToNumber } from "./formatCurrency";
 
-const { convertToNumber } = useFormatCurrency();
 
 /**
  * Classe de erro para representar uma exceção quando há produtos sem quantidade durante o cálculo do valor total.
@@ -26,44 +28,58 @@ export class ProdutosSemQuantidadeError {
 
 /**
  * Calcula o valor total com base nas quantidades de produtos e nos valores unitários.
- * @param {ComprasModel[] | ComprasModel} mpList - Lista de produtos ou um único produto.
- * @param {CompraHistoricoModel[] | CompraHistoricoModel} comprasDataTable - Lista de compras históricas ou uma única compra.
+ * @param {ComprasModel[]} mpList - Lista de produtos ou um único produto.
  * @returns {number} - Valor total calculado.
  * @throws {ProdutosSemQuantidadeError} - Lança exceção se houver produtos sem quantidade.
  */
-export function calculateTotalValue(mpList: ComprasModel[] | ComprasModel, comprasDataTable: CompraHistoricoModel[] | CompraHistoricoModel): number {
+export async function calculateTotalValue(
+    mpList: ComprasModel[], 
+    dispatch: Dispatch,
+    tableKeys: ReturnType<typeof useTableKeys>
+): Promise<number> {
     let soma = 0;
     const produtosSemQuantidade: string[] = [];
-    if (Array.isArray(comprasDataTable) && Array.isArray(mpList)) {
-        comprasDataTable.forEach(compra => {
-            if(compra.tpProduto === SituacaoProduto.FABRICADO || !compra.stMateriaPrima) return;
-            if(!compra.vlUnitario){
-                produtosSemQuantidade.push(compra.nmProduto)
-            }
-        })
-        if(produtosSemQuantidade.length > 0){
-            const nomesSeparadosPorVirgula = produtosSemQuantidade.join(', ');
-            throw new ProdutosSemQuantidadeError(nomesSeparadosPorVirgula);
+
+    const verificarProdutosSemQuantidade = (produtos: ProdutosModel[]) => {
+        return produtos.reduce((acc: string[], compra) => {
+            if (!compra.stMateriaPrima) return acc;
+            if (!compra.vlUnitario) acc.push(compra.nmProduto);
+            return acc;
+        }, []);
+    };
+
+    const { data } = await getItemsByQuery<ProdutosModel>(
+        tableKeys.Produtos,
+        [where('stMateriaPrima', '==', true)],
+        dispatch
+    );
+    
+    produtosSemQuantidade.push(...verificarProdutosSemQuantidade(data));
+    
+    if (produtosSemQuantidade.length > 0) {
+        throw new ProdutosSemQuantidadeError(produtosSemQuantidade.join(', '));
+    }
+
+    const produtosMap = new Map<string, ProdutosModel>(
+        data.map(compra => [compra.nmProduto, compra])
+    );
+
+    for (const mp of mpList) {
+        const produtoEncontrado = produtosMap.get(mp.nmProduto);
+        if (produtoEncontrado) {
+            const foundProduct = foundKgProduto(produtoEncontrado);
+            soma += calcularValorParaProduto(mp, foundProduct);
         }
-        for (const mp of mpList) {
-            const produtoEncontrado = comprasDataTable.find(produto => produto.nmProduto === mp.nmProduto);
-            if (produtoEncontrado) {
-                const foundProduct = foundKgProduto(produtoEncontrado)
-                soma += calcularValorParaProduto(mp, foundProduct);
-            }
-        }
-    } else if (!Array.isArray(comprasDataTable) && !Array.isArray(mpList)) {
-        soma = calcularValorParaProduto(mpList, comprasDataTable);
     }
     return soma;
 }
 /**
  * Calcula o valor total para um único produto com base na quantidade e no valor unitário.
  * @param {ComprasModel} mp - Produto a ser calculado.
- * @param {CompraHistoricoModel} produtoEncontrado - Informações históricas do produto.
+ * @param {ProdutosModel} produtoEncontrado - Informações históricas do produto.
  * @returns {number} - Valor total calculado para o produto.
  */
-function calcularValorParaProduto(mp: ComprasModel, produtoEncontrado: CompraHistoricoModel): number {
+function calcularValorParaProduto(mp: ComprasModel, produtoEncontrado: ProdutosModel): number {
     let result = 0;
     let quantidade = null
     if(typeof mp.quantidade === 'string') { quantidade = convertToNumber(mp.quantidade) } 

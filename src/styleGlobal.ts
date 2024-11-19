@@ -18,6 +18,47 @@ body {
   font-size: 16px;
 }
 
+@media print {
+    /* Oculta elementos que não devem aparecer na impressão */
+    .no-print {
+        display: none !important;
+    }
+
+    .marginprint {
+        margin-bottom: 6px;
+        margin-top: 6px;
+    }
+
+    /* Adicione aqui quaisquer outros estilos específicos para impressão */
+}
+
+.style-scrollbar {
+  overflow-y: auto;
+  
+  &::-webkit-scrollbar {
+    width: 14px; 
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px; 
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #979799;
+    border-radius: 10px; 
+    border: 3px solid #f1f1f1;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #333;
+  }
+}
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none; /* Chrome/Safari */
+    margin: 0; /* Remove margens */
+}
 body {
   font-family: ${props => props.theme.fontsDefault.primaryFont};
   line-height: 1.4;

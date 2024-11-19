@@ -1,39 +1,42 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Link, Outlet, useNavigate } from 'react-router-dom';
 import List from '@mui/material/List';
 import Divider from '@mui/material/Divider';
-import MuiDrawer from '@mui/material/Drawer';
-import { Link, Outlet } from 'react-router-dom';
-import logo from '../../assets/Image/logo-admin.png';
+import Tooltip from '@mui/material/Tooltip';
+import { Theme, CSSObject } from '@mui/material/styles';
+import { styled as muiStyled } from '@mui/material/styles';
 import ListItemIcon from '@mui/material/ListItemIcon';
-import { styled, Theme, CSSObject } from '@mui/material/styles';
+import { Box, Collapse, IconButton, LinearProgress } from '@mui/material';
 import MuiAppBar, { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
+import MuiDrawer from '@mui/material/Drawer';
 
-//import de icon para menu
+// Importando ícones e logo
+import logo from '../../assets/Image/logo-admin.png';
 import cliente from '../../assets/Icon/user.png';
 import estoque from '../../assets/Icon/stock.png';
 import compra from '../../assets/Icon/checklist.png';
-import vendas from '../../assets/Icon/acquisition.png';
+import vendas from '../../assets/Icon/coupon.png';
 import dashboard from '../../assets/Icon/dashboard.png';
 import produto from '../../assets/Icon/add-product.png';
 import entrega from '../../assets/Icon/entrega-rapida.png';
-import colaborador from '../../assets/Icon/employee.png';
-import gestao from '../../assets/Icon/gestao.png'
-import cartaoPonto from '../../assets/Icon/cartao-ponto.png'
+import gestao from '../../assets/Icon/gestao.png';
+import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
+import LogoutIcon from '@mui/icons-material/Logout';
 
 import {
-    Image,
-    Title,
     Button,
-    BoxTitle,
     StyledListItemText,
     StyledListItemButton,
-    StyledListItemButtonSubOpcao,
-    Icon,
-    Box
+    Image,
 } from './style';
-import { Tooltip } from '@mui/material';
-
-
+import { signOut } from 'firebase/auth';
+import { auth } from '../../firebase';
+import { useDispatch, useSelector } from 'react-redux';
+import { setMessage } from '../../store/reducer/reducer';
+import { RootState } from '../../store/reducer/store';
+import CustomSnackBar, { StateSnackBar } from '../snackBar/customsnackbar';
+import Admin from '../../Pages/signup/authentication';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 
 const drawerWidth = 240;
 
@@ -43,8 +46,8 @@ const openedMixin = (theme: Theme): CSSObject => ({
         easing: theme.transitions.easing.sharp,
         duration: theme.transitions.duration.enteringScreen,
     }),
-    backgroundImage: 'linear-gradient(to right bottom, #2e294e, #2e2858, #2f2761, #2f256b, #2f2374)',
-    overflowY: 'visible'
+    backgroundColor: '#0a0269',
+    overflowY: 'visible',
 });
 
 const closedMixin = (theme: Theme): CSSObject => ({
@@ -56,19 +59,18 @@ const closedMixin = (theme: Theme): CSSObject => ({
     [theme.breakpoints.up('sm')]: {
         width: `calc(${theme.spacing(8)} + 1px)`,
     },
-    backgroundImage: 'linear-gradient(to right bottom, #2e294e, #2e2858, #2f2761, #2f256b, #2f2374)',
+    backgroundColor: '#0a0269',
     overflowY: 'hidden',
     '&::-webkit-scrollbar': {
         height: '0px',
-        backgroundImage: 'linear-gradient(to right bottom, #2e294e, #2e2858, #2f2761, #2f256b, #2f2374)',
+        backgroundColor: '#0a0269',
     },
 });
 
 interface AppBarProps extends MuiAppBarProps {
     open?: boolean;
 }
-
-const AppBar = styled(MuiAppBar, {
+const AppBar = muiStyled(MuiAppBar, {
     shouldForwardProp: (prop) => prop !== 'open',
 })<AppBarProps>(({ theme, open }) => ({
     zIndex: theme.zIndex.drawer + 1,
@@ -90,7 +92,34 @@ const AppBar = styled(MuiAppBar, {
     boxShadow: 'none',
 }));
 
-const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' })(
+
+interface MenuItem {
+    label: string;
+    route: string;
+    icon?: string;
+    subItems?: MenuItem[];
+}
+const menuItems: MenuItem[] = [
+    { label: 'Dashboard', icon: dashboard, route: '/dashboard' },
+    { label: 'Cadastro Produto', icon: produto, route: '/cadastro-produto' },
+    { label: 'Atualizar Estoque', icon: compra, route: '/atualizar-estoque' },
+    { label: 'Cadastro Cliente', icon: cliente, route: '/cadastro-cliente' },
+    { label: 'Painel de venda', icon: vendas, route: '/vendas' },
+    { label: 'Entregas', icon: entrega, route: '/entregas' },
+    {
+        label: 'Estoques', icon: estoque, route: '', subItems: [
+            { label: 'Fabricados', icon: estoque, route: '/estoque-fabricado' },
+            { label: 'Comprados', icon: estoque, route: '/estoque-comprado' },
+        ]
+    },
+    {
+        label: 'Gestão', icon: gestao, route: '', subItems: [
+            { label: 'Colaborador', route: '/colaborador' },
+            { label: 'Cartão Ponto', route: '/cartao-ponto' }
+        ]
+    }
+];
+const Drawer = muiStyled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' })(
     ({ theme, open }) => ({
         width: drawerWidth,
         flexShrink: 0,
@@ -107,153 +136,88 @@ const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' 
     }),
 
 );
-
-/**
- * Componente que exibe um menu lateral com opções de navegação.
- * O menu inclui links para as seguintes páginas: Dashboard, Atualizar Estoque,
- * Cadastro de Produto, Cadastro de Cliente, Painel de Venda, Entregas e Estoque.
- * O menu pode ser aberto e fechado, exibindo ou ocultando as opções de navegação.
- */
-
 export default function MenuLateral() {
     const [open, setOpen] = useState(false);
-    const [openSubOpcao, setOpenSubOpcao] = useState<boolean>(false);
+    const [openSubOptions, setOpenSubOptions] = useState<{ [key: string]: boolean }>({});
+    const [openSnackBar, setOpenSnackBar] = useState<StateSnackBar>({ error: false, success: false });
+    const isLoading = useSelector((state: RootState) => state.loading.loadingGlobal);
+    const message = useSelector((state: RootState) => state.user.message);
+    const empresa = useSelector((state: RootState) => state.empresaOnline);
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const [isAdmin, setIsAdmin] = useState(false);
 
-    const handleClick = () => {
-        setOpenSubOpcao(!openSubOpcao);
-        setOpen(true);
+    const toggleSubmenu = (label: string) => {
+        setOpen(true)
+        setOpenSubOptions((prevState) => ({
+            ...prevState,
+            [label]: !prevState[label]
+        }));
     };
-    const handleDrawerOpen = () => {
-        setOpen(true);
-    };
+
+    const handleDrawerOpen = () => setOpen(true);
 
     const handleDrawerClose = () => {
         setOpen(false);
-        setOpenSubOpcao(false)
+        setOpenSubOptions({});
     };
-    const list = () => (
-        <Box
-            sx={{ width: 240 }}
-            role="presentation"
-        >
-            <List>
-                <Link to="/dashboard" style={{ textDecoration: 'none', color: 'white' }}>
-                    <StyledListItemButton>
-                        <Tooltip
-                            title={"Dashboard"}
-                        >
-                            <ListItemIcon>
-                                <Image src={dashboard} alt="Dashboard" width={32} />
-                            </ListItemIcon>
-                        </Tooltip>
-                        <StyledListItemText primary="Dashboard" />
-                    </StyledListItemButton>
-                </Link>
-                <Link to="/cadastro-produto" style={{ textDecoration: 'none', color: 'white' }}>
-                    <StyledListItemButton>
-                        <Tooltip
-                            title={"Cadastro Produto"}
-                        >
-                            <ListItemIcon>
-                                <Image src={produto} alt="Cadastro Produto" width={30} />
-                            </ListItemIcon>
-                        </Tooltip>
-                        <StyledListItemText primary="Cadastro Produto" />
-                    </StyledListItemButton>
-                </Link>
-                <Link to="/atualizar-estoque" style={{ textDecoration: 'none', color: 'white' }}>
-                    <StyledListItemButton>
-                        <Tooltip
-                            title={"Atualizar Estoque"}
-                        >
-                            <ListItemIcon>
-                                <Image src={compra} alt="Atualizar Estoque" width={30} />
-                            </ListItemIcon>
-                        </Tooltip>
-                        <StyledListItemText primary="Atualizar Estoque" />
-                    </StyledListItemButton>
-                </Link>
-                <Link to="/cadastro-cliente" style={{ textDecoration: 'none', color: 'white' }}>
-                    <StyledListItemButton>
-                        <Tooltip
-                            title={"Cadastro Cliente"}
-                        >
-                            <ListItemIcon>
-                                <Image src={cliente} alt="cadastro cliente" width={30} />
-                            </ListItemIcon>
-                        </Tooltip>
-                        <StyledListItemText primary="Cadastro Cliente" />
-                    </StyledListItemButton>
-                </Link>
-                <Link to="/vendas" style={{ textDecoration: 'none', color: 'white' }}>
-                    <StyledListItemButton>
-                        <Tooltip
-                            title={"Painel de venda"}
-                        >
-                            <ListItemIcon>
-                                <Image src={vendas} alt="Painel de venda" width={30} />
-                            </ListItemIcon>
-                        </Tooltip>
-                        <StyledListItemText primary="Painel de venda" />
-                    </StyledListItemButton>
-                </Link>
-                <Link to="/entregas" style={{ textDecoration: 'none', color: 'white' }}>
-                    <StyledListItemButton>
-                        <Tooltip
-                            title={"Entregas"}
-                        >
-                            <ListItemIcon>
-                                <Image src={entrega} alt="Entregas" width={30} />
-                            </ListItemIcon>
-                        </Tooltip>
-                        <StyledListItemText primary="Entregas" />
-                    </StyledListItemButton>
-                </Link>
-                <Link to="/estoque" style={{ textDecoration: 'none', color: 'white' }}>
-                    <StyledListItemButton>
-                        <Tooltip
-                            title={"Estoque"}
-                        >
-                            <ListItemIcon>
-                                <Image src={estoque} alt="Estoque" width={30} />
-                            </ListItemIcon>
-                        </Tooltip>
-                        <StyledListItemText primary="Estoque" />
-                    </StyledListItemButton>
-                </Link>
-                <StyledListItemButton onClick={handleClick}>
-                    <Tooltip
-                        title={"Gestão"}
-                    >
-                        <ListItemIcon>
-                            <Image src={gestao} alt="Gestão" width={30} />
-                        </ListItemIcon>
-                    </Tooltip>
-                    <StyledListItemText primary="Gestão" />
-                    <Icon opensubopcao={openSubOpcao.toString()} />
-                </StyledListItemButton>
-                {openSubOpcao &&
-                    <div style={{ backgroundColor: '#3b2e87' }}>
-                        <Link to="/colaborador" style={{ textDecoration: 'none', color: 'white' }} onClick={handleClick}>
-                            <StyledListItemButtonSubOpcao>
+
+    const handleLogout = async () => {
+        try {
+            await signOut(auth);
+            navigate('/');
+        } catch (error) {
+            dispatch(setMessage("Erro ao sair. Tente novamente."))
+            setOpenSnackBar(prev => ({ ...prev, error: true }))
+        }
+    }
+    useEffect(() => {
+        if (empresa) {
+            empresa.isAdmin ? setIsAdmin(true) : setIsAdmin(false)
+        }
+    }, [empresa])
+
+    const renderMenuItems = () => (
+        <List>
+            {menuItems.map(({ label, icon, route, subItems }) => (
+                <div key={label}>
+                    <Link to={route || '#'} style={{ textDecoration: 'none', color: 'white' }}>
+                        <StyledListItemButton onClick={() => subItems && toggleSubmenu(label)}>
+                            <Tooltip title={label}>
                                 <ListItemIcon>
-                                    <Image src={colaborador} alt="Colaborador" width={30} />
+                                    <Image src={icon} alt={label} width={30} />
                                 </ListItemIcon>
-                                <StyledListItemText primary="Colaborador" />
-                            </StyledListItemButtonSubOpcao>
-                        </Link>
-                        <Link to="/cartao-ponto" style={{ textDecoration: 'none', color: 'white' }} onClick={handleClick}>
-                            <StyledListItemButtonSubOpcao>
-                                <ListItemIcon>
-                                    <Image src={cartaoPonto} alt="Cartão Ponto" width={30} />
-                                </ListItemIcon>
-                                <StyledListItemText primary="Cartão Ponto" />
-                            </StyledListItemButtonSubOpcao>
-                        </Link>
-                    </div>
-                }
-            </List>
-        </Box>
+                            </Tooltip>
+                            <StyledListItemText primary={label} />
+                            {subItems && <KeyboardArrowRightIcon
+                                color='inherit'
+                                style={
+                                    openSubOptions[label] !== undefined
+                                        ? {
+                                            transform: openSubOptions[label] ? 'rotate(90deg)' : undefined,
+                                            transition: 'transform 0.3s linear'
+                                        }
+                                        : undefined
+                                }
+                            />}
+                        </StyledListItemButton>
+                    </Link>
+                    {subItems && (
+                        <Collapse in={openSubOptions[label]} timeout={'auto'}>
+                            <Box sx={{ backgroundColor: '#0b0083' }}>
+                                {subItems.map((subItem) => (
+                                    <Link to={subItem.route} key={subItem.label} style={{ textDecoration: 'none', color: 'white' }}>
+                                        <StyledListItemButton sx={{ pl: 10 }}>
+                                            <StyledListItemText primary={subItem.label} />
+                                        </StyledListItemButton>
+                                    </Link>
+                                ))}
+                            </Box>
+                        </Collapse>
+                    )}
+                </div>
+            ))}
+        </List>
     );
     return (
         <Box sx={{ display: 'flex' }}>
@@ -272,22 +236,50 @@ export default function MenuLateral() {
                     <span className="text">MENU</span>
                 </Button>
             </AppBar>
-            <Drawer variant="permanent" open={open}>
-                <div onClick={handleDrawerClose}>
+            <Drawer variant="permanent" open={open}
+                sx={{
+                    '& .MuiDrawer-paper': open ? openedMixin : closedMixin,
+                }}
+            >
+                <Box onClick={handleDrawerClose}>
                     {open ? (
-                        <BoxTitle>
+                        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 2 }}>
                             <img src={logo} alt="Logo da empresa" width={220} />
-                            <Title>Sorveteria Obah!</Title>
-                        </BoxTitle>
+                        </Box>
                     ) : (
                         <img src={logo} alt="mini logo" width={70} />
                     )}
-                </div>
+                </Box>
                 <Divider color="#fafafad4" />
-                {list()}
+                {renderMenuItems()}
             </Drawer>
             <Box component="main" sx={{ flexGrow: 1, p: 3 }} onClick={handleDrawerClose}>
+                <Box sx={{ position: 'fixed', top: 0, left: 0, width: '100vw', zIndex: 1 }}>
+                    {isLoading && <LinearProgress />}
+                </Box>
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        top: 8,
+                        right: '5rem',
+                        zIndex: 10,
+                        cursor: 'pointer'
+                    }}
+                >
+                    {isAdmin && <Admin />}
+                    <Tooltip title={'Perfil'} sx={{ mr: 2 }}>
+                        <IconButton onClick={() => navigate('/perfil')}>
+                            <PersonOutlineIcon fontSize='inherit' />
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip title={'Sair'}>
+                        <IconButton onClick={handleLogout}>
+                            <LogoutIcon fontSize='inherit' />
+                        </IconButton>
+                    </Tooltip>
+                </Box>
                 <Outlet />
+                <CustomSnackBar message={message} open={openSnackBar} setOpen={setOpenSnackBar} />
             </Box>
         </Box>
     );

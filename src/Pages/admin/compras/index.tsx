@@ -1,116 +1,64 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import * as Yup from 'yup';
 import moment from 'moment';
-import { isEqual } from 'lodash';
 import { useFormik } from 'formik';
 import { db } from "../../../firebase";
 import ComprasModel from "./model/compras";
 import Input from "../../../Components/input";
 import Button from "../../../Components/button";
-import GetData from "../../../firebase/getData";
-import { useState, useEffect, lazy } from "react";
-import { TableKey } from '../../../types/tableName';
-import EstoqueModel from '../estoque/model/estoque';
+import { useState, useEffect } from "react";
+import EstoqueModel, { Versao } from '../estoque/model/estoque';
 import GenericTable from "../../../Components/table";
 import { useDispatch, useSelector } from 'react-redux';
-import FiltroGeneric from "../../../Components/filtro";
 import formatDate from "../../../Components/masks/formatDate";
-import TelaDashboard from '../../../enumeration/telaDashboard';
 import ProdutosModel from "../cadastroProdutos/model/produtos";
-import CompraHistoricoModel from './model/comprahistoricoModel';
-import { InputConfig } from "../../../Components/isEdit/isEdit";
-import FormAlert from "../../../Components/FormAlert/formAlert";
-import { State, setLoading } from '../../../store/reducer/reducer';
 import SituacaoProduto from "../../../enumeration/situacaoProduto";
-import ModalDelete from '../../../Components/FormAlert/modalDelete';
-import { addDoc, arrayUnion, collection, deleteDoc, doc, updateDoc } from "firebase/firestore";
-import { Autocomplete, AutocompleteChangeReason, Checkbox, FormControl, FormControlLabel, InputLabel, MenuItem, Select, TextField } from "@mui/material";
-const IsEdit = lazy(() => import('../../../Components/isEdit/isEdit'));
-
-import {
-    Box,
-    ContainerInputs,
-    DivInput,
-    Title,
-    ContainerButton,
-} from './style'
-import { BoxTitleDefault } from "../estoque/style";
+import { addDoc, arrayUnion, collection, deleteDoc, doc, serverTimestamp, updateDoc, where, writeBatch } from "firebase/firestore";
+import { Autocomplete, AutocompleteChangeReason, Box, FormControlLabel, Grid, Switch, TextField, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
 
 //hooks
 import useEstoque from '../../../hooks/useEstoque';
-import { useUniqueNames } from '../../../hooks/useUniqueName';
-import useFormatCurrency from '../../../hooks/formatCurrency';
 import { foundKgProduto } from '../../../hooks/useFoundProductKg';
 import useHandleInputKeyPress from '../../../hooks/useHandleInputKeyPress';
-import { calculateTotalValue } from '../../../hooks/useCalculateTotalValue';
-import { useCalculateValueDashboard } from '../../../hooks/useCalculateValueDashboard';
+import useDebouncedSuggestions from '../../../hooks/useDebouncedSuggestions';
+import { getItemsByQuery, getSingleItemByQuery } from '../../../hooks/queryFirebase';
+import CustomSnackBar, { StateSnackBar } from '../../../Components/snackBar/customsnackbar';
+import { RootState } from '../../../store/reducer/store';
+import { setMessage } from '../../../store/reducer/reducer';
+import { useTableKeys } from '../../../hooks/tableKey';
+import { formatDescription } from '../../../utils/formattedString';
+import { setLoadingGlobal } from '../../../store/reducer/loadingSlice';
+import { DashboardCompraModel, updateAddDashboardCompra } from '../../../hooks/useCalculateValueDashboard';
+import { convertToNumber, formatCurrency, formatCurrencyRealTime } from '../../../hooks/formatCurrency';
 
 
-const objClean: ComprasModel = {
-    cdProduto: '',
-    nmProduto: '',
-    vlUnitario: 0,
-    dtCompra: null,
-    quantidade: 0,
-    totalPago: null,
-    tpProduto: null,
-    qntMinima: null,
-    nrOrdem: undefined
-}
 
 function AtualizarEstoque() {
     const [key, setKey] = useState<number>(0);
-    const [isEdit, setIsEdit] = useState<boolean>(false);
-    const [recarregue, setRecarregue] = useState<boolean>(true);
-    const [openDelete, setOpenDelete] = useState<boolean>(false);
-    const [selected, setSelected] = useState<ComprasModel | undefined>();
-    const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
-    const [selectAutoComplete, setSelectAutoComplete] = useState<boolean>(false);
-    const [recarregueDashboard, setRecarregueDashboard] = useState<boolean>(true);
-    const [initialValues, setInitialValues] = useState<ComprasModel>({ ...objClean });
-
+    const [openSnackBar, setOpenSnackBar] = useState<StateSnackBar>({ error: false, success: false });
+    const message = useSelector((state: RootState) => state.user.message);
+    const loadingGlobal = useSelector((state: RootState) => state.loading.loadingGlobal);
+    const [deleteData, setDeleteData] = useState<boolean>();
+    const [editData, setEditData] = useState<ComprasModel>();
+    const tableKeys = useTableKeys();
     const dispatch = useDispatch();
-    const { loading } = useSelector((state: State) => state.user);
-    const { convertToNumber, formatCurrency, formatCurrencyRealTime } = useFormatCurrency();
-    const { removedStockCompras, updateStock } = useEstoque();
+    const { removedStockCompras } = useEstoque();
     const { onKeyPressHandleSubmit } = useHandleInputKeyPress();
-    const { calculateValueDashboard } = useCalculateValueDashboard(recarregueDashboard, setRecarregueDashboard);
-
-    const inputsConfig: InputConfig[] = [
-        { label: 'Nome Do Produto', propertyName: 'nmProduto' },
-        { label: 'Código do Produto', propertyName: 'cdProduto' },
-        { label: 'Data', propertyName: 'dtCompra' },
-        { label: 'Valor Unitário', propertyName: 'vlUnitario', isCurrency: true, isDisable: true },
-        { label: 'Quantidade', propertyName: 'quantidade', type: 'number' },
-        { label: 'Valor Total', propertyName: 'totalPago', isCurrency: true },
-        { label: 'Quant. mínima em estoque', propertyName: 'qntMinima', type: 'number' },
-    ];
-    //Realizando busca no banco de dados
-    const {
-        dataTable,
-        loading: isLoading,
-        setDataTable
-    } = GetData(TableKey.Compras, recarregue) as {
-        dataTable: ComprasModel[],
-        loading: boolean,
-        setDataTable: (data: ComprasModel[]) => void
-    };
-    const {
-        dataTable: produtoDataTable,
-    } = GetData(TableKey.Produtos, recarregue) as { dataTable: ProdutosModel[] };
-
-    const {
-        dataTable: dataTableEstoque,
-    } = GetData(TableKey.Estoque, recarregue) as { dataTable: EstoqueModel[] };
-
-    const {
-        dataTable: dataTableCompraHistorico,
-    } = GetData(TableKey.CompraHistorico, recarregue) as { dataTable: CompraHistoricoModel[] };
 
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<ComprasModel>({
         validateOnBlur: true,
         validateOnChange: true,
-        initialValues,
+        initialValues: {
+            cdProduto: '',
+            nmProduto: '',
+            vlUnitario: 0,
+            dtCompra: null,
+            quantidade: 0,
+            totalPago: null,
+            tpProduto: null,
+            qntMinima: null,
+            nmProdutoFormatted: ''
+        },
         validationSchema: Yup.object().shape({
             nmProduto: Yup.string().required('Campo obrigatório'),
             cdProduto: Yup.string().required('Campo obrigatório'),
@@ -127,78 +75,43 @@ function AtualizarEstoque() {
                     if (parent.stEstoqueInfinito) return true;
                     return value !== undefined && value > 0;
                 }),
-            qntMinima: Yup.number().required('Campo obrigatório').typeError('Campo obrigatório'),
             nrOrdem: Yup.number().optional().nullable()
         }),
         onSubmit: handleSubmitForm,
     });
 
     /**
-     * Limpa o estado do formulário, resetando os valores e estados relacionados.
-     */
-    function cleanState() {
-        setInitialValues({
-            cdProduto: '',
-            nmProduto: '',
-            vlUnitario: 0,
-            dtCompra: null,
-            quantidade: 0,
-            totalPago: null,
-            tpProduto: null,
-            qntMinima: null,
-            nrOrdem: undefined
-        })
-        setSelectAutoComplete(false);
-        setFieldValue('cdProduto', '');
-        setFieldValue('vlUnitario', '');
-        setFieldValue('qntMinima', '');
-        setFieldValue('dtCompra', null);
-        setKey(Math.random());
-    }
-
-    /**
      * Deleta uma linha da tabela e do banco de dados.
      * Deleta Da Tabela de Estoque a quantidade e a versao de acordo com o item selecionado
      */
-    async function handleDeleteRow() {
-        setOpenDelete(false)
+    async function handleDeleteRow(selected: ComprasModel | undefined) {
         if (selected) {
+            dispatch(setLoadingGlobal(true))
             const refID: string = selected.id ?? '';
-            await deleteDoc(doc(db, TableKey.Compras, refID)).then(() => {
-                const newDataTable = dataTable.filter(row => row.id !== selected.id);
-                setDataTable(newDataTable);
-            });
-            const versoesValidas = dataTableEstoque.find(stock => stock.nmProduto === selected.nmProduto)
+            await deleteDoc(doc(db, tableKeys.Compras, refID));
+            const versoesValidas = await getSingleItemByQuery<EstoqueModel>(tableKeys.Estoque, [where('nmProduto', '==', selected.nmProduto)], dispatch)
+
             if (versoesValidas) {
                 const refIdEstoque: string = versoesValidas.id ?? ''
-                const refTable = doc(db, TableKey.Estoque, refIdEstoque);
-                const versoes = versoesValidas.versaos.filter(versao => versao.versao !== selected.nrOrdem)
+                const refTable = doc(db, tableKeys.Estoque, refIdEstoque);
+                const versoes = versoesValidas.versaos.filter(versao => versao.idVersao !== selected.id)
+                const idsversoes = versoesValidas.idsVersoes?.filter(versao => versao !== selected.id)
                 const totalQuantity = versoes.reduce((accumulator, versao) => accumulator + versao.vrQntd, 0);
 
                 await updateDoc(refTable, {
                     nmProduto: selected.nmProduto,
                     cdProduto: selected.cdProduto,
+                    idsVersoes: idsversoes,
                     quantidade: totalQuantity,
                     tpProduto: selected.tpProduto,
                     qntMinima: selected.qntMinima,
                     versaos: versoes
                 })
             }
+            setDeleteData(true)
+            dispatch(setLoadingGlobal(false))
         }
-        setSelected(undefined)
     }
-
-    /**
-     * Retorna o histórico de compra de um produto encontrado.
-     * 
-     * @param nmProduto - Nome do produto.
-     * @returns O histórico de compra do produto.
-     */
-    function foundProducts(nmProduto: string): CompraHistoricoModel {
-        const foundProduct: CompraHistoricoModel = dataTableCompraHistorico.find(history => history.nmProduto === nmProduto) as CompraHistoricoModel;
-        return foundProduct;
-    }
-
 
     /**
      * Recalcula os valores dos produtos que estão sendo atualizados no estoque.
@@ -208,27 +121,19 @@ function AtualizarEstoque() {
      * @param valuesUpdate - Valores atualizados.
      * @param produtosEncontrado - Array onde os produtos encontrados serão armazenados.
      */
-    function recalculateProduct(valuesUpdate: ComprasModel, produtosEncontrado: ProdutosModel[]) {
-        produtoDataTable.forEach(produto => {
-            if (produto.mpFabricado.some(mp => mp.nmProduto === valuesUpdate.nmProduto)) {
-                let soma = 0.0;
-                // Recalcule a soma dos totalPago após a atualização
-                produto.mpFabricado.forEach(item => {
-                    const foundProduct = foundProducts(item.nmProduto)
-                    if (item.nmProduto !== valuesUpdate.nmProduto) {
-                        const foundProductUpdate = foundKgProduto(foundProduct)
-                        const totalAtualizado = calculateTotalValue(item, foundProductUpdate)
-                        soma += totalAtualizado
-                    } else {
-                        const totalAtualizado = calculateTotalValue(item, valuesUpdate)
-                        soma += totalAtualizado
-                    }
-                });
-                const newProduto = { ...produto, vlUnitario: parseFloat(soma.toFixed(2)) }
-                produtosEncontrado.push(newProduto);
-            }
-        });
+    async function recalculateProduct(valuesUpdate: ComprasModel, produtosEncontrado: ProdutosModel[], todosProdutos: ProdutosModel[]) {
+        const produtosQueUsamProdutoEditado = todosProdutos.filter(produto =>
+            produto.mpFabricado.some(mp => mp.nmProduto === valuesUpdate.nmProduto)
+        );
+
+        produtosQueUsamProdutoEditado.forEach(produto => {
+            const novoValorUnitario = calculateNewUnitario(valuesUpdate, produto);
+            const newProduto = { ...produto, vlUnitario: novoValorUnitario };
+            produtosEncontrado.push(newProduto);
+        })
     }
+
+
 
     /**
      * Recalcula os preços dos produtos encontrados com base nos registros de compras.
@@ -239,146 +144,120 @@ function AtualizarEstoque() {
      * @param produtosEncontrado - Array de produtos encontrados.
      * @param produtoAtualizados - Array onde os produtos atualizados serão armazenados.
      */
-    function recalculateProductFound(produtosEncontrado: ProdutosModel[]) {
-        const produtoAtualizados: ProdutosModel[] = []
-        produtosEncontrado.forEach(items => {
-            const foundProductUpdate = foundKgProduto(items)
-            if (!produtoAtualizados.includes(items)) produtoAtualizados.push(items)
-            produtoDataTable.forEach(produto => {
-                if (produto.mpFabricado.some(mp => mp.nmProduto.includes(items.nmProduto))) {
-                    let soma = 0.0;
-                    // Recalcule a soma dos totalPago após a atualização
-                    produto.mpFabricado.forEach(item => {
-                        if (item.nmProduto.includes(items.nmProduto)) {
-                            const totalAtualizado = calculateTotalValue(item, foundProductUpdate as ComprasModel)
-                            soma += totalAtualizado
-                        } else {
-                            const encontrado = foundProducts(item.nmProduto)
-                            const totalAtualizado = calculateTotalValue(item, encontrado as ComprasModel)
-                            soma += totalAtualizado
-                        }
-                    });
-                    const newProduto = { ...produto, vlUnitario: parseFloat(soma.toFixed(2)) }
-                    produtoAtualizados.push(newProduto);
-                }
-            });
-        })
-        produtosEncontrado.length = 0;
-        produtosEncontrado.push(...produtoAtualizados);
-    }
+    async function recalculateProductFound(produtosEncontrado: ProdutosModel[], todosProdutos: ProdutosModel[]) {
+        await Promise.all(
+            produtosEncontrado.map(async (item) => {
+                if (item.tpProduto === SituacaoProduto.FABRICADO && item.stMateriaPrima) {
+                    const foundProductUpdate = foundKgProduto(item);
+                    if (!produtosEncontrado.includes(item)) produtosEncontrado.push(item);
 
+                    const produtosQueUsamProdutoEditado = todosProdutos.filter(produto =>
+                        produto.mpFabricado.some(mp => mp.nmProduto === item.nmProduto)
+                    );
+
+                    // Para cada produto que utiliza o item editado
+                    produtosQueUsamProdutoEditado.forEach(produto => {
+                        const novoValorUnitario = calculateNewUnitario(item, produto, foundProductUpdate);
+                        const newProduto = { ...produto, vlUnitario: novoValorUnitario };
+                        produtosEncontrado.push(newProduto);
+                    });
+                }
+            })
+        );
+    }
+    function calculateNewUnitario(item: ProdutosModel | ComprasModel, produto: ProdutosModel, itemAtualizando?: ProdutosModel): number {
+        let soma = 0.0;
+        produto.mpFabricado.forEach(mp => {
+            const unitario = mp.nmProduto === item.nmProduto
+                ? (itemAtualizando ? itemAtualizando.vlUnitario : item.vlUnitario)
+                : mp.vlUnitario;
+
+            if (mp.nmProduto === item.nmProduto) mp.vlUnitario = item.vlUnitario
+            soma += unitario * mp.quantidade;
+        });
+        return parseFloat(soma.toFixed(2));
+    }
     /**
      * Cria ou atualiza o estoque com base nos valores fornecidos.
      * 
-     * @param valuesUpdate - Valores atualizados.
+     * @param value - Valores atualizados.
      */
-    async function createStock(valuesUpdate: ComprasModel) {
-        const estoqueExistente = dataTableEstoque.find(
-            estoque => estoque.nmProduto === valuesUpdate.nmProduto
-        );
-        if (estoqueExistente) {
-            const refID: string = estoqueExistente.id ?? '';
-            const refTable = doc(db, TableKey.Estoque, refID);
-            let quantidadeKg = valuesUpdate.quantidade;
-            if (valuesUpdate.kgProduto && valuesUpdate.kgProduto !== 1) {
-                quantidadeKg = valuesUpdate.kgProduto * valuesUpdate.quantidade
+    async function createStock(value: ComprasModel, idCompra: string | undefined) {
+        const existingStock = await getSingleItemByQuery<EstoqueModel>(tableKeys.Estoque, [where('nmProduto', '==', value.nmProduto)], dispatch);
+        const novaVersao = criarNovaVersao(idCompra ?? '', value.quantidade);
+
+        if (existingStock) {
+            const refID: string = existingStock.id ?? '';
+            const refTable = doc(db, tableKeys.Estoque, refID);
+            let quantidadeKg = value.quantidade;
+            if (value.kgProduto && value.kgProduto !== 1) {
+                quantidadeKg = value.kgProduto * value.quantidade;
             }
-            const novaQuantidade = quantidadeKg + estoqueExistente.quantidade;
+            const novaQuantidade = quantidadeKg + existingStock.quantidade;
+
+            // Atualizando o estoque com a nova quantidade e as novas versões
+            const updates: Partial<EstoqueModel> = {};
+
+            if (novaQuantidade !== existingStock.quantidade) updates.quantidade = novaQuantidade;
+            if (value.nmProduto !== existingStock.nmProduto) updates.nmProduto = value.nmProduto;
+            if (value.cdProduto !== existingStock.cdProduto) updates.cdProduto = value.cdProduto;
+            if (value.qntMinima !== existingStock.qntMinima) updates.qntMinima = value.qntMinima;
+            if (value.tpProduto !== existingStock.tpProduto) updates.tpProduto = value.tpProduto;
+            if (value.stEstoqueInfinito !== existingStock.stEstoqueInfinito) updates.stEstoqueInfinito = value.stEstoqueInfinito;
             await updateDoc(refTable, {
-                nmProduto: valuesUpdate.nmProduto,
-                cdProduto: valuesUpdate.cdProduto,
-                tpProduto: valuesUpdate.tpProduto,
-                qntMinima: valuesUpdate.qntMinima,
-                stEstoqueInfinito: valuesUpdate.stEstoqueInfinito,
-                quantidade: novaQuantidade,
-                versaos: arrayUnion({ versao: valuesUpdate.nrOrdem, vrQntd: valuesUpdate.quantidade })
-            })
+                ...updates,
+                versaos: arrayUnion(novaVersao),
+                idsVersoes: arrayUnion(novaVersao.idVersao)
+            });
         } else {
-            await addDoc(collection(db, TableKey.Estoque), {
-                nmProduto: valuesUpdate.nmProduto,
-                cdProduto: valuesUpdate.cdProduto,
-                tpProduto: valuesUpdate.tpProduto,
-                qntMinima: valuesUpdate.qntMinima,
-                stEstoqueInfinito: valuesUpdate.stEstoqueInfinito,
-                quantidade: valuesUpdate.quantidade,
-                versaos: [
-                    { versao: valuesUpdate.nrOrdem, vrQntd: valuesUpdate.quantidade }
-                ]
-            })
+            await addDoc(collection(db, tableKeys.Estoque), {
+                nmProduto: value.nmProduto,
+                cdProduto: value.cdProduto,
+                qntMinima: value.qntMinima,
+                tpProduto: value.tpProduto,
+                stEstoqueInfinito: value.stEstoqueInfinito,
+                quantidade: value.quantidade,
+                versaos: [novaVersao],
+                idsVersoes: [novaVersao.idVersao]
+            });
         }
     }
 
-    /**
-     * Salva um Historico de Compras para que essa tabela tenha todos os produtos salvos e com valores atualizados.
-     * @param valuesUpdate objeto que ta sendo atualizado o estoque
-     */
-    async function savePurchaseHistory(valuesUpdate: ComprasModel) {
-        const history = dataTableCompraHistorico.find(history => history.nmProduto === valuesUpdate.nmProduto)
-        const filteredValuesUpdate: Partial<CompraHistoricoModel> = {
-            nmProduto: valuesUpdate.nmProduto,
-            cdProduto: valuesUpdate.cdProduto,
-            vlUnitario: valuesUpdate.vlUnitario,
-            mpFabricado: valuesUpdate.mpFabricado ? valuesUpdate.mpFabricado : [],
-            qntMinima: valuesUpdate.qntMinima ? valuesUpdate.qntMinima : null,
-            tpProduto: valuesUpdate.tpProduto,
-            nrOrdem: valuesUpdate?.nrOrdem
+    function criarNovaVersao(id: string, quantidade: number): Versao {
+        return {
+            idVersao: id,
+            vrQntd: quantidade
         };
-
-        if (history) {
-            const refID: string = history.id ?? '';
-            const refTable = doc(db, TableKey.CompraHistorico, refID);
-
-            const { id, stMateriaPrima, kgProduto, ...historyWithoutId } = history;
-
-            if (!isEqual(filteredValuesUpdate, historyWithoutId)) {
-                await updateDoc(refTable, {
-                    ...filteredValuesUpdate
-                });
-            }
-        }
     }
-
     /**
     * Atualiza os valores no banco de dados.
     * @param valuesUpdate - Array de valores a serem atualizados.
     * @param nameCollection - Nome da coleção no banco de dados.
     */
-    function updateValue(valuesUpdate: ProdutosModel[], nameCollection: string) {
-        valuesUpdate.forEach(async item => {
+    function updateValuesInBatch(valuesUpdate: ProdutosModel[], nameCollection: string) {
+        const batch = writeBatch(db);
+        valuesUpdate.forEach(item => {
             const refID: string = item.id ?? '';
             const refTable = doc(db, nameCollection, refID);
-            await updateDoc(refTable, { ...item })
-        })
+            batch.update(refTable, { ...item });
+        });
+        return batch.commit();
     }
 
-    /**
-    * Atualiza o valor unitario de compra Historico no banco de dados.
-    * @param valuesUpdate - Array de valores a serem atualizados.
-    */
-    function updateValueCompraHistorico(valuesUpdate: ProdutosModel[]) {
-        valuesUpdate.forEach(async item => {
-            const history = dataTableCompraHistorico.find(history => history.nmProduto === item.nmProduto)
-            if (!history) return;
-            const refID: string = history.id ?? '';
-            const refTable = doc(db, TableKey.CompraHistorico, refID);
-            const updatedData = { vlUnitario: item.vlUnitario };
-            await updateDoc(refTable, updatedData);
-        })
-    }
     /**
      * Recalcula os produtos e clientes com base nos valores fornecidos.
      * @param valuesUpdate  - Valores atualizados.
      */
-    function recalculate(valuesUpdate: ComprasModel) {
+    async function recalculate(valuesUpdate: ComprasModel) {
         const produtosEncontrado: ProdutosModel[] = [];
-
-        recalculateProduct(valuesUpdate, produtosEncontrado);
-
-        recalculateProductFound(produtosEncontrado);
-
-        updateValue(produtosEncontrado, TableKey.Produtos)
-        updateValueCompraHistorico(produtosEncontrado)
-
+        const { data: todosProdutos } = await getItemsByQuery<ProdutosModel>(
+            tableKeys.Produtos,
+            [where('tpProduto', '==', SituacaoProduto.FABRICADO)],
+            dispatch
+        );
+        await recalculateProduct(valuesUpdate, produtosEncontrado, todosProdutos);
+        await recalculateProductFound(produtosEncontrado, todosProdutos);
+        updateValuesInBatch(produtosEncontrado, tableKeys.Produtos);
     }
 
 
@@ -386,155 +265,93 @@ function AtualizarEstoque() {
      * Envia o formulário para o banco de dados. 
      */
     async function handleSubmitForm() {
-        dispatch(setLoading(true))
-        const newNrOrdem = values.nrOrdem || values.nrOrdem === 0 ? values.nrOrdem + 1 : 0;
+        dispatch(setLoadingGlobal(true));
         const valuesUpdate: ComprasModel = {
             ...values,
-            nrOrdem: newNrOrdem,
             vlUnitario: convertToNumber(values.vlUnitario.toString()),
             totalPago: values.totalPago && convertToNumber(values.totalPago?.toString())
         };
-        savePurchaseHistory(valuesUpdate)
         try {
             if (valuesUpdate.tpProduto === SituacaoProduto.COMPRADO) {
-                const product = foundProducts(valuesUpdate.nmProduto);
+
+                const product = await getSingleItemByQuery<ProdutosModel>(tableKeys.Produtos, [where('nmProduto', '==', valuesUpdate.nmProduto)], dispatch);
                 if (product) {
                     const needUpdate = product?.vlUnitario !== valuesUpdate.vlUnitario
-                    if (needUpdate && product.stMateriaPrima) recalculate(valuesUpdate)
-                }
-                if (product.stMateriaPrima) {
-                    //Necessario atualizar o valor unitario do produto, pois ao cadastrar uma materia prima voce nao seta 
-                    //o valor unitario.
-                    const foundProduct = produtoDataTable.find(prod => prod.nmProduto === valuesUpdate.nmProduto)
-                    if (foundProduct && foundProduct.vlUnitario !== valuesUpdate.vlUnitario) {
-                        const refID: string = foundProduct.id ?? '';
-                        const refTable = doc(db, TableKey.Produtos, refID);
+                    if (needUpdate && product.stMateriaPrima) {
+                        recalculate(valuesUpdate)
+                        const refID: string = product.id ?? '';
+                        const refTable = doc(db, tableKeys.Produtos, refID);
                         const updatedData = { vlUnitario: valuesUpdate.vlUnitario };
                         await updateDoc(refTable, updatedData);
                     }
                 }
-                createStock(valuesUpdate)
-                if (valuesUpdate.totalPago) {
-                    calculateValueDashboard(valuesUpdate.totalPago, valuesUpdate.dtCompra, TelaDashboard.COMPRA)
+                const newValue: DashboardCompraModel = {
+                    nmProduto: valuesUpdate.nmProduto,
+                    dtProduto: valuesUpdate.dtCompra?.toString(),
+                    vlTotal: valuesUpdate.totalPago ?? 0,
+                    qntdTotal: valuesUpdate.quantidade
                 }
+                updateAddDashboardCompra(newValue, tableKeys.DashboardCompra, dispatch)
             }
             if (values.tpProduto === SituacaoProduto.FABRICADO) {
                 if (valuesUpdate.stEstoqueInfinito) {
-                    const infiniteStock = Number.MAX_SAFE_INTEGER
-                    valuesUpdate.quantidade = infiniteStock
+                    valuesUpdate.quantidade = Number.MAX_SAFE_INTEGER
                 } else {
-                    await removedStockCompras(valuesUpdate)
+                    await removedStockCompras(valuesUpdate.mpFabricado, valuesUpdate.quantidade)
                 }
-                createStock(valuesUpdate)
             }
+            const compraRef = await addDoc(collection(db, tableKeys.Compras), {
+                ...valuesUpdate
+            })
+            await createStock(valuesUpdate, compraRef.id);
+            setEditData(valuesUpdate)
+            setOpenSnackBar(prev => ({ ...prev, success: true }))
+            dispatch(setLoadingGlobal(false))
         } catch (error) {
-            dispatch(setLoading(false))
-            setSubmitForm(false);
-            console.log(error)
-            setTimeout(() => { setSubmitForm(undefined) }, 3000);
+            dispatch(setMessage("Erro ao Atualizar Estoque"))
+            setOpenSnackBar(prev => ({ ...prev, error: true }))
             return;
         }
-
-        await addDoc(collection(db, TableKey.Compras), {
-            ...valuesUpdate
-        })
-            .then(() => {
-                dispatch(setLoading(false))
-                setSubmitForm(true)
-                setTimeout(() => { setSubmitForm(undefined) }, 3000)
-                setDataTable([...dataTable, valuesUpdate])
-            })
-            .catch(() => {
-                dispatch(setLoading(false))
-                setSubmitForm(false)
-                setTimeout(() => { setSubmitForm(undefined) }, 3000)
-            });
         resetForm()
-        cleanState()
-        setSelectAutoComplete(false);
-        setRecarregueDashboard(true)
+        setKey(Math.random());
     }
 
     /**
      * Atualiza o valor pago ou valor Unitario, considerando a quantidade, valor unitário ou Total Pago.
      */
     useEffect(() => {
-        if (isEdit && selected) {
-            if (!selected.totalPago) return
-            const division = convertToNumber(selected.totalPago.toString()) / selected.quantidade
-            if (!isNaN(division)) {
-                setSelected((prevSelected) => ({
-                    ...prevSelected,
-                    vlUnitario: formatCurrency(division.toString()) as unknown as number,
-                } as ComprasModel | undefined));
-            }
-        } else {
+        if (editData) return;
+        else {
             if (values.tpProduto === SituacaoProduto.COMPRADO) {
                 if (!values.totalPago) return
                 const division = convertToNumber(values.totalPago.toString()) / values.quantidade
                 if (!isNaN(division)) setFieldValue('vlUnitario', formatCurrency(division.toString()))
                 else setFieldValue('vlUnitario', 0)
             } else if (values.tpProduto === SituacaoProduto.FABRICADO) {
-                const multiplication = convertToNumber(values.vlUnitario.toString()) * values.quantidade
+                const foundProduct = foundKgProduto(values as any)
+                const multiplication = convertToNumber(foundProduct.vlUnitario.toString()) * values.quantidade
                 if (!isNaN(multiplication)) setFieldValue('totalPago', formatCurrency(multiplication.toString()))
                 else setFieldValue('totalPago', 0)
             }
         }
-    }, [values.quantidade, values.totalPago, selected?.quantidade, selected?.totalPago])
-
-    /**
-     * Edita uma linha da tabela e do banco de dados, atualizando também o estoque correspondente.
-     */
-    async function handleEditRow() {
-        if (selected && selected.totalPago) {
-            selected.vlUnitario = convertToNumber(selected.vlUnitario.toString())
-            selected.totalPago = convertToNumber(selected.totalPago.toString())
-            const refID: string = selected.id ?? '';
-            const refTable = doc(db, TableKey.Compras, refID);
-            const estoque: EstoqueModel = {
-                nmProduto: selected.nmProduto,
-                cdProduto: selected.cdProduto,
-                qntMinima: selected.qntMinima || 0,
-                quantidade: selected.quantidade,
-                tpProduto: selected.tpProduto || 0,
-                versaos: [],
-            }
-            updateStock(estoque, selected.nrOrdem)
-            selected.totalPago = convertToNumber(selected.totalPago?.toString() ?? '')
-            selected.vlUnitario = convertToNumber(selected.vlUnitario.toString())
-
-            if (JSON.stringify(selected) !== JSON.stringify(initialValues)) {
-                await updateDoc(refTable, { ...selected })
-                    .then(() => {
-                        const index = dataTable.findIndex((item) => item.id === selected.id);
-                        const updatedDataTable = [
-                            ...dataTable.slice(0, index),
-                            selected,
-                            ...dataTable.slice(index + 1)
-                        ];
-                        setDataTable(updatedDataTable);
-                    });
-            }
-        }
-        setIsEdit(false)
-        setSelected(undefined)
-    }
+    }, [values.quantidade, values.totalPago, editData?.quantidade, editData?.totalPago])
 
     /**
      * Manipula a seleção de um valor no campo de autocompletar, preenchendo os campos do formulário com os valores correspondentes.
      * @param newValue  - Novo valor selecionado.
      * @param reason - Razão da mudança.
      */
-    function handleAutoComplete(newValue: ComprasModel | null, reason: AutocompleteChangeReason) {
+    function handleAutoComplete(_: React.SyntheticEvent<Element, Event>, newValue: any, reason: AutocompleteChangeReason) {
         if (reason === 'clear' || reason === 'removeOption') {
-            cleanState()
+            resetForm();
+            setKey(Math.random());
         } else if (newValue) {
-            setSelectAutoComplete(true);
             setFieldValue('nrOrdem', newValue.nrOrdem);
             setFieldValue('cdProduto', newValue.cdProduto);
             setFieldValue('vlUnitario', formatCurrency(newValue.vlUnitario.toString()));
             setFieldValue('qntMinima', newValue.qntMinima);
             setFieldValue('nmProduto', newValue.nmProduto);
+            setFieldValue('nmProdutoFormatted', newValue.nmProdutoFormatted);
             setFieldValue('kgProduto', newValue.kgProduto);
             setFieldValue('dtCompra', moment(new Date()).format('DD/MM/YYYY'))
             if (newValue.stMateriaPrima) {
@@ -553,98 +370,60 @@ function AtualizarEstoque() {
     /**
      * Atualiza o Estoque infinito para false e limpa os campos, caso ocorra mudança no tipo produto
      */
-    useEffect(() => { cleanState(); setFieldValue("stEstoqueInfinito", false) }, [values.tpProduto])
+    useEffect(() => { setFieldValue("stEstoqueInfinito", false) }, [values.tpProduto])
+
+    const suggestions: ComprasModel[] = useDebouncedSuggestions<ComprasModel>(formatDescription(values.nmProduto), tableKeys.Produtos, dispatch, 'Produto', values.tpProduto ?? 0);
 
     return (
-        <Box>
-            <Title>Atualização de estoque</Title>
-            <ContainerInputs>
-                <DivInput>
-                    <FormControl
-                        variant="standard"
-                        sx={{ mb: 2, minWidth: 120 }}
-                        style={{ width: '13rem' }}
+        <Box sx={{ padding: '5rem' }}>
+            <Typography variant="h4" gutterBottom>Atualização de estoque</Typography>
+            <Grid container spacing={2}>
+                <Grid item xs={12}>
+                    <Typography variant="body1">Situação do produto</Typography>
+                    <ToggleButtonGroup
+                        exclusive
+                        value={values.tpProduto}
+                        onChange={(e, newValue) => setFieldValue('tpProduto', newValue)}
                     >
-                        <InputLabel style={{ color: '#4d68af', fontWeight: 'bold', paddingLeft: 4 }} id="standard-label">Situação do produto</InputLabel>
-                        <Select
-                            key={`tpProduto-${key}`}
-                            name='tpProduto'
-                            id="standard"
-                            onBlur={handleBlur}
-                            label="Selecione..."
-                            labelId="standard-label"
-                            onChange={e => setFieldValue(e.target.name, e.target.value)}
-                            value={values.tpProduto}
-                            style={{ borderBottom: '1px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
-                        >
-                            <MenuItem
-                                value={SituacaoProduto.FABRICADO}
-                            >
-                                Fabricado
-                            </MenuItem>
-                            <MenuItem
-                                value={SituacaoProduto.COMPRADO}
-                            >
-                                Comprado
-                            </MenuItem>
-                        </Select>
-                        {touched.tpProduto && errors.tpProduto && (
-                            <div style={{ color: 'red' }}>{errors.tpProduto}</div>
-                        )}
-                    </FormControl>
+                        <ToggleButton value={SituacaoProduto.FABRICADO}>Fabricado</ToggleButton>
+                        <ToggleButton value={SituacaoProduto.COMPRADO}>Comprado</ToggleButton>
+                    </ToggleButtonGroup>
+                    {touched.tpProduto && errors.tpProduto && (
+                        <Typography color="error">{errors.tpProduto}</Typography>
+                    )}
+                </Grid>
+
+                <Grid item xs={3} >
                     <Autocomplete
-                        options={useUniqueNames(dataTableCompraHistorico, values.tpProduto, values.tpProduto)}
-                        getOptionLabel={(option: ComprasModel) => option.nmProduto || ""}
-                        onChange={(e, newValue, reason) => handleAutoComplete(newValue, reason)}
+                        freeSolo
+                        key={key}
+                        options={suggestions}
+                        value={suggestions.find((item: any) => item.nmProduto === values.nmProduto) || null}
+                        getOptionLabel={(option: any) => option && option.nmProduto ? option.nmProduto : ""}
+                        onChange={(_, newValue, reason) => handleAutoComplete(_, newValue, reason)}
+                        onInputChange={(_, newInputValue, reason) => {
+                            if (reason === 'clear') handleAutoComplete(_, null, 'clear');
+                            setFieldValue('nmProduto', newInputValue);
+                        }}
                         disabled={values.tpProduto === null}
                         renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                label="Nome do Produto"
-                                variant="standard"
-                                InputLabelProps={{
-                                    style: {
-                                        color: '#4d68af',
-                                        fontSize: '24px',
-                                        paddingLeft: 6,
-                                    }
-                                }}
-                                onBlur={handleBlur}
-                                onChange={(e) => {
-                                    setFieldValue('nmProduto', e.target.value);
-                                }}
-                            />
+                            <TextField {...params} label="Nome do Produto" variant="standard" />
                         )}
-                        style={{
-                            width: '100%',
-                            backgroundColor: '#b2beed1a',
-                            borderBottom: '1px solid #6e6dc0',
-                        }}
                     />
-                    <Input
-                        key={`cdProduto-${key}`}
-                        name="cdProduto"
-                        onBlur={handleBlur}
-                        label="Código do Produto"
-                        value={values.cdProduto}
-                        onChange={e => setFieldValue(e.target.name, e.target.value.replace(/[^\d]/g, ''))}
-                        error={touched.cdProduto && errors.cdProduto ? errors.cdProduto : ''}
-                        raisedLabel={selectAutoComplete}
-                    />
+                </Grid>
 
-                </DivInput>
-                <DivInput>
+                <Grid item xs={3}>
                     <Input
-                        key={`dtCompra-${key}`}
-                        label="Data"
-                        onBlur={handleBlur}
-                        name="dtCompra"
-                        value={values.dtCompra ?? ''}
-                        maxLength={10}
-                        onChange={e => setFieldValue(e.target.name, formatDate(e.target.value))}
-                        error={touched.dtCompra && errors.dtCompra ? errors.dtCompra : ''}
-                        raisedLabel={values.dtCompra ? true : false}
+                        key={`Quantidade-${key}`}
+                        label="Quantidade"
+                        name="quantidade"
+                        disabled={values.stEstoqueInfinito}
+                        value={values.stEstoqueInfinito ? '\u221E' : values.quantidade || ''}
+                        onChange={e => setFieldValue(e.target.name, parseFloat(e.target.value))}
+                        error={touched.quantidade && errors.quantidade ? errors.quantidade : ''}
                     />
+                </Grid>
+                <Grid item xs={3}>
                     <Input
                         key={`vlUnitario-${key}`}
                         label="Valor Unitário"
@@ -655,23 +434,9 @@ function AtualizarEstoque() {
                         maxLength={15}
                         onChange={e => setFieldValue(e.target.name, formatCurrencyRealTime(e.target.value))}
                         error={touched.vlUnitario && errors.vlUnitario ? errors.vlUnitario : ''}
-                        raisedLabel={values.vlUnitario && values.vlUnitario.toString() !== 'R$ 0,00' ? true : false}
                     />
-                </DivInput>
-                <DivInput>
-                    <Input
-                        key={`Quantidade-${key}`}
-                        label="Quantidade"
-                        onBlur={handleBlur}
-                        name="quantidade"
-                        value={values.stEstoqueInfinito ? '\u221E' : values.quantidade || ''}
-                        maxLength={10}
-                        disabled={values.stEstoqueInfinito}
-                        raisedLabel={values.stEstoqueInfinito}
-                        onKeyPress={e => onKeyPressHandleSubmit(e, handleSubmit)}
-                        onChange={e => setFieldValue(e.target.name, parseFloat(e.target.value))}
-                        error={touched.quantidade && errors.quantidade ? errors.quantidade : ''}
-                    />
+                </Grid>
+                <Grid item xs={3}>
                     <Input
                         key={`totalPago-${key}`}
                         label="Valor Total"
@@ -681,92 +446,83 @@ function AtualizarEstoque() {
                         value={values.totalPago && values.totalPago.toString() !== 'R$ 0,00' ? values.totalPago : ''}
                         onChange={e => setFieldValue(e.target.name, formatCurrencyRealTime(e.target.value))}
                         maxLength={15}
-                        error={''}
-                        raisedLabel={values.totalPago && values.totalPago.toString() !== 'R$ 0,00' ? true : false}
                     />
-                </DivInput>
-            </ContainerInputs>
-            <div style={{ width: 200, marginLeft: '4rem' }}>
-                <Input
-                    key={`qntMinima-${key}`}
-                    label="Quant. mínima em estoque"
-                    onBlur={handleBlur}
-                    name="qntMinima"
-                    value={values.qntMinima || ''}
-                    onChange={e => setFieldValue(e.target.name, parseFloat(e.target.value.replace(/[^\d]/g, '')))}
-                    maxLength={4}
-                    error={touched.qntMinima && errors.qntMinima ? errors.qntMinima : ''}
-                    style={{ paddingBottom: 0 }}
-                    styleLabel={{ fontSize: '0.8rem' }}
-                    raisedLabel={values.qntMinima ? true : false}
-                    onKeyPress={e => onKeyPressHandleSubmit(e, handleSubmit)}
-                />
-                {values.tpProduto === SituacaoProduto.FABRICADO ?
+                </Grid>
+
+                <Grid item xs={3}>
+                    <Input
+                        key={`cdProduto-${key}`}
+                        name="cdProduto"
+                        label="Código do Produto"
+                        value={values.cdProduto}
+                        onChange={e => setFieldValue(e.target.name, e.target.value.replace(/[^\d]/g, ''))}
+                        error={touched.cdProduto && errors.cdProduto ? errors.cdProduto : ''}
+                    />
+                </Grid>
+                <Grid item xs={3}>
+                    <Input
+                        key={`dtCompra-${key}`}
+                        label="Data"
+                        name="dtCompra"
+                        value={values.dtCompra ?? ''}
+                        onChange={e => setFieldValue(e.target.name, formatDate(e.target.value))}
+                        error={touched.dtCompra && errors.dtCompra ? errors.dtCompra : ''}
+                    />
+                </Grid>
+                <Grid item xs={3}>
+                    <Input
+                        key={`qntMinima - ${key}`}
+                        label="Quant. mínima em estoque"
+                        value={values.qntMinima || ''}
+                        disabled
+                    />
+                </Grid>
+                <Grid item xs={3}>
                     <FormControlLabel
+                        style={{ height: '70px' }}
+                        disabled={values.tpProduto === SituacaoProduto.COMPRADO}
                         control={
-                            <Checkbox
+                            <Switch
                                 checked={values.stEstoqueInfinito}
                                 onChange={(e) => setFieldValue("stEstoqueInfinito", e.target.checked)}
+                                color="primary" // Você pode mudar a cor para "secondary" se preferir
                             />
                         }
                         label="Estoque infinito?"
                     />
-                    : null
-                }
-            </div>
-            {/* Editar Estoque */}
-            <IsEdit
-                editingScreen='Estoque'
-                setSelected={setSelected}
-                selected={selected}
-                handleEditRow={handleEditRow}
-                inputsConfig={inputsConfig}
-                isEdit={isEdit}
-                products={[]}
-                setIsEdit={setIsEdit}
-            />
-            <ModalDelete open={openDelete} onDeleteClick={handleDeleteRow} onCancelClick={() => setOpenDelete(false)} />
-            <ContainerButton>
+                </Grid>
+            </Grid>
+
+            {/* Botão de submissão */}
+            <Box mt={4} display="flex" justifyContent="flex-end">
                 <Button
-                    label='Cadastrar Estoque'
-                    type="button"
-                    disabled={loading}
+                    type='button'
+                    label={'Cadastrar'}
                     onClick={handleSubmit}
-                    style={{ margin: '1rem 4rem 2rem 95%', height: '4rem', width: '12rem' }}
+                    disabled={loadingGlobal}
+                    style={{ width: '12rem', height: '4rem' }}
                 />
-                <FormAlert submitForm={submitForm} name={'Estoque'} styleLoadingMarginTop='-8rem' />
+            </Box>
 
-            </ContainerButton>
 
-            {/*Tabala */}
-            <BoxTitleDefault>
-                <div>
-                    <FiltroGeneric data={dataTable} setFilteredData={setDataTable} carregarDados={setRecarregue} type="produto" />
-                </div>
-            </BoxTitleDefault>
+            {/* Tabela de produtos */}
             <GenericTable
                 columns={[
-                    { label: 'Código', name: 'cdProduto' },
-                    { label: 'Nome', name: 'nmProduto' },
-                    { label: 'Data', name: 'dtCompra' },
+                    { label: 'Código', name: 'cdProduto', shouldApplyFilter: true },
+                    { label: 'Nome', name: 'nmProduto', shouldApplyFilter: true },
+                    { label: 'Data', name: 'dtCompra', shouldApplyFilter: true },
                     { label: 'Valor Unitario', name: 'vlUnitario', isCurrency: true },
                     { label: 'Quantidade', name: 'quantidade', isInfinite: true },
                     { label: 'Valor Total', name: 'totalPago', isCurrency: true }
                 ]}
-                data={dataTable}
-                isLoading={isLoading}
-                isdisabled={selected ? false : true}
-                onSelectedRow={setSelected}
-                onEdit={() => {
-                    if (selected) {
-                        setIsEdit(true)
-                        setInitialValues(selected)
-                    } else {
-                        return
-                    }
-                }}
-                onDelete={() => setOpenDelete(true)}
+                deleteData={deleteData}
+                collectionName={tableKeys.Compras}
+                isVisibleEdit
+                setEditData={setEditData}
+                editData={editData}
+                onDelete={(selected: ComprasModel | undefined) => { handleDeleteRow(selected) }}
             />
+            <CustomSnackBar message={message ? message : "Atualizado Estoque com sucesso"} open={openSnackBar} setOpen={setOpenSnackBar} />
         </Box>
     );
 }

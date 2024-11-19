@@ -1,10 +1,12 @@
 import ProdutosModel from "../Pages/admin/cadastroProdutos/model/produtos";
-import CompraHistoricoModel from "../Pages/admin/compras/model/comprahistoricoModel";
 
 
-export function foundKgProduto(foundProduct: CompraHistoricoModel | ProdutosModel) {
-    const clonedProduct = { ...foundProduct } as CompraHistoricoModel;
+export function foundKgProduto(foundProduct: ProdutosModel): ProdutosModel {
+    const clonedProduct = { ...foundProduct };
     if (clonedProduct.kgProduto && clonedProduct.kgProduto !== 1) {
+        if(typeof clonedProduct.kgProduto === 'string') {
+            clonedProduct.kgProduto = Number(clonedProduct.kgProduto);
+        }
         const vlUnitario = clonedProduct.vlUnitario / clonedProduct.kgProduto;
         clonedProduct.vlUnitario = vlUnitario;
     }

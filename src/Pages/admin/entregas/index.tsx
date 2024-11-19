@@ -7,101 +7,57 @@ import { EntregaModel } from "./model/entrega";
 import GetData from "../../../firebase/getData";
 import Button from "../../../Components/button";
 import { AiTwotonePrinter } from 'react-icons/ai';
-import { TableKey } from '../../../types/tableName';
 import GenericTable from "../../../Components/table";
-import FiltroGeneric from "../../../Components/filtro";
 import { useDispatch, useSelector } from 'react-redux';
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { NotaFiscal } from '../../../Components/notaFiscal';
 import ClienteModel from "../cadastroClientes/model/cliente";
 import formatDate from "../../../Components/masks/formatDate";
-import ProdutosModel from '../cadastroProdutos/model/produtos';
-import TelaDashboard from '../../../enumeration/telaDashboard';
-import FormAlert from "../../../Components/FormAlert/formAlert";
-import { State, setLoading } from '../../../store/reducer/reducer';
-import ModalDelete from '../../../Components/FormAlert/modalDelete';
-import { addDoc, collection, deleteDoc, doc } from "firebase/firestore";
-import { Autocomplete, AutocompleteChangeReason, TextField } from "@mui/material";
-
-import {
-    Box,
-    Title,
-    DivColumn,
-    BoxLabels,
-    DivInputs,
-    TextTable,
-    QntProduto,
-    DivProduto,
-    DivButtons,
-    NameProduto,
-    LabelsHeader,
-    ContainerAll,
-    ValueProduto,
-    ResultProduto,
-    DivColumnPrice,
-    DivButtonAndTable,
-    DivColumnQntTotal,
-    ContainerTableCliente,
-    DivFlutuante,
-    DivColumnTotal,
-} from './style'
-import { BoxTitleDefault } from "../estoque/style";
+import { setMessage } from '../../../store/reducer/reducer';
+import { addDoc, collection } from "firebase/firestore";
+import { Autocomplete, AutocompleteChangeReason, Box, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from "@mui/material";
 
 //hooks
 import useEstoque from '../../../hooks/useEstoque';
-import useFormatCurrency from '../../../hooks/formatCurrency';
 import useDeleteOldData from '../../../hooks/useDeleteOldData';
-import { useCalculateValueDashboard } from '../../../hooks/useCalculateValueDashboard';
-
-
-const objClean: EntregaModel = {
-    vlLucro: 0,
-    vlEntrega: 0,
-    dtEntrega: null,
-    quantidades: [],
-}
+import useDebouncedSuggestions from '../../../hooks/useDebouncedSuggestions';
+import CustomSnackBar, { StateSnackBar } from '../../../Components/snackBar/customsnackbar';
+import { RootState } from '../../../store/reducer/store';
+import { useTableKeys } from '../../../hooks/tableKey';
+import { formatDescription } from '../../../utils/formattedString';
+import { convertToNumber, NumberFormatForBrazilianCurrency } from '../../../hooks/formatCurrency';
+import { updateAddDashboardVendasEntregas } from '../../../hooks/useCalculateValueDashboard';
+import { setLoadingGlobal } from '../../../store/reducer/loadingSlice';
 
 function Entregas() {
     const [key, setKey] = useState<number>(0);
-    const [selected, setSelected] = useState<EntregaModel>();
-    const [recarregue, setRecarregue] = useState<boolean>(true);
-    const [openDelete, setOpenDelete] = useState<boolean>(false);
+    const [editData, setEditData] = useState<EntregaModel>();
     const [shouldShow, setShouldShow] = useState<boolean>(false);
-    const [scrollActive, setScrollActive] = useState<boolean>(false);
-    const [clienteCurrent, setClienteCurrent] = useState<ClienteModel>();
-    const [quantidades, setQuantidades] = useState<{ [key: string]: number }>({});
-    const [recarregueDashboard, setRecarregueDashboard] = useState<boolean>(true);
-    const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
+    const [openSnackBar, setOpenSnackBar] = useState<StateSnackBar>({ error: false, success: false });
+    const message = useSelector((state: RootState) => state.user.message);
+    const loadingGlobal = useSelector((state: RootState) => state.loading.loadingGlobal);
 
     const dispatch = useDispatch();
-    const { loading } = useSelector((state: State) => state.user);
-    const { NumberFormatForBrazilianCurrency, convertToNumber } = useFormatCurrency();
-    const { removedStockEntrega } = useEstoque();
-    const { calculateValueDashboard } = useCalculateValueDashboard(recarregueDashboard, setRecarregueDashboard);
-    const { deleteEntregas } = useDeleteOldData()
+    const { removedStock } = useEstoque();
+    const { deleteEntregas } = useDeleteOldData();
+    const tableKeys = useTableKeys();
 
-    const initialValues: EntregaModel = ({ ...objClean });
-    const ref = useRef<HTMLDivElement>(null);
-
-    //realizando busca no banco de dados
-    const {
-        dataTable: dataTableCliente,
-    } = GetData(TableKey.Clientes, recarregue) as { dataTable: ClienteModel[] };
     const {
         dataTable: dataTableEntregas,
-        setDataTable: setDataTableEntregas,
-        loading: isLoading
-    } = GetData(TableKey.Entregas, recarregue) as { dataTable: EntregaModel[], setDataTable: (data: EntregaModel[]) => void, loading: boolean };
-
-    const {
-        dataTable: produtoDataTable,
-    } = GetData(TableKey.Produtos, recarregue) as { dataTable: ProdutosModel[] };
+        setDataTable: setDataTableEntregas
+    } = GetData(tableKeys.Entregas, true) as { dataTable: EntregaModel[], setDataTable: (data: EntregaModel[]) => void };
 
 
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<EntregaModel>({
         validateOnBlur: true,
         validateOnChange: true,
-        initialValues,
+        initialValues: {
+            vlLucro: 0,
+            vlEntrega: 0,
+            dtEntrega: null,
+            nmCliente: '',
+            produtos: [],
+        },
         validationSchema: Yup.object().shape({
             vlLucro: Yup.string().optional(),
             vlEntrega: Yup.string().required('Campo obrigatório'),
@@ -111,143 +67,105 @@ function Entregas() {
     });
 
 
-    //deleta uma linha da tabela e do banco de dados
-    async function handleDeleteRow() {
-        setOpenDelete(false)
-        if (selected) {
-            const refID: string = selected.id ?? '';
-            await deleteDoc(doc(db, TableKey.Entregas, refID)).then(() => {
-                const newDataTable = dataTableEntregas.filter(row => row.id !== selected.id);
-                setDataTableEntregas(newDataTable);
+    //enviando formulario
+    async function hundleSubmitForm() {
+        dispatch(setLoadingGlobal(true))
+        removedStock(values.produtos)
+        values.vlEntrega = convertToNumber(values.vlEntrega.toString())
+        values.vlLucro = convertToNumber(values.vlLucro.toString())
+        values.produtos = values.produtos.filter(produto => produto.quantidade !== null)
+        updateAddDashboardVendasEntregas(values.produtos, values.dtEntrega?.toString() ?? '', tableKeys.DashboardEntregas, dispatch)
+        await addDoc(collection(db, tableKeys.Entregas), {
+            ...values
+        })
+            .then(() => {
+                dispatch(setLoadingGlobal(false))
+                setDataTableEntregas([...dataTableEntregas, values])
+                setEditData(values)
+                setOpenSnackBar(prev => ({ ...prev, success: true }))
+            })
+            .catch(() => {
+                dispatch(setLoadingGlobal(false))
+                dispatch(setMessage('Erro ao Cadastrar Entrega'))
+                setOpenSnackBar(prev => ({ ...prev, error: true }))
             });
-        }
-        setSelected(undefined)
-    }
-
-    //limpa os inputs
-    function cleanState() {
-        setFieldValue('vlLucro', 0)
-        setFieldValue('vlEntrega', 0)
-        setFieldValue('dtEntrega', '')
-        setFieldValue('quantidades', [])
-        setFieldValue('cliente.nmCliente', '')
-        setQuantidades({})
+        resetForm()
         setKey(Math.random());
     }
 
-    //enviando formulario
-    async function hundleSubmitForm() {
-        dispatch(setLoading(true))
-        const valuesUpdate = { ...values, quantidades: quantidades };
-        removedStockEntrega(clienteCurrent, quantidades)
-        valuesUpdate.vlEntrega = convertToNumber(valuesUpdate.vlEntrega.toString())
-        valuesUpdate.vlLucro = convertToNumber(valuesUpdate.vlLucro.toString())
-        calculateValueDashboard(valuesUpdate.vlEntrega, valuesUpdate.dtEntrega, TelaDashboard.ENTREGA, valuesUpdate.vlLucro)
-        await addDoc(collection(db, TableKey.Entregas), {
-            ...valuesUpdate
-        })
-            .then(() => {
-                dispatch(setLoading(false))
-                setSubmitForm(true)
-                setDataTableEntregas([...dataTableEntregas, values])
-                setTimeout(() => { setSubmitForm(undefined) }, 3000)
-            })
-            .catch(() => {
-                dispatch(setLoading(false))
-                setSubmitForm(false)
-                setTimeout(() => { setSubmitForm(undefined) }, 3000)
-            });
-        resetForm()
-        cleanState()
-        setRecarregueDashboard(true)
-    }
-
     //manupulando evento de onchange do Select
-    function handleClienteChange(event: React.SyntheticEvent<Element, Event>, value: any, reason: AutocompleteChangeReason) {
+    function handleClienteChange(_: React.SyntheticEvent<Element, Event>, value: any, reason: AutocompleteChangeReason) {
         if (reason === 'clear' || reason === 'removeOption') {
-            cleanState()
+            resetForm()
+            setFieldValue('produtos', [])
+            setKey(Math.random());
         } else {
-            cleanState()
-            const clienteSelecionado = value;
-            clienteSelecionado.produtos.forEach((prodClient: ProdutosModel) => {
-                const foundProduct = produtoDataTable.find(prod => prod.nmProduto.toLowerCase().trim() === prodClient.nmProduto.toLowerCase().trim())
-                if (foundProduct) {
-                    prodClient.vlUnitario = foundProduct.vlUnitario
-                }
-            })
-            setClienteCurrent(clienteSelecionado)
-            setFieldValue('cliente.nmCliente', clienteSelecionado.nmCliente)
+            setFieldValue('nmCliente', value.nmCliente)
+            setFieldValue('produtos', value.produtos)
             setFieldValue('dtEntrega', moment(new Date()).format('DD/MM/YYYY'))
         }
     }
 
     //fazendo a soma dos lucros e do valor total
     useEffect(() => {
-        if (!clienteCurrent) return;
-        //calculando o Total da entrega
-        const result = clienteCurrent.produtos.map((produto) => {
-            const quantidade = quantidades[produto.nmProduto] ?? 0;
-            const valor = produto.vlVendaProduto;
-            const total = quantidade * valor;
-            produto.valorItem = total;
-            return total;
-        })
-        //calculando o lucro
-        const resultLucro = clienteCurrent.produtos.map((produto) => {
-            const quantidade = quantidades[produto.nmProduto] ?? 0;
-            const valorPago = produto.vlUnitario;
-            const valorVenda = produto.vlVendaProduto;
-            const totalLucro = valorVenda - valorPago;
-            const total = totalLucro * quantidade;
-            return total;
-        })
+        if (!values.produtos?.length) return;
 
-        //somando todos os valores de total da entrega
-        const sum = result.reduce((total, number) => total + number, 0);
+        const { sumTotal, sumLucro } = values.produtos.reduce(
+            (acc, produto) => {
+                const quantidade = produto.quantidade || 0;
+                const vlVendaProduto = produto.vlVendaProduto || 0;
+                const vlUnitario = produto.vlUnitario || 0;
 
-        //somando todos os valores de lucro
-        const sumLucro = resultLucro.reduce((total, number) => total + number, 0);
+                const totalProduto = quantidade * vlVendaProduto;
+                produto.valorItem = totalProduto;
+                const lucroProduto = (vlVendaProduto - vlUnitario) * quantidade;
 
-        // Formatar total da entrega
-        if (sum === 0 && sumLucro === 0) return
-        setFieldValue('vlEntrega', NumberFormatForBrazilianCurrency(sum));
+                return {
+                    sumTotal: acc.sumTotal + totalProduto,
+                    sumLucro: acc.sumLucro + lucroProduto,
+                };
+            },
+            { sumTotal: 0, sumLucro: 0 }
+        );
 
-        // Formatar lucro
+        // Formatar e setar os valores
+        setFieldValue('vlEntrega', NumberFormatForBrazilianCurrency(sumTotal));
         setFieldValue('vlLucro', NumberFormatForBrazilianCurrency(sumLucro));
-    }, [quantidades]);
-
-    useEffect(() => {
-        if (ref.current?.scrollHeight) {
-            const hasScrollbar = ref.current?.scrollHeight > ref.current?.clientHeight;
-            setScrollActive(hasScrollbar)
-        }
-    }, [values.cliente]);
+    }, [values.produtos]);
 
     useEffect(() => {
         if (dataTableEntregas.length)
             deleteEntregas(dataTableEntregas)
     }, [dataTableEntregas])
+
+    const suggestions: ClienteModel[] = useDebouncedSuggestions<ClienteModel>(formatDescription(values.nmCliente), tableKeys.Clientes, dispatch, 'Cliente');
+
     return (
-        <Box>
-            <Title>Cadastro de Novas Entregas</Title>
-            <ContainerAll>
-                <DivInputs>
-                    <div>
+        <Box sx={{ padding: '5rem' }}>
+            <Typography variant="h4" gutterBottom>
+                Cadastro de Novas Entregas
+            </Typography>
+            <Box sx={{ display: "flex" }}>
+                <Grid container spacing={2}>
+                    <Grid item xs={5} sx={{ paddingRight: 10 }}>
                         <Autocomplete
                             id="tags-standard"
-                            options={dataTableCliente}
-                            getOptionLabel={(item: any) => item.nmCliente}
-                            onChange={handleClienteChange}
-                            style={{ borderBottom: '1px solid #6e6dc0', color: 'black', backgroundImage: 'linear-gradient(to top, #b2beed1a, #b2beed1a, #b2beed1a, #b2beed12, #ffffff)' }}
+                            freeSolo
+                            style={{ height: '70px' }}
+                            options={suggestions}
+                            getOptionLabel={(option: any) => option && option.nmCliente ? option.nmCliente : ""}
+                            value={suggestions.find((item: any) => item.nmCliente === values.nmCliente) || null}
+                            onChange={(_, newValue, reason) => handleClienteChange(_, newValue, reason)}
+                            onInputChange={(_, newInputValue, reason) => {
+                                if (reason === 'clear') handleClienteChange(_, null, 'clear');
+                                setFieldValue('nmCliente', newInputValue);
+                            }}
                             renderInput={(params) => (
                                 <TextField
                                     {...params}
                                     variant="standard"
                                     label="Cliente"
                                     placeholder="Selecione..."
-                                    InputLabelProps={{
-                                        style: { fontSize: '1.3rem', fontWeight: '500', color: '#4d68b7' }
-                                    }}
                                 />
                             )}
                         />
@@ -258,13 +176,11 @@ function Entregas() {
                             onBlur={handleBlur}
                             label="Data da Entrega"
                             value={values.dtEntrega ?? ''}
-                            raisedLabel={values.dtEntrega ? true : false}
                             onChange={e => setFieldValue(e.target.name, formatDate(e.target.value))}
                             error={touched.dtEntrega && errors.dtEntrega ? errors.dtEntrega : ''}
-                            styleDiv={{ marginTop: 8 }}
                         />
-                    </div>
-                    <div>
+                    </Grid>
+                    <Grid item xs={5} sx={{ paddingRight: 10 }}>
                         <Input
                             key={`vlEntrega-${key}`}
                             label="Valor Total"
@@ -273,10 +189,7 @@ function Entregas() {
                             value={values.vlEntrega !== 0 ? values.vlEntrega : ''}
                             onChange={e => setFieldValue(e.target.name, e.target.value)}
                             error={touched.vlEntrega && errors.vlEntrega ? errors.vlEntrega : ''}
-                            style={{ color: '#333333d3', opacity: 1, borderBottom: '2px solid #c7c6f3', backgroundColor: '#e0e0e04f' }}
-                            styleDiv={{ marginTop: 0 }}
                             disabled
-                            raisedLabel={values.vlEntrega ? true : false}
                         />
                         <Input
                             key={`vlLucro-${key}`}
@@ -285,116 +198,109 @@ function Entregas() {
                             name="vlLucro"
                             onBlur={handleBlur}
                             value={values.vlLucro !== 0 ? values.vlLucro : ''}
-                            raisedLabel={values.vlLucro ? true : false}
                             onChange={e => setFieldValue(e.target.name, e.target.value)}
                             error={touched.vlLucro && errors.vlLucro ? errors.vlLucro : ''}
-                            styleDiv={{ marginTop: 8 }}
-                            style={{ color: '#333333d3', opacity: 1, borderBottom: '2px solid #c7c6f3', backgroundColor: '#e0e0e04f' }}
                         />
-                    </div>
-                </DivInputs>
-                <DivButtonAndTable>
-                    <BoxLabels isVisible={values.cliente?.nmCliente ? false : true}>
-                        <DivFlutuante />
-                        <DivColumn scrollActive={scrollActive}>
-                            <LabelsHeader>Descrição</LabelsHeader>
-                        </DivColumn>
-                        <DivFlutuante />
-                        <DivColumnPrice scrollActive={scrollActive}>
-                            <LabelsHeader>Preço</LabelsHeader>
-                        </DivColumnPrice>
-                        <DivFlutuante />
-                        <DivColumnQntTotal scrollActive={scrollActive}>
-                            <LabelsHeader>Quantidade</LabelsHeader>
-                        </DivColumnQntTotal>
-                        <DivFlutuante />
-                        <DivColumnTotal scrollActive={scrollActive}>
-                            <LabelsHeader>Total</LabelsHeader>
-                        </DivColumnTotal>
-                        <DivFlutuante style={{ marginLeft: '-2px' }} />
-                    </BoxLabels>
-                    <ContainerTableCliente isVisible={values.cliente?.nmCliente ? false : true} ref={ref}>
-                        {clienteCurrent && clienteCurrent.produtos.map((produto) => (
-                            <>
-                                <DivProduto key={produto.nmProduto}>
-                                    <NameProduto>
-                                        <TextTable>{produto.nmProduto}</TextTable>
-                                    </NameProduto>
-                                    <ValueProduto>
-                                        <TextTable>{NumberFormatForBrazilianCurrency(produto.vlVendaProduto)}</TextTable>
-                                    </ValueProduto>
-                                    <QntProduto>
-                                        <Input
-                                            key={`qnt-${key}`}
-                                            error=""
-                                            label="Quantidade"
-                                            name={`quantidades.${produto.nmProduto}`}
-                                            onChange={(e) => {
-                                                const value = Number(e.target.value);
-                                                setQuantidades((prevQuantidades) => ({
-                                                    ...prevQuantidades,
-                                                    [produto.nmProduto]: value,
-                                                }));
-                                            }}
-                                            value={quantidades[produto.nmProduto] ?? ''}
-                                            style={{ marginTop: 14, height: '2rem' }}
-                                            styleLabel={{ fontSize: '1rem', top: 14 }}
-                                        />
-                                    </QntProduto>
-                                    <ResultProduto>
-                                        <TextTable>R$ {produto.valorItem?.toFixed(2).replace('.', ',')}</TextTable>
-                                    </ResultProduto>
-                                </DivProduto>
-                            </>
-                        ))}
-                    </ContainerTableCliente>
+                    </Grid>
+                </Grid>
+                <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", width: "100%", }}>
+                    <Box sx={{ height: "19rem", width: "100%", display: "flex", flexDirection: "column", mt: -1 }} >
+                        <TableContainer component={Paper} className='style-scrollbar'>
+                            <Table>
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell>Nome Produto</TableCell>
+                                        <TableCell>Valor Un.</TableCell>
+                                        <TableCell>Valor Venda</TableCell>
+                                        <TableCell>Quantidade</TableCell>
+                                        <TableCell>Total</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {values.produtos.length > 0 ? (
+                                        values.produtos.map((produto, index) => (
+                                            <TableRow key={produto.nmProduto}>
+                                                <TableCell>{produto.nmProduto}</TableCell>
+                                                <TableCell>{NumberFormatForBrazilianCurrency(produto.vlUnitario)}</TableCell>
+                                                <TableCell>{NumberFormatForBrazilianCurrency(produto.vlVendaProduto)}</TableCell>
+
+                                                {/* Célula Editável */}
+                                                <TableCell>
+                                                    <TextField
+                                                        value={produto.quantidade || null}
+                                                        onChange={(e) => {
+                                                            const newQuantity = Number(e.target.value);
+                                                            const updatedList = [...values.produtos];
+                                                            updatedList[index] = {
+                                                                ...produto,
+                                                                quantidade: newQuantity
+                                                            };
+                                                            setFieldValue('produtos', updatedList);
+                                                        }}
+                                                        variant="outlined"
+                                                        size="small"
+                                                        type="number"
+                                                        sx={{ width: '6rem' }}
+                                                        fullWidth
+                                                    />
+                                                </TableCell>
+                                                <TableCell sx={{ width: '7rem', textAlign: 'center' }}>
+                                                    {NumberFormatForBrazilianCurrency(produto.quantidade ? (produto.quantidade * produto.vlVendaProduto) : 0)}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow >
+                                            <TableCell colSpan={5} align="center">Selecione um Cliente</TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+
+                    </Box>
+
                     {shouldShow &&
                         <NotaFiscal
-                            quantidades={quantidades}
                             values={values}
-                            clienteCurrent={clienteCurrent as ClienteModel}
                             setShouldShow={setShouldShow}
                             handleSubmit={handleSubmit}
                         />}
-                    <DivButtons>
+                    <Box display="flex" justifyContent="flex-end" mt={3}>
                         <Button
                             label={<AiTwotonePrinter size={30} />}
                             type='button'
-                            style={{ margin: '0rem 0px 2rem 0px', height: '4rem', width: '5rem' }}
                             disabled={values.dtEntrega ? false : true}
                             onClick={() => setShouldShow(true)}
+                            style={{ width: '6rem', height: '4rem', marginRight: "1rem" }}
                         />
                         <Button
                             label='Cadastrar Entrega'
                             type="button"
                             onClick={handleSubmit}
-                            disabled={loading || values.dtEntrega ? false : true}
-                            style={{ margin: '2rem 0px 4rem 0px', height: '4rem', width: '12rem' }}
+                            disabled={!values.dtEntrega || loadingGlobal}
+                            style={{ width: '12rem', height: '4rem' }}
                         />
-                    </DivButtons>
-                </DivButtonAndTable>
-            </ContainerAll>
-            <ModalDelete open={openDelete} onDeleteClick={handleDeleteRow} onCancelClick={() => setOpenDelete(false)} />
-            <FormAlert submitForm={submitForm} name={'Entregas'} styleLoadingMarginTop='-12rem' />
+                    </Box>
+                </Box>
+            </Box>
             {/*Tabala */}
-            <BoxTitleDefault>
-                <div>
-                    <FiltroGeneric data={dataTableEntregas} setFilteredData={setDataTableEntregas} carregarDados={setRecarregue} type="Entrega" />
-                </div>
-            </BoxTitleDefault>
-            <GenericTable
+            <GenericTable<EntregaModel>
                 columns={[
-                    { label: 'Nome', name: 'cliente.nmCliente' },
-                    { label: 'Data Entrega', name: 'dtEntrega' },
+                    { label: 'Nome', name: 'nmCliente', shouldApplyFilter: true },
+                    { label: 'Data Entrega', name: 'dtEntrega', shouldApplyFilter: true },
                     { label: 'Valor Total', name: 'vlEntrega', isCurrency: true },
                     { label: 'Lucro', name: 'vlLucro', isCurrency: true },
                 ]}
-                data={dataTableEntregas}
-                isLoading={isLoading}
-                onSelectedRow={setSelected}
+                collectionName={tableKeys.Entregas}
                 isVisibleEdit
-                onDelete={() => setOpenDelete(true)}
-                isdisabled={selected ? false : true}
+                editData={editData}
+                setEditData={setEditData}
+            />
+            <CustomSnackBar
+                message={message || "Cadastrado Entrega com sucesso"}
+                open={openSnackBar}
+                setOpen={setOpenSnackBar}
             />
         </Box>
     );

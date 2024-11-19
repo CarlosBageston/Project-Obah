@@ -13,7 +13,8 @@ export const theme: DefaultTheme ={
         tertiaryBlue: '#0a0269',
         primaryGreen: '#001f03',
         secundGreen: '#34974d',
-        tertiaryGreen: '#36c85b'
+        tertiaryGreen: '#36c85b',
+        error: '#f44336',
     },
     fontsDefault: {
         primaryFont: "'Baloo 2', Arial, sans-serif",

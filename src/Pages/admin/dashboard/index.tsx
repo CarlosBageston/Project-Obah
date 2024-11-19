@@ -1,173 +1,177 @@
-import { SHA256 } from 'crypto-js';
-import { Button } from "../../login/style";
-import { Bar, Line } from "react-chartjs-2";
-import GetData from "../../../firebase/getData";
-import { TableKey } from '../../../types/tableName';
-import ChartLine from "../../../Components/graficos/Line";
-import ChartBarVertical from "../../../Components/graficos/BarVertical";
-import ChartBarHorizontal from "../../../Components/graficos/BarHorizontal";
-import React, { useEffect, useRef, useState } from 'react'
-import {
-    Box,
-    Title,
-    Input,
-    Error,
-    DivResult,
-    Paragraph,
-    SumResult,
-    Container,
-    TextResult,
-    TitlePassword,
-    DivGraficLine,
-    ContainerResult,
-    ContainerGrafic,
-    StyledGiPadlock,
-    DivGraficVertical,
-    ContainerPassword,
-    ContainerTwoGrafic,
-    BlockedInformation,
-    DivGraficHortizontal,
-    DivPadLock,
-    StyledGiPadlockInternal,
-} from './style'
+import { useEffect, useRef, useState } from 'react';
+import { Card, CardContent, Grid, IconButton, Typography, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button } from '@mui/material';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import HorizontalTabs from '../../../Components/horizontaltabs/horizontalTabs';
+import DashboardCard from './dashboardCard';
+import { useTableKeys } from '../../../hooks/tableKey';
+import { DashboardCompraModel, DashboardVendasEntregaModel } from '../../../hooks/useCalculateValueDashboard';
+import SituacaoProduto from '../../../enumeration/situacaoProduto';
 import { useFormik } from 'formik';
-import DashboardModel from './model/dashboard';
-import useFormatCurrency from '../../../hooks/formatCurrency';
-import PopUpReport from './components/pop-upReport';
+import useHandleInputKeyPress from '../../../hooks/useHandleInputKeyPress';
+import { getSingleItemByQuery } from '../../../hooks/queryFirebase';
+import { useDispatch, useSelector } from 'react-redux';
+import { where } from 'firebase/firestore';
+import CryptoJS from 'crypto-js';
+import { RootState } from '../../../store/reducer/store';
 
-
+interface DashboardLogin {
+    passwordDashboard: string
+}
 function Dashboard() {
-    const [freeScreen, setFreeScreen] = useState<boolean>(false);
-    const [openReport, setOpenReport] = useState<boolean>(false);
-    const [isLocked, setIsLocked] = useState<boolean>(true);
+    const [selectTab, setSelectTab] = useState<number>(0);
+    const [showData, setShowData] = useState<boolean>(false);
+    const [isAuthDialogOpen, setIsAuthDialogOpen] = useState<boolean>(false);
+    const tableKeys = useTableKeys();
     const refInput = useRef<HTMLInputElement>(null);
-    const { dataVertical, optionsVertical, vlLucro: vlLucroVertical, vlTotal: vlTotalVertical, dadosPorMes: DadosPorMesVertical } = ChartBarVertical(freeScreen);
-    const { dataLine, optionsLine, ref, vlLucro: vlLucroLine, vlTotal: vlTotalLine, dadosPorMes: DadosPorMesLine } = ChartLine(freeScreen);
-    const { dataHorizontal, optionsHotizontal } = ChartBarHorizontal(freeScreen)
+    const { onKeyPressHandleSubmit } = useHandleInputKeyPress();
+    const dispatch = useDispatch();
+    const user = useSelector((state: RootState) => state.user.user);
 
-    const initialValues: DashboardModel = {
-        error: '',
-        password: '',
-        somaAnual: null,
-        somaLucroAnual: null,
-    }
-    const {
-        dataTable
-    } = GetData(TableKey.Dashboard, true);
-    const { NumberFormatForBrazilianCurrency } = useFormatCurrency()
-
-    const { values, setFieldValue } = useFormik<DashboardModel>({
-        initialValues,
-        onSubmit: () => { },
-    });
-
-    useEffect(() => {
-        if (vlLucroLine && vlLucroVertical && vlTotalLine && vlTotalVertical) {
-            setFieldValue('somaAnual', vlTotalLine + vlTotalVertical);
-            setFieldValue('somaLucroAnual', vlLucroLine + vlLucroVertical);
+    const handleAuthSubmit = async (values: DashboardLogin) => {
+        const res = await getSingleItemByQuery<DashboardLogin>(tableKeys.Empresa, [where('uid', '==', user?.uid)], dispatch)
+        const hashedInputPassword = CryptoJS.SHA256(values.passwordDashboard).toString(CryptoJS.enc.Base64);
+        if (res?.passwordDashboard) {
+            if (hashedInputPassword === res.passwordDashboard) {
+                setShowData(true);
+                setIsAuthDialogOpen(false);
+                formik.resetForm();
+            } else {
+                formik.setFieldTouched('password', true, false);
+                formik.setFieldError('password', 'Senha incorreta');
+            }
+        } else {
+            formik.setFieldTouched('password', true, false);
+            formik.setFieldError('password', 'Senha incorreta');
         }
-    }, [vlLucroLine, vlLucroVertical, vlTotalLine, vlTotalVertical])
+    };
+    const formik = useFormik<DashboardLogin>({
+        initialValues: {
+            passwordDashboard: '',
+        },
+        onSubmit: handleAuthSubmit
+    })
 
-    const togglePadlock = () => {
-        setIsLocked(false);
+    const handleToggleVisibility = () => {
+        if (showData) {
+            setShowData(false);
+        } else {
+            setIsAuthDialogOpen(true);
+        }
     };
 
-    function authenticateDashboard() {
-        let rightPassword = null;
-
-        for (const data of dataTable) {
-            rightPassword = data.acesso.password;
-        }
-
-        if (rightPassword) {
-            const hash = SHA256(values.password).toString();
-            if (hash === rightPassword) {
-                setFreeScreen(true);
-                setFieldValue('password', '');
-                setFieldValue('error', '');
-            } else {
-                setFieldValue('error', 'Acesso Negado')
-            }
-        }
-    }
-
-    function onKeyPress(e: React.KeyboardEvent<HTMLInputElement>) {
-        if (e.code === "Enter" || e.code === "NumpadEnter") {
-            authenticateDashboard()
-        }
-    }
+    const cardStyle = {
+        backgroundColor: '#047e00',
+        borderRadius: '15px',
+        opacity: showData ? 1 : 0.5,
+        filter: showData ? 'none' : 'grayscale(100%)',
+        cursor: showData ? 'default' : 'not-allowed',
+    };
     useEffect(() => {
-        if (!isLocked && refInput.current) {
+        if (isAuthDialogOpen && refInput.current) {
             refInput.current.focus();
         }
-    }, [isLocked]);
+    }, [isAuthDialogOpen]);
     return (
-        <Box>
-            <div>
-                <Title>Dashboard Sorveteria Obah!</Title>
-            </div>
-            <Container>
-                <BlockedInformation isVisible={freeScreen} onClick={togglePadlock}>
-                    <StyledGiPadlock isLocked={isLocked} />
-                    <ContainerPassword isLocked={isLocked}>
-                        <TitlePassword>Digite a senha para desbloquear as informações</TitlePassword>
-                        <Input
-                            onKeyDown={onKeyPress}
-                            type="password"
-                            id="password"
-                            name="password"
-                            placeholder='Senha'
-                            value={values.password}
-                            ref={refInput}
-                            onChange={e => { setFieldValue('password', e.target.value) }}
-                        />
-                        <Error>{values.error}</Error>
-                        <Button
-                            onClick={authenticateDashboard}
-                        >
-                            Acessar
-                            <div className="arrow-wrapper">
-                                <div className="arrow"></div>
-                            </div>
-                        </Button>
+        <>
+            <Grid container justifyContent="flex-end" mt={5} mb={'-4rem'} paddingRight={'2rem'} >
+                <IconButton onClick={handleToggleVisibility} style={{ marginRight: '1rem' }}>
+                    {showData ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                </IconButton>
+                <Grid item xs={2} mr={5}>
+                    <Card style={cardStyle}>
+                        <CardContent>
+                            <Typography variant="h6" width={'8rem'} color={'#fff'}>Receita Anual</Typography>
+                            <Typography variant="h5" width={'11rem'} color={'#fff'}>
+                                {showData ? 'R$ 60.000,00' : 'R$ ********'}
+                            </Typography>
+                        </CardContent>
+                    </Card>
+                </Grid>
+                <Grid item xs={2}>
+                    <Card style={cardStyle}>
+                        <CardContent>
+                            <Typography variant="h6" width={'8rem'} color={'#fff'}>Lucro Anual</Typography>
+                            <Typography variant="h5" width={'11rem'} color={'#fff'}>
+                                {showData ? 'R$ 70.000,00' : 'R$ ********'}
+                            </Typography>
+                        </CardContent>
+                    </Card>
+                </Grid>
+            </Grid>
+            <HorizontalTabs
+                selectedIndex={selectTab}
+                onChangeIndex={setSelectTab}
+                title="Registros e comparativos"
+                tabs={[
+                    {
+                        label: 'Compras',
+                        content: (
+                            <DashboardCard<DashboardCompraModel>
+                                showData={showData}
+                                collectionName={tableKeys.DashboardCompra}
+                                nameGrafico='Compras'
+                                nameUnidade='Compradas'
+                                selectTab={selectTab}
+                                tpProduto={SituacaoProduto.COMPRADO}
+                                stMateriaPrima
+                            />
+                        )
+                    },
+                    {
+                        label: 'Vendas',
+                        content: (
+                            <DashboardCard<DashboardVendasEntregaModel>
+                                showData={showData}
+                                collectionName={tableKeys.DashboardVendas}
+                                nameGrafico='Vendas'
+                                nameUnidade='Vendidas'
+                                selectTab={selectTab}
+                            />
+                        )
+                    },
+                    {
+                        label: 'Entregas',
+                        content: (
+                            <DashboardCard<DashboardVendasEntregaModel>
+                                showData={showData}
+                                collectionName={tableKeys.DashboardEntregas}
+                                nameGrafico='Entregas'
+                                nameUnidade='Entregues'
+                                selectTab={selectTab}
+                            />
+                        )
+                    }
+                ]}
+            />
 
-                    </ContainerPassword>
-                </BlockedInformation>
-                <ContainerGrafic>
-                    <DivGraficHortizontal>
-                        <Bar data={freeScreen ? dataHorizontal : { labels: [''], datasets: [] }} options={optionsHotizontal} style={{ width: '100%', height: '100%' }} />
-                    </DivGraficHortizontal>
-                    <ContainerTwoGrafic>
-                        <DivGraficLine>
-                            <Line data={freeScreen ? dataLine : { labels: [''], datasets: [] }} options={optionsLine} ref={ref} style={{ width: '100%', height: '100%' }} />
-                        </DivGraficLine>
-                        <DivGraficVertical >
-                            <Bar data={freeScreen ? dataVertical : { labels: [''], datasets: [] }} options={optionsVertical} style={{ width: '100%', height: '100%' }} />
-                        </DivGraficVertical>
-                    </ContainerTwoGrafic>
-                </ContainerGrafic>
-                <ContainerResult open={freeScreen}>
-                    <DivPadLock>
-                        <StyledGiPadlockInternal onClick={() => { setFreeScreen(false); setIsLocked(true) }} />
-                    </DivPadLock>
-                    <Button onClick={() => { setOpenReport(!openReport) }}>
-                        Gerar Relatório Mensal
+            <Dialog open={isAuthDialogOpen} onClose={() => setIsAuthDialogOpen(false)}>
+                <DialogTitle>Digite sua senha para acessar os dados</DialogTitle>
+                <DialogContent>
+                    <TextField
+                        label="Senha"
+                        type="password"
+                        fullWidth
+                        variant='standard'
+                        value={formik.values.passwordDashboard}
+                        ref={refInput}
+                        onKeyDown={(e) => onKeyPressHandleSubmit(e, formik.handleSubmit)}
+                        onChange={(e) => formik.setFieldValue('passwordDashboard', e.target.value)}
+                        error={Boolean(formik.errors.passwordDashboard && formik.touched.passwordDashboard)}
+                        helperText={formik.errors.passwordDashboard}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setIsAuthDialogOpen(false)} color="primary">
+                        Cancelar
                     </Button>
-                    <PopUpReport open={openReport} DadosPorMesLine={DadosPorMesLine} DadosPorMesVertical={DadosPorMesVertical} />
-                    <DivResult>
-                        <TextResult>Ganho anual</TextResult>
-                        <SumResult>{freeScreen && values.somaAnual ? `${NumberFormatForBrazilianCurrency(values.somaAnual)}` : 'R$ 0,00'}</SumResult>
-                        <Paragraph>Soma de todas as vendas no decorrer do ano</Paragraph>
-                    </DivResult>
-                    <DivResult>
-                        <TextResult>Lucro anual</TextResult>
-                        <SumResult>{freeScreen && values.somaLucroAnual ? `${NumberFormatForBrazilianCurrency(values.somaLucroAnual)}` : 'R$ 0,00'}</SumResult>
-                        <Paragraph>Soma de todas as vendas no decorrer do ano</Paragraph>
-                    </DivResult>
-                </ContainerResult>
-            </Container>
-        </Box>
-    )
+                    <Button onClick={() => formik.handleSubmit()} color="primary">
+                        Confirmar
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        </>
+    );
 }
 
 export default Dashboard;

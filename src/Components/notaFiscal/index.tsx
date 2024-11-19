@@ -2,29 +2,25 @@ import Button from "../button";
 import { format } from "date-fns";
 import { useEffect, useRef, useState } from "react";
 import { EntregaModel } from "../../Pages/admin/entregas/model/entrega";
-import ClienteModel from "../../Pages/admin/cadastroClientes/model/cliente";
-import { Table, TableHead, TableRow, TableCell, TableBody, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
+import { Table, TableHead, TableRow, TableCell, TableBody, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Typography, Box } from "@mui/material";
 
 
-import { BoxClose, StyledAiOutlineClose } from "../isEdit/style";
-import { Box, DivSubHeader, Title, TotalValue, DivClosePrint, ContainerFlutuantePrint, TextLabel, BoxButtonPrint, BoxButtonDialog } from "./style";
-import useFormatCurrency from "../../hooks/formatCurrency";
+import printJS from "print-js";
+import { NumberFormatForBrazilianCurrency } from "../../hooks/formatCurrency";
+import { useSelector } from "react-redux";
+import { RootState } from "../../store/reducer/store";
 
 interface Props {
     values: EntregaModel,
-    clienteCurrent: ClienteModel,
     setShouldShow: React.Dispatch<React.SetStateAction<boolean>>
-    quantidades: { [key: string]: number }
     handleSubmit: (e?: React.FormEvent<HTMLFormElement> | undefined) => void
 }
 
-export function NotaFiscal({ values, clienteCurrent, setShouldShow, quantidades, handleSubmit }: Props) {
+export function NotaFiscal({ values, setShouldShow, handleSubmit }: Props) {
     const [horaAtual, setHoraAtual] = useState<string>('');
     const [registerProduct, setRegisterProduct] = useState<boolean>(false);
-
     const ref = useRef<HTMLDivElement>(null);
-    const { NumberFormatForBrazilianCurrency } = useFormatCurrency();
-
+    const empresa = useSelector((state: RootState) => state.empresaOnline);
     useEffect(() => {
         const data = new Date();
         const dataFormatada = format(data, 'HH:mm');
@@ -35,71 +31,95 @@ export function NotaFiscal({ values, clienteCurrent, setShouldShow, quantidades,
         return index.toString().padStart(3, '0');
     }
 
+    // TODO: IMPRIMIR CUPOM DE NOTA FISCAL TESTE
+
     const handlePrint = () => {
         if (ref.current) {
-            const printWindow = window.open('', '_blank');
-            if (printWindow) {
-                printWindow.document.write('<html><head><title>Nota Fiscal</title>');
-                printWindow.document.write(`
-                    <style>
-                        .marginprint {
-                            margin-bottom: 6px;
-                            margin-top: 6px;
-                        }
-                    </style>
+            const printContent = ref.current.innerHTML;
+
+            // Crie um iframe temporário
+            const iframe = document.createElement('iframe');
+            document.body.appendChild(iframe);
+            iframe.style.display = 'none'; // Oculta o iframe
+
+            const doc = iframe.contentWindow?.document || iframe.contentDocument;
+
+            if (doc) {
+                doc.open();
+                doc.write(`
+                    <html>
+                    <head>
+                        <title>Nota Fiscal</title>
+                        <style>
+                            @media print {
+                                .marginprint {
+                                    margin-bottom: 6px;
+                                    margin-top: 6px;
+                                }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        ${printContent}
+                    </body>
+                    </html>
                 `);
-                printWindow.document.write('</head><body>');
-                printWindow.document.write(ref.current.innerHTML);
-                printWindow.document.write('</body></html>');
-                printWindow.document.close();
+                doc.close();
 
-                printWindow.addEventListener('afterprint', () => {
-                    printWindow.close();
-                    setRegisterProduct(true)
-                });
+                // Usando print.js para imprimir o conteúdo do iframe
+                printJS({ printable: iframe.contentWindow?.document.body.innerHTML, type: 'html', style: '' });
 
-                printWindow.print();
+                // Remove o iframe após a impressão
+                setTimeout(() => {
+                    document.body.removeChild(iframe);
+                    setRegisterProduct(true);
+                }, 1000);
             }
         }
     };
+
+
     return (
         <>
             {!registerProduct ?
 
-                <ContainerFlutuantePrint>
-                    <BoxClose>
-                        <DivClosePrint
-                            onClick={() => setShouldShow(false)}
-                        >
-                            <StyledAiOutlineClose />
-                        </DivClosePrint>
-                    </BoxClose>
-                    <Title>
-                        Imprimir Cupom Fiscal
-                    </Title>
-                    <Box>
-                        <div style={{ padding: 16 }} ref={ref}>
-                            <div>
-                                <Title>SORVETERIA OBAH</Title>
-                                <TextLabel className="marginprint">R. Uruguai, 115 - Santa Luzia, Dois Vizinhos - PR, 85660-000</TextLabel>
-                                <TextLabel className="marginprint">Telefone: (46) 99935-8718</TextLabel>
-                                <DivSubHeader>
-                                    <div>
-                                        <TextLabel className="marginprint">CNPJ: 52.193.214/0001-25</TextLabel>
-                                        <TextLabel className="marginprint">IE: Isento</TextLabel>
-                                    </div>
-                                    <div>
-                                        <TextLabel className="marginprint">Data e Hora da venda</TextLabel>
-                                        <div style={{ display: 'flex' }}>
-                                            <TextLabel className="marginprint">{values.dtEntrega !== null ? values.dtEntrega.toString() : ''}</TextLabel>
-                                            <TextLabel className="marginprint">-{horaAtual}</TextLabel>
-                                        </div>
-                                    </div>
-                                </DivSubHeader>
-                            </div>
+                <Dialog open={true} onClose={() => setShouldShow(false)} maxWidth="md" fullWidth>
+                    <Box sx={{ padding: "28px", position: "relative" }}>
+                        {/* Close button */}
+                        <Box sx={{ position: "absolute", top: "-28px", right: "10px", cursor: "pointer" }} onClick={() => setShouldShow(false)}>
+                            x
+                        </Box>
+
+                        {/* Title */}
+                        <Typography variant="h3" align="center">Imprimir Cupom Fiscal</Typography>
+
+                        <Box sx={{ padding: "16px" }} ref={ref}>
+                            <Box>
+                                <Typography variant="h4" align="center">SORVETERIA OBAH</Typography>
+                                <Typography align="center" sx={{ fontWeight: "bold", fontSize: "22px", margin: "8px 0" }}>
+                                    {`${empresa.ruaEmpresa}, ${empresa.numeroEmpresa} - ${empresa.bairroEmpresa}, ${empresa.cidadeEmpresa} - ${empresa.estadoEmpresa}, ${empresa.cepEmpresa}`}
+                                </Typography>
+
+                                <Box display="flex" justifyContent="space-between" sx={{ margin: "1rem 0", height: "10rem", flexDirection: "column" }}>
+                                    <Box>
+                                        <Typography sx={{ fontWeight: "bold", fontSize: "22px" }}>CNPJ: {empresa.cnpjEmpresa}</Typography>
+                                        <Typography sx={{ fontWeight: "bold", fontSize: "22px" }}>Telefone: {empresa.tfEmpresa}</Typography>
+                                    </Box>
+                                    <Box>
+                                        <Typography sx={{ fontWeight: "bold", fontSize: "22px" }}>Data e Hora da venda</Typography>
+                                        <Box display="flex">
+                                            <Typography sx={{ fontWeight: "bold", fontSize: "22px" }}>{values.dtEntrega ? values.dtEntrega.toString() : ''}</Typography>
+                                            <Typography sx={{ fontWeight: "bold", fontSize: "22px", marginLeft: "8px" }}>- {horaAtual}</Typography>
+                                        </Box>
+                                    </Box>
+                                </Box>
+                            </Box>
+
                             <hr style={{ border: "1px dashed #000000" }} />
-                            <div style={{ margin: "1rem 0 1rem 0" }}>
-                                <Table >
+
+                            {/* Table */}
+                            <Box sx={{ margin: "1rem 0" }}>
+                                <Table>
                                     <TableHead>
                                         <TableRow>
                                             <TableCell style={{ fontSize: 13 }}>ITEM</TableCell>
@@ -110,44 +130,42 @@ export function NotaFiscal({ values, clienteCurrent, setShouldShow, quantidades,
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        {clienteCurrent.produtos
-                                            .filter(produto => produto.valorItem !== 0)
-                                            .map((produto, index) => (
-                                                <>
-                                                    <TableRow key={produto.cdProduto}>
-                                                        <TableCell style={{ fontSize: 13 }}>{formatIndex(index + 1)}</TableCell>
-                                                        <TableCell style={{ fontSize: 13 }}>{produto.nmProduto}</TableCell>
-                                                        <TableCell style={{ fontSize: 13 }}>
-                                                            {quantidades[produto.nmProduto] ?? 0}
-                                                        </TableCell>
-                                                        <TableCell style={{ fontSize: 13 }}>
-                                                            {NumberFormatForBrazilianCurrency(produto.vlVendaProduto).replace('R$', '')}
-                                                        </TableCell>
-                                                        <TableCell style={{ fontSize: 12 }}> {
-                                                            Number(produto.valorItem) % 1 === 0
-                                                                ? `${produto.valorItem?.toFixed(0)},00`
-                                                                : `${produto.valorItem?.toFixed(2).replace('.', ',')}`}
-                                                        </TableCell>
-                                                    </TableRow>
-                                                </>
-                                            ))}
+                                        {values.produtos.filter(produto => produto.valorItem !== 0).map((produto, index) => (
+                                            <TableRow key={produto.nmProduto}>
+                                                <TableCell style={{ fontSize: 13 }}>{formatIndex(index + 1)}</TableCell>
+                                                <TableCell style={{ fontSize: 13 }}>{produto.nmProduto}</TableCell>
+                                                <TableCell style={{ fontSize: 13 }}>{produto.quantidade ?? 0}</TableCell>
+                                                <TableCell style={{ fontSize: 13 }}>{NumberFormatForBrazilianCurrency(produto.vlVendaProduto).replace('R$', '')}</TableCell>
+                                                <TableCell style={{ fontSize: 12 }}> {
+                                                    Number(produto.valorItem) % 1 === 0
+                                                        ? `${produto.valorItem?.toFixed(0)},00`
+                                                        : `${produto.valorItem?.toFixed(2).replace('.', ',')}`}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
                                     </TableBody>
                                 </Table>
-                            </div>
+                            </Box>
+
                             <hr style={{ border: "1px dashed #000000" }} />
-                            <div style={{ margin: "1rem 0 1rem 0" }}>
-                                <TotalValue>VALOR TOTAL {values.vlEntrega}</TotalValue>
-                            </div>
-                        </div>
+
+                            <Box sx={{ margin: "1rem 0" }}>
+                                <Typography variant="h6" align="center" sx={{ fontWeight: "bold" }}>VALOR TOTAL {values.vlEntrega}</Typography>
+                            </Box>
+                        </Box>
+
+                        {/* Button */}
+                        <Box display="flex" justifyContent="center" sx={{ margin: "1rem 0 2rem 0" }}>
+                            <Button
+                                className="no-print"
+                                label={"Confirmar"}
+                                type="button"
+                                onClick={handlePrint}
+                            />
+                        </Box>
                     </Box>
-                    <BoxButtonPrint>
-                        <Button
-                            label={"Confirmar"}
-                            type="button"
-                            onClick={handlePrint}
-                        />
-                    </BoxButtonPrint>
-                </ContainerFlutuantePrint>
+                </Dialog>
+
                 :
                 <Dialog open={registerProduct}>
                     <DialogTitle>Cadastrar Entrega</DialogTitle>
@@ -156,14 +174,14 @@ export function NotaFiscal({ values, clienteCurrent, setShouldShow, quantidades,
                             Deseja Cadastrar a Entrega ?
                         </DialogContentText>
                     </DialogContent>
-                    <BoxButtonDialog>
+                    <Box display="flex" justifyContent="space-between" sx={{ padding: "16px", width: '37rem' }}>
                         <DialogActions>
                             <Button onClick={() => { setRegisterProduct(false); setShouldShow(false) }} label={'Cancelar'} type="button" />
                         </DialogActions>
                         <DialogActions>
                             <Button onClick={() => { handleSubmit(); setRegisterProduct(false); setShouldShow(false) }} label={'Cadastrar Entrega'} type="button" />
                         </DialogActions>
-                    </BoxButtonDialog>
+                    </Box>
                 </Dialog>
             }
         </>

@@ -1,22 +1,21 @@
 
 import { Suspense, lazy } from 'react';
 import Footer from '../Pages/Footer';
-import Contato from '../Pages/Contato';
-import SobreNos from '../Pages/SobreNos';
-import Carousel from '../Pages/Carousel';
-import MaisVendidos from '../Pages/MaisVendidos';
 import logo from '../assets/Image/logo.png';
 
 const Login = lazy(() => import('../Pages/login'));
+const SignUp = lazy(() => import('../Pages/signup'));
 const Vendas = lazy(() => import('../Pages/admin/vendas'));
-const Estoque = lazy(() => import('../Pages/admin/estoque'));
+const Profile = lazy(() => import('../Pages/admin/profile'));
 const Entregas = lazy(() => import('../Pages/admin/entregas'));
 const Dashboard = lazy(() => import('../Pages/admin/dashboard'));
-const PrivateRoute = lazy(() => import('../store/reducer/private'));
+const PrivateRoute = lazy(() => import('../hooks/auth/private'));
 const CartaoPonto = lazy(() => import('../Pages/admin/cartaoPonto'));
 const AtualizarEstoque = lazy(() => import('../Pages/admin/compras'));
 const CadastroProduto = lazy(() => import('../Pages/admin/cadastroProdutos'));
 const CadastroCliente = lazy(() => import('../Pages/admin/cadastroClientes'));
+const EstoqueComprados = lazy(() => import('../Pages/admin/estoque/comprado'));
+const EstoqueFabricados = lazy(() => import('../Pages/admin/estoque/fabricado'));
 const CadastroColaborador = lazy(() => import('../Pages/admin/cadastroColaborador'));
 
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
@@ -36,19 +35,8 @@ export default function Router() {
                 </BoxLoading>
             }>
                 <Routes>
-                    <Route path='/' element={
-                        <>
-                            <Carousel />
-                            <MaisVendidos />
-                            <SobreNos />
-                            <Contato />
-                        </>
-                    }
-                    />
-                    <Route path='/login' element={
-                        <Login />
-                    }
-                    />
+                    <Route path='/' element={<Login />} />
+                    <Route path='/register' element={<SignUp />} />
 
                     <Route element={<PrivateRoute />}>
                         <Route path='dashboard' element={<Dashboard />} />
@@ -57,9 +45,11 @@ export default function Router() {
                         <Route path='/cadastro-produto' element={<CadastroProduto />} />
                         <Route path='/entregas' element={<Entregas />} />
                         <Route path='/atualizar-estoque' element={<AtualizarEstoque />} />
-                        <Route path='/estoque' element={<Estoque />} />
                         <Route path='/colaborador' element={<CadastroColaborador />} />
                         <Route path='/cartao-ponto' element={<CartaoPonto />} />
+                        <Route path='/estoque-fabricado' element={<EstoqueFabricados />} />
+                        <Route path='/estoque-comprado' element={<EstoqueComprados />} />
+                        <Route path='/perfil' element={<Profile />} />
                     </Route>
                 </Routes>
             </Suspense>

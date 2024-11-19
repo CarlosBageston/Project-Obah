@@ -8,7 +8,6 @@ import { realtimeDb } from '../../../firebase';
 import GetData from "../../../firebase/getData";
 import { onValue, ref } from 'firebase/database';
 import CartaoPontoModel from "./model/cartaoponto";
-import { TableKey } from '../../../types/tableName';
 import { TitleDefault } from '../cadastroClientes/style';
 import ActionCartaoPontoEnum from '../../../enumeration/action';
 import { ButtonFilter } from "../../../Components/filtro/style";
@@ -29,7 +28,8 @@ import {
     DivTableTitle,
     DivTableRow
 } from "./style";
-import useFormatCurrency from '../../../hooks/formatCurrency';
+import { useTableKeys } from '../../../hooks/tableKey';
+import { formatCurrency } from '../../../hooks/formatCurrency';
 
 const objClean: CartaoPontoModel = {
     dtInicio: '',
@@ -47,12 +47,12 @@ function CartaoPonto() {
     const [sumTotalPago, setSumTotalPago] = useState<string>('');
     const [sumHoraTrabalhada, setHoraTrabalhada] = useState<string>('');
     const [dataRealTime, setDataRealTime] = useState<CartaoPontoModel[]>([])
+    const tableKeys = useTableKeys();
 
-    const { formatCurrency } = useFormatCurrency();
     //realizando busca no banco de dados
     const {
         dataTable: dataTableColabroador,
-    } = GetData(TableKey.Colaborador, true) as { dataTable: ColaboradorModel[] };
+    } = GetData(tableKeys.Colaborador, true) as { dataTable: ColaboradorModel[] };
 
 
     const { values, setFieldValue } = useFormik<CartaoPontoModel>({

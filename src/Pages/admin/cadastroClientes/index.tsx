@@ -1,85 +1,53 @@
 import * as Yup from 'yup';
 import { useFormik } from 'formik';
-import { lazy, useState } from 'react';
+import { useState } from 'react';
 import { db } from '../../../firebase';
 import ClienteModel from './model/cliente';
 import Input from '../../../Components/input';
-import GetData from '../../../firebase/getData';
 import Button from '../../../Components/button';
-import { TableKey } from '../../../types/tableName';
 import GenericTable from '../../../Components/table';
-import FiltroGeneric from '../../../Components/filtro';
 import { useDispatch, useSelector } from 'react-redux';
-import useFormatCurrency from '../../../hooks/formatCurrency';
-import ProdutosModel from '../cadastroProdutos/model/produtos';
-import FormAlert from '../../../Components/FormAlert/formAlert';
 import formatPhone from '../../../Components/masks/maskTelefone';
-import { State, setLoading } from '../../../store/reducer/reducer';
-import ModalDelete from '../../../Components/FormAlert/modalDelete';
-import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore';
-
-const IsEdit = lazy(() => import('../../../Components/isEdit/isEdit'));
-const IsAdding = lazy(() => import('../../../Components/isAdding/isAdding'));
-
-//import do styled components
-import {
-    Box,
-    ContainerInfoCliente,
-    DivCliente,
-    ButtonStyled,
-    ContainerButton,
-    TitleDefault,
-} from './style';
-import { BoxTitleDefault } from '../estoque/style';
+import { setMessage } from '../../../store/reducer/reducer';
+import { addDoc, collection, doc, updateDoc } from 'firebase/firestore';
+import MUIButton from "@mui/material/Button";
 
 
-const objClean: ClienteModel = {
-    nmCliente: '',
-    tfCliente: '',
-    ruaCliente: '',
-    nrCasaCliente: '',
-    bairroCliente: '',
-    cidadeCliente: '',
-    produtos: []
-}
+import CollapseListProduct from '../../../Components/collapse/collapseListProduct';
+import _ from 'lodash';
+import SituacaoProduto from '../../../enumeration/situacaoProduto';
+import { Box, Dialog, Divider, Grid, Typography } from '@mui/material';
+import CustomSnackBar, { StateSnackBar } from '../../../Components/snackBar/customsnackbar';
+import { RootState } from '../../../store/reducer/store';
+import { formatDescription } from '../../../utils/formattedString';
+import { useTableKeys } from '../../../hooks/tableKey';
+import { setLoadingGlobal } from '../../../store/reducer/loadingSlice';
+import { convertToNumber } from '../../../hooks/formatCurrency';
 
 function CadastroCliente() {
     const [key, setKey] = useState<number>(0);
-    const [isEdit, setIsEdit] = useState<boolean>(false);
-    const [selected, setSelected] = useState<ClienteModel>();
-    const [recarregue, setRecarregue] = useState<boolean>(true);
-    const [openDelete, setOpenDelete] = useState<boolean>(false);
-    const [isVisibleTpProuto, setIsVisibleTpProduto] = useState<boolean>(false);
-    const [submitForm, setSubmitForm] = useState<boolean | undefined>(undefined);
-    const [initialValues, setInitialValues] = useState<ClienteModel>({ ...objClean });
-
+    const [editData, setEditData] = useState<ClienteModel>();
+    const [openSnackBar, setOpenSnackBar] = useState<StateSnackBar>({ error: false, success: false });
+    const message = useSelector((state: RootState) => state.user.message);
+    const tableKeys = useTableKeys();
     const dispatch = useDispatch();
-    const { convertToNumber } = useFormatCurrency();
-    const { loading } = useSelector((state: State) => state.user);
+    const [openDialog, setOpenDialog] = useState(false);
+    const loadingGlobal = useSelector((state: RootState) => state.loading.loadingGlobal);
 
-    const inputsConfig = [
-        { label: 'Nome', propertyName: 'nmCliente' },
-        { label: 'Telefone', propertyName: 'tfCliente' },
-        { label: 'Cidade', propertyName: 'cidadeCliente' },
-        { label: 'Bairro', propertyName: 'bairroCliente' },
-        { label: 'Rua', propertyName: 'ruaCliente' },
-        { label: 'Numero', propertyName: 'nrCasaCliente' },
-    ];
-
-    //realizando busca no banco de dados
-    const {
-        dataTable,
-        loading: isLoading,
-        setDataTable
-    } = GetData(TableKey.Clientes, recarregue) as { dataTable: ClienteModel[], loading: boolean, setDataTable: (data: ClienteModel[]) => void };
-    const {
-        dataTable: produtosDataTable,
-    } = GetData(TableKey.Produtos, recarregue) as { dataTable: ProdutosModel[] };
 
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<ClienteModel>({
         validateOnBlur: true,
         validateOnChange: true,
-        initialValues,
+        initialValues: {
+            nmCliente: '',
+            tfCliente: '',
+            ruaCliente: '',
+            nrCasaCliente: '',
+            bairroCliente: '',
+            cidadeCliente: '',
+            produtos: [],
+            nmClienteFormatted: ''
+        },
         validationSchema: Yup.object().shape({
             nmCliente: Yup.string().required('Campo obrigatório'),
             tfCliente: Yup.string().required('Campo obrigatório'),
@@ -88,239 +56,195 @@ function CadastroCliente() {
             bairroCliente: Yup.string().required('Campo obrigatório'),
             cidadeCliente: Yup.string().required('Campo obrigatório'),
             produtos: Yup.array().test("array vazio", 'Obrigatório pelo menos 1 produto', function (value) {
-                if ((!value || value.length === 0)) return false;
+                if ((!value || value.length === 0)) return false
                 return true;
             }).nullable()
         }),
-        onSubmit: hundleSubmitForm,
+        onSubmit: editData ? handleEditRow : hundleSubmitForm,
     });
 
     //editar uma linha da tabela e do banco de dados
     async function handleEditRow() {
-        if (selected) {
-            const refID: string = selected.id ?? '';
-            const refTable = doc(db, TableKey.Clientes, refID);
-            selected.produtos.forEach(product => {
-                product.vlVendaProduto = convertToNumber(product.vlVendaProduto.toString())
+        if (values) {
+            dispatch(setLoadingGlobal(true))
+            const refID: string = values.id ?? '';
+            const refTable = doc(db, tableKeys.Clientes, refID);
+            values.produtos.forEach(product => {
+                if (typeof product.vlVendaProduto === 'string') {
+                    product.vlVendaProduto = convertToNumber(product.vlVendaProduto)
+                }
             })
-            if (JSON.stringify(selected) !== JSON.stringify(initialValues)) {
-                await updateDoc(refTable, { ...selected })
+            if (!_.isEqual(values, editData)) {
+                await updateDoc(refTable, { ...values })
                     .then(() => {
-                        const index = dataTable.findIndex((item) => item.id === selected.id);
-                        const updatedDataTable = [
-                            ...dataTable.slice(0, index),
-                            selected,
-                            ...dataTable.slice(index + 1)
-                        ];
-                        setDataTable(updatedDataTable);
+                        setEditData(values)
                     });
             }
+            resetForm()
+            setKey(Math.random());
+            dispatch(setLoadingGlobal(false))
         }
-        setIsEdit(false)
-        setSelected(undefined)
-    }
-
-    //deleta uma linha da tabela e do banco de dados
-    async function handleDeleteRow() {
-        setOpenDelete(false)
-        if (selected) {
-            const refID: string = selected.id ?? '';
-            await deleteDoc(doc(db, TableKey.Clientes, refID)).then(() => {
-                const newDataTable = dataTable.filter(row => row.id !== selected.id);
-                setDataTable(newDataTable);
-            });
-        }
-        setSelected(undefined)
-    }
-
-    function cleanState() {
-        setInitialValues({
-            nmCliente: '',
-            tfCliente: '',
-            ruaCliente: '',
-            nrCasaCliente: '',
-            bairroCliente: '',
-            cidadeCliente: '',
-            produtos: []
-        })
-        setKey(Math.random());
     }
 
     //envia informações para o banco
     async function hundleSubmitForm() {
-        dispatch(setLoading(true))
+        dispatch(setLoadingGlobal(true))
         values.produtos.forEach((produto) => {
             produto.vlVendaProduto = convertToNumber(produto.vlVendaProduto.toString())
         })
-        await addDoc(collection(db, TableKey.Clientes), {
+        await addDoc(collection(db, tableKeys.Clientes), {
             ...values
         }).then(() => {
-            dispatch(setLoading(false))
-            setSubmitForm(true);
-            setDataTable([...dataTable, values]);
-            setTimeout(() => { setSubmitForm(undefined) }, 3000)
+            setOpenSnackBar(prev => ({ ...prev, success: true }))
+            setEditData(values)
         }).catch(() => {
-            dispatch(setLoading(false))
-            setSubmitForm(false);
-            setTimeout(() => { setSubmitForm(undefined) }, 3000)
-        });
+            dispatch(setMessage('Erro ao Cadastrar Cliente'))
+            setOpenSnackBar(prev => ({ ...prev, error: true }))
+        })
+            .finally(() => dispatch(setLoadingGlobal(false)));
         resetForm()
-        cleanState()
+        setKey(Math.random());
     }
 
+    function handleSubmitForm() {
+        if (!values.produtos.length) setOpenDialog(true)
+        else handleSubmit()
+    }
     return (
-        <>
-            <Box>
-                <div>
-                    <TitleDefault>Cadastro De Novos Clientes</TitleDefault>
-                    <ContainerInfoCliente>
-                        <DivCliente>
-                            <Input
-                                key={`nmCliente-${key}`}
-                                label='Nome'
-                                name='nmCliente'
-                                onBlur={handleBlur}
-                                value={values.nmCliente}
-                                onChange={e => setFieldValue(e.target.name, e.target.value)}
-                                error={touched.nmCliente && errors.nmCliente ? errors.nmCliente : ''}
-                                styleDiv={{ marginTop: 4 }}
-                                style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
-                            />
-                            <Input
-                                key={`tfCliente-${key}`}
-                                maxLength={12}
-                                label='Telefone'
-                                name='tfCliente'
-                                onBlur={handleBlur}
-                                value={formatPhone(values.tfCliente)}
-                                onChange={e => setFieldValue(e.target.name, e.target.value)}
-                                error={touched.tfCliente && errors.tfCliente ? errors.tfCliente : ''}
-                                styleDiv={{ marginTop: 4 }}
-                                style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
-                            />
-                            <Input
-                                key={`cidadeCliente-${key}`}
-                                label='Cidade'
-                                name='cidadeCliente'
-                                onBlur={handleBlur}
-                                value={formatPhone(values.cidadeCliente)}
-                                onChange={e => setFieldValue(e.target.name, e.target.value)}
-                                error={touched.cidadeCliente && errors.cidadeCliente ? errors.cidadeCliente : ''}
-                                styleDiv={{ marginTop: 4 }}
-                                style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
-                            />
-                        </DivCliente>
-                        <DivCliente>
-                            <Input
-                                key={`bairroCliente-${key}`}
-                                label='Bairro'
-                                name='bairroCliente'
-                                onBlur={handleBlur}
-                                value={values.bairroCliente}
-                                onChange={e => setFieldValue(e.target.name, e.target.value)}
-                                error={touched.bairroCliente && errors.bairroCliente ? errors.bairroCliente : ''}
-                                styleDiv={{ marginTop: 4 }}
-                                style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
-                            />
-                            <Input
-                                key={`ruaCliente-${key}`}
-                                label='Rua'
-                                name='ruaCliente'
-                                onBlur={handleBlur}
-                                value={values.ruaCliente}
-                                onChange={e => setFieldValue(e.target.name, e.target.value)}
-                                error={touched.ruaCliente && errors.ruaCliente ? errors.ruaCliente : ''}
-                                styleDiv={{ marginTop: 4 }}
-                                style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
-                            />
-                            <Input
-                                key={`nrCasaCliente-${key}`}
-                                label='Numero'
-                                name='nrCasaCliente'
-                                onBlur={handleBlur}
-                                value={values.nrCasaCliente}
-                                onChange={e => setFieldValue(e.target.name, e.target.value)}
-                                error={touched.nrCasaCliente && errors.nrCasaCliente ? errors.nrCasaCliente : ''}
-                                styleDiv={{ marginTop: 4 }}
-                                style={{ borderBottom: '2px solid #6e6dc0', color: 'black', backgroundColor: '#b2beed1a' }}
-                            />
-                        </DivCliente>
-                        <div>
-                            {touched.produtos && errors.produtos && (
-                                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                                //@ts-ignore
-                                <div style={{ color: 'red' }}>{errors.produtos}</div>
-                            )}
-                            <ButtonStyled onClick={() => setIsVisibleTpProduto(true)}> Adicionar Produtos</ButtonStyled>
-                        </div>
-                    </ContainerInfoCliente>
-                    <FormAlert submitForm={submitForm} name={'Cliente'} />
-                </div>
-                <ModalDelete open={openDelete} onDeleteClick={handleDeleteRow} onCancelClick={() => setOpenDelete(false)} />
-                <ContainerButton>
-                    <Button
-                        type={'button'}
-                        label={'Cadastrar Cliente'}
-                        onClick={handleSubmit}
-                        disabled={loading}
-                        style={{ margin: '1rem 0 3rem 0', height: '4rem', width: '14rem' }}
+        <Box sx={{ padding: '5rem' }}>
+            <Typography variant="h4" gutterBottom>Cadastro de Novos Clientes</Typography>
+            <Grid container spacing={2}>
+                <Grid item xs={4}>
+                    <Input
+                        key={`nmCliente-${key}`}
+                        label="Nome"
+                        name="nmCliente"
+                        onBlur={handleBlur}
+                        value={values.nmCliente}
+                        onChange={(e) => {
+                            setFieldValue(e.target.name, e.target.value)
+                            setFieldValue('nmClienteFormatted', formatDescription(e.target.value));
+                        }}
+                        error={touched.nmCliente && errors.nmCliente ? errors.nmCliente : ""}
                     />
-                </ContainerButton>
-                {/*Adicionar Produtos */}
-                <IsAdding
-                    data={produtosDataTable}
-                    isAdding={isVisibleTpProuto}
-                    setFieldValue={setFieldValue}
-                    setIsVisibleTpProduto={setIsVisibleTpProduto}
-                    products={values.produtos}
-                    addingScreen='Cliente'
-                />
+                </Grid>
+                <Grid item xs={4}>
+                    <Input
+                        key={`tfCliente-${key}`}
+                        label="Telefone"
+                        name="tfCliente"
+                        onBlur={handleBlur}
+                        value={values.tfCliente}
+                        onChange={(e) => setFieldValue(e.target.name, formatPhone(e.target.value))}
+                        error={touched.tfCliente && errors.tfCliente ? errors.tfCliente : ""}
+                    />
+                </Grid>
+                <Grid item xs={4}>
+                    <Input
+                        key={`cidadeCliente-${key}`}
+                        label="Cidade"
+                        name="cidadeCliente"
+                        onBlur={handleBlur}
+                        value={values.cidadeCliente}
+                        onChange={(e) => setFieldValue(e.target.name, e.target.value)}
+                        error={touched.cidadeCliente && errors.cidadeCliente ? errors.cidadeCliente : ""}
+                    />
+                </Grid>
+                <Grid item xs={4}>
+                    <Input
+                        key={`bairroCliente-${key}`}
+                        label="Bairro"
+                        name="bairroCliente"
+                        onBlur={handleBlur}
+                        value={values.bairroCliente}
+                        onChange={(e) => setFieldValue(e.target.name, e.target.value)}
+                        error={touched.bairroCliente && errors.bairroCliente ? errors.bairroCliente : ""}
+                    />
+                </Grid>
+                <Grid item xs={4}>
+                    <Input
+                        key={`ruaCliente-${key}`}
+                        label="Logradouro"
+                        name="ruaCliente"
+                        onBlur={handleBlur}
+                        value={values.ruaCliente}
+                        onChange={(e) => setFieldValue(e.target.name, e.target.value)}
+                        error={touched.ruaCliente && errors.ruaCliente ? errors.ruaCliente : ""}
+                    />
+                </Grid>
+                <Grid item xs={4}>
+                    <Input
+                        key={`nrCasaCliente-${key}`}
+                        label="Número"
+                        name="nrCasaCliente"
+                        type='number'
+                        onBlur={handleBlur}
+                        value={values.nrCasaCliente}
+                        onChange={(e) => setFieldValue(e.target.name, e.target.value)}
+                        error={touched.nrCasaCliente && errors.nrCasaCliente ? errors.nrCasaCliente : ""}
+                    />
+                </Grid>
+            </Grid>
 
+            <CollapseListProduct
+                isVisible={true}
+                tpProdutoSearch={SituacaoProduto.FABRICADO}
+                nameArray="produtos"
+                collectionName={tableKeys.Produtos}
+                initialItems={values.produtos}
+                labelInput="Valor venda"
+                typeValueInput="currency"
+                setFieldValueExterno={setFieldValue}
+            />
 
-                {/* Editar o cliente */}
-                <IsEdit
-                    editingScreen='Cliente'
-                    selected={selected}
-                    handleEditRow={handleEditRow}
-                    inputsConfig={inputsConfig}
-                    isEdit={isEdit}
-                    products={selected ? selected.produtos : []}
-                    setSelected={setSelected}
-                    setIsEdit={setIsEdit}
-                    newData={produtosDataTable}
-                />
-
-                {/*Tabela */}
-                <BoxTitleDefault>
-                    <div>
-                        <FiltroGeneric data={dataTable} setFilteredData={setDataTable} carregarDados={setRecarregue} type="cliente" />
-                    </div>
-                </BoxTitleDefault>
-                <GenericTable
-                    columns={[
-                        { label: 'Nome', name: 'nmCliente' },
-                        { label: 'Telefone', name: 'tfCliente' },
-                        { label: 'Cidade', name: 'cidadeCliente' },
-                        { label: 'Bairro', name: 'bairroCliente' },
-                        { label: 'Rua', name: 'ruaCliente' },
-                        { label: 'Numero Casa', name: 'nrCasaCliente' },
-                    ]}
-                    data={dataTable}
-                    isLoading={isLoading}
-                    onSelectedRow={setSelected}
-                    onEdit={() => {
-                        if (selected) {
-                            setIsEdit(true)
-                            setInitialValues(selected)
-                        } else {
-                            return
-                        }
-                    }}
-                    onDelete={() => setOpenDelete(true)}
-                    isdisabled={selected ? false : true}
+            <Box mt={3} display="flex" justifyContent="flex-end">
+                <Button
+                    type="button"
+                    label={editData ? "Atualizar" : "Cadastrar"}
+                    onClick={() => handleSubmitForm()}
+                    style={{ height: "4rem", width: "14rem" }}
+                    disabled={loadingGlobal}
                 />
             </Box>
-        </>
+            <Dialog open={openDialog}>
+                <Typography variant="body1" component="p" sx={{ p: 3 }}>
+                    É Obrigatório ter pelo menos um produto cadastrado
+                </Typography>
+                <Divider />
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1 }}>
+                    <MUIButton onClick={() => setOpenDialog(false)}>OK</MUIButton>
+                </Box>
+            </Dialog>
+            {/* Tabela */}
+            <GenericTable
+                columns={[
+                    { label: "Nome", name: "nmCliente" },
+                    { label: "Telefone", name: "tfCliente" },
+                    { label: "Cidade", name: "cidadeCliente" },
+                    { label: "Bairro", name: "bairroCliente" },
+                    { label: "Rua", name: "ruaCliente" },
+                    { label: "Número Casa", name: "nrCasaCliente" },
+                ]}
+                onEdit={(row: ClienteModel | undefined) => {
+                    if (!row) return;
+                    setEditData(row);
+                    setFieldValue("nmCliente", row.nmCliente);
+                    setFieldValue("tfCliente", formatPhone(row.tfCliente));
+                    setFieldValue("ruaCliente", row.ruaCliente);
+                    setFieldValue("nrCasaCliente", row.nrCasaCliente);
+                    setFieldValue("bairroCliente", row.bairroCliente);
+                    setFieldValue("cidadeCliente", row.cidadeCliente);
+                    setFieldValue("produtos", row.produtos);
+                    setFieldValue("id", row.id);
+                    setFieldValue("nmClienteFormatted", row.nmClienteFormatted);
+                    setKey(Math.random());
+                }}
+                editData={editData}
+                setEditData={setEditData}
+                collectionName={tableKeys.Clientes}
+            />
+            <CustomSnackBar message={message ? message : "Cadastrado Cliente com sucesso"} open={openSnackBar} setOpen={setOpenSnackBar} />
+        </Box>
     )
 }
 

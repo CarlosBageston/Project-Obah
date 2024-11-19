@@ -5,24 +5,9 @@ export const ContainerFilter = styled.div`
 display: flex;
 `;
 
-export const ContainerInput = styled.div<{isVisible: boolean}>`
-display: none;
-width: 18rem;
-${({ isVisible }) =>
-    isVisible &&
-    `
-      margin-right: 10px;
-      display: block;
-      animation: slide-right .4s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
-    `}
-@keyframes slide-right {
-  0% {
-    transform: translateX(-100px);
-  }
-  100% {
-    transform: translateX(10px);
-  }
-}
+export const ContainerInput = styled.div`
+display: block;
+width: 11rem;
 `;
 
 export const ContainerButton = styled.div`
@@ -40,21 +25,6 @@ const flipOut = keyframes`
     opacity: 0;
   }
 `;
-
-export const StyledButton = styled(Button)`
-  opacity: 1;
-  position: absolute;
-  left: 0%;
-
-  &:hover {
-    opacity: 0.8;
-  }
-
-  &.flip-out {
-    animation: ${flipOut} .4s linear forwards;
-  }
-  `;
-
 
 export const ButtonFilter = styled(Button)`
 

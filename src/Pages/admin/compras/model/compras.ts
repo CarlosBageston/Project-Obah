@@ -8,13 +8,13 @@ interface ComprasModel {
     id?: string,
     dtCompra: Date | null,
     nmProduto: string,
+    nmProdutoFormatted: string,
     cdProduto: string,
     vlUnitario: number,
     quantidade: number,
     totalPago: number | null,
     tpProduto: SituacaoProduto | null,
     qntMinima: number | null,
-    nrOrdem?: number
     mpFabricado?: ComprasModel[]
     stEstoqueInfinito?: boolean
     stMateriaPrima?: boolean

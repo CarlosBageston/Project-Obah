@@ -333,7 +333,7 @@ function Vendas() {
     }
 
     const suggestions: ProdutosModel[] = useDebouncedSuggestions<ProdutosModel>(formatDescription(formik.values.barcode ?? ''), tableKeys.Produtos, dispatch, "Produto", undefined, false);
-
+    //TODO: Não ta mostrando mensagem de erro qual clicar na taça sundae, deve msotrar que o campo e obrigatorio para adicionar ao carrinho
     return (
         <Box sx={{ padding: '5rem 8rem' }}>
             <Typography variant="h4" gutterBottom>Painel de Vendas</Typography>

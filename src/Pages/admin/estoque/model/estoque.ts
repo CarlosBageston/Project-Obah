@@ -13,9 +13,10 @@ interface EstoqueModel {
     nmProduto: string,
     cdProduto: string,
     quantidade: number,
-    tpProduto: SituacaoProduto,
+    tpProduto: SituacaoProduto | null,
+    idsVersoes?: string[],
     stEstoque?: 'Bom' | 'Comprar' | 'Fabricar',
-    qntMinima: number,
+    qntMinima: number | null,
     versaos: Versao[]
     stEstoqueInfinito?: boolean
 }

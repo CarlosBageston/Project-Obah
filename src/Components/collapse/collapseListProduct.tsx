@@ -143,7 +143,7 @@ const CollapseListProduct = <T,>({
         <Box
             key={item.nmProduto}
             sx={{
-                padding: 2,
+                padding: '8px',
                 margin: 0.5,
                 backgroundColor: '#f5f5f5',
                 borderRadius: '8px',

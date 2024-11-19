@@ -13,7 +13,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setMessage } from '../../../store/reducer/reducer';
 import SituacaoProduto from "../../../enumeration/situacaoProduto";
 import { addDoc, collection, deleteDoc, doc, updateDoc, where } from "firebase/firestore";
-import { Box, Checkbox, FormControl, FormControlLabel, Grid, InputLabel, MenuItem, Select, Typography, } from "@mui/material";
+import { Box, Checkbox, FormControl, FormControlLabel, FormHelperText, Grid, InputLabel, MenuItem, Select, Typography, } from "@mui/material";
 
 
 //hooks
@@ -28,6 +28,8 @@ import { formatDescription } from '../../../utils/formattedString';
 import { useTableKeys } from '../../../hooks/tableKey';
 import { setLoadingGlobal } from '../../../store/reducer/loadingSlice';
 import { convertToNumber, formatCurrency, formatCurrencyRealTime, NumberFormatForBrazilianCurrency } from '../../../hooks/formatCurrency';
+import useHandleInputKeyPress from '../../../hooks/useHandleInputKeyPress';
+import { theme } from '../../../theme';
 
 
 function CadastroProduto() {
@@ -39,6 +41,7 @@ function CadastroProduto() {
     const [openSnackBar, setOpenSnackBar] = useState<StateSnackBar>({ error: false, success: false });
     const loadingGlobal = useSelector((state: RootState) => state.loading.loadingGlobal);
     const tableKeys = useTableKeys();
+    const { onKeyPressHandleSubmit } = useHandleInputKeyPress();
 
     const history = useNavigate();
     const dispatch = useDispatch();
@@ -59,10 +62,19 @@ function CadastroProduto() {
             mpFabricado: [],
             stMateriaPrima: false,
             kgProduto: 1,
-            nmProdutoFormatted: ''
+            nmProdutoFormatted: '',
+            qntMinima: null
         },
         validationSchema: Yup.object().shape({
-            nmProduto: Yup.string().required('Campo obrigatório'),
+            nmProduto: Yup.string().required('Campo obrigatório')
+                .test('valueUniqueProduto', 'Esse produto ja está cadastrado', async (value) => {
+                    if (editData) return true;
+                    if (!value) return false;
+                    const { data } = await getItemsByQuery(tableKeys.Produtos, [where('nmProdutoFormatted', '==', formatDescription(value))], dispatch);
+                    if (data && data.length > 0) return false;
+                    return true;
+                })
+                .max(30, 'O nome do produto deve ter no maximo 30 caracteres'),
             cdProduto: Yup.string()
                 .required('Campo obrigatório')
                 .test('valueUnique', 'Esse código já está cadastrado', async (value) => {
@@ -89,7 +101,8 @@ function CadastroProduto() {
                 const tpProduto = this.resolve(Yup.ref('tpProduto'));
                 if (tpProduto === SituacaoProduto.FABRICADO && (!value || value.length === 0)) return false;
                 return true;
-            }).nullable()
+            }).nullable(),
+            qntMinima: Yup.number().required('Campo obrigatório').typeError('Campo obrigatório'),
         }),
         onSubmit: editData ? handleEditRow : handleSubmitForm,
     });
@@ -287,8 +300,8 @@ function CadastroProduto() {
                             <MenuItem value={SituacaoProduto.FABRICADO}>Fabricado</MenuItem>
                             <MenuItem value={SituacaoProduto.COMPRADO}>Comprado</MenuItem>
                         </Select>
-                        {touched.tpProduto && errors.tpProduto && (
-                            <div style={{ color: 'red' }}>{errors.tpProduto}</div>
+                        {errors.tpProduto && touched.tpProduto && (
+                            <FormHelperText style={{ color: theme.paletteColor.error }}>{errors.tpProduto}</FormHelperText>
                         )}
                     </FormControl>
                 </Grid>
@@ -305,6 +318,20 @@ function CadastroProduto() {
                             ))}
                         </Select>
                     </FormControl>
+                </Grid>
+                <Grid item xs={2}>
+                    <Input
+                        key={`qntMinima - ${key}`}
+                        label="Quant. mínima em estoque"
+                        onBlur={handleBlur}
+                        name="qntMinima"
+                        value={values.qntMinima || ''}
+                        type='number'
+                        onChange={e => setFieldValue(e.target.name, Number(e.target.value))}
+                        maxLength={5}
+                        error={touched.qntMinima && errors.qntMinima ? errors.qntMinima : ''}
+                        onKeyDown={e => onKeyPressHandleSubmit(e, handleSubmit)}
+                    />
                 </Grid>
                 <Grid item xs={5} >
                     <FormControlLabel
@@ -370,6 +397,7 @@ function CadastroProduto() {
                     setFieldValue('mpFabricado', row.mpFabricado);
                     setFieldValue('id', row.id);
                     setFieldValue('nmProdutoFormatted', row.nmProdutoFormatted);
+                    setFieldValue('qntMinima', row.qntMinima);
                 }}
                 editData={editData}
                 setEditData={setEditData}

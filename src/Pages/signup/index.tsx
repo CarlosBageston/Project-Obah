@@ -176,176 +176,179 @@ function SignUp() {
                         Registro de Novo Usuário
                     </Typography>
                     <Grid container spacing={2}>
-                        <Grid item xs={12}>
-                            <Input
-                                fullWidth
-                                label="Nome Empresa"
-                                name="nmEmpresa"
-                                value={formik.values.nmEmpresa}
-                                onChange={formik.handleChange}
-                                onBlur={formik.handleBlur}
-                                error={formik.touched.nmEmpresa && formik.errors.nmEmpresa ? formik.errors.nmEmpresa : ''}
-                            />
-                        </Grid>
-                        <Grid item xs={12}>
-                            <Input
-                                fullWidth
-                                label="CNPJ"
-                                maxLength={18}
-                                name="cnpjEmpresa"
-                                type='tel'
-                                value={formik.values.cnpjEmpresa}
-                                onChange={(e) => formik.setFieldValue("cnpjEmpresa", formatCNPJ(e.target.value))}
-                                onBlur={formik.handleBlur}
-                                error={formik.touched.cnpjEmpresa && formik.errors.cnpjEmpresa ? formik.errors.cnpjEmpresa : ''}
-                            />
-                        </Grid>
-                        <Grid item display={'flex'} >
-                            <Grid item xs={7} marginRight={3}>
+                        <form onSubmit={formik.handleSubmit}>
+                            <Grid item xs={12}>
                                 <Input
                                     fullWidth
-                                    label="Telefone(DDD)"
+                                    label="Nome Empresa"
+                                    name="nmEmpresa"
+                                    value={formik.values.nmEmpresa}
+                                    onChange={formik.handleChange}
+                                    onBlur={formik.handleBlur}
+                                    error={formik.touched.nmEmpresa && formik.errors.nmEmpresa ? formik.errors.nmEmpresa : ''}
+                                />
+                            </Grid>
+                            <Grid item xs={12}>
+                                <Input
+                                    fullWidth
+                                    label="CNPJ"
+                                    maxLength={18}
+                                    name="cnpjEmpresa"
                                     type='tel'
-                                    name="tfEmpresa"
-                                    maxLength={15}
-                                    value={formik.values.tfEmpresa || ''}
-                                    onChange={(e) => formik.setFieldValue("tfEmpresa", formatPhoneNumber(e.target.value))}
+                                    value={formik.values.cnpjEmpresa}
+                                    onChange={(e) => formik.setFieldValue("cnpjEmpresa", formatCNPJ(e.target.value))}
                                     onBlur={formik.handleBlur}
-                                    error={formik.touched.tfEmpresa && formik.errors.tfEmpresa ? formik.errors.tfEmpresa : ''}
+                                    error={formik.touched.cnpjEmpresa && formik.errors.cnpjEmpresa ? formik.errors.cnpjEmpresa : ''}
                                 />
                             </Grid>
-                            <Grid item xs={4}>
-                                <Input
-                                    fullWidth
-                                    label="CEP"
-                                    maxLength={9}
-                                    name="cepEmpresa"
-                                    value={formik.values.cepEmpresa}
-                                    onChange={(e) => formik.setFieldValue("cepEmpresa", formatCEP(e.target.value))}
-                                    onBlur={formik.handleBlur}
-                                    error={formik.touched.cepEmpresa && formik.errors.cepEmpresa ? formik.errors.cepEmpresa : ''}
-                                />
+                            <Grid item display={'flex'} >
+                                <Grid item xs={7} marginRight={3}>
+                                    <Input
+                                        fullWidth
+                                        label="Telefone(DDD)"
+                                        type='tel'
+                                        name="tfEmpresa"
+                                        maxLength={15}
+                                        value={formik.values.tfEmpresa || ''}
+                                        onChange={(e) => formik.setFieldValue("tfEmpresa", formatPhoneNumber(e.target.value))}
+                                        onBlur={formik.handleBlur}
+                                        error={formik.touched.tfEmpresa && formik.errors.tfEmpresa ? formik.errors.tfEmpresa : ''}
+                                    />
+                                </Grid>
+                                <Grid item xs={4}>
+                                    <Input
+                                        fullWidth
+                                        label="CEP"
+                                        maxLength={9}
+                                        name="cepEmpresa"
+                                        value={formik.values.cepEmpresa}
+                                        onChange={(e) => formik.setFieldValue("cepEmpresa", formatCEP(e.target.value))}
+                                        onBlur={formik.handleBlur}
+                                        error={formik.touched.cepEmpresa && formik.errors.cepEmpresa ? formik.errors.cepEmpresa : ''}
+                                    />
+                                </Grid>
                             </Grid>
-                        </Grid>
-                        <Grid item display={'flex'} >
-                            <Grid item xs={7} marginRight={3} >
-                                <Input
-                                    fullWidth
-                                    label="Cidade"
-                                    disabled
-                                    name="cidadeEmpresa"
-                                    value={formik.values.cidadeEmpresa}
-                                />
+                            <Grid item display={'flex'} >
+                                <Grid item xs={7} marginRight={3} >
+                                    <Input
+                                        fullWidth
+                                        label="Cidade"
+                                        disabled
+                                        name="cidadeEmpresa"
+                                        value={formik.values.cidadeEmpresa}
+                                    />
+                                </Grid>
+                                <Grid item xs={4}>
+                                    <Input
+                                        fullWidth
+                                        label="Estado"
+                                        disabled
+                                        name="estadoEmpresa"
+                                        value={formik.values.estadoEmpresa}
+                                    />
+                                </Grid>
                             </Grid>
-                            <Grid item xs={4}>
-                                <Input
-                                    fullWidth
-                                    label="Estado"
-                                    disabled
-                                    name="estadoEmpresa"
-                                    value={formik.values.estadoEmpresa}
-                                />
+                            <Grid item display={'flex'} >
+                                <Grid item xs={5} marginRight={3} >
+                                    <Input
+                                        fullWidth
+                                        label="Logradouro"
+                                        name="ruaEmpresa"
+                                        value={formik.values.ruaEmpresa}
+                                        onChange={formik.handleChange}
+                                        onBlur={formik.handleBlur}
+                                        error={formik.touched.ruaEmpresa && formik.errors.ruaEmpresa ? formik.errors.ruaEmpresa : ''}
+                                    />
+                                </Grid>
+                                <Grid item xs={2} marginRight={3} >
+                                    <Input
+                                        fullWidth
+                                        label="N°"
+                                        name="numeroEmpresa"
+                                        type='number'
+                                        onChange={formik.handleChange}
+                                        onBlur={formik.handleBlur}
+                                        value={formik.values.numeroEmpresa}
+                                        error={formik.touched.numeroEmpresa && formik.errors.numeroEmpresa ? formik.errors.numeroEmpresa : ''}
+                                    />
+                                </Grid>
+                                <Grid item xs={4}>
+                                    <Input
+                                        fullWidth
+                                        label="Bairro"
+                                        name="bairroEmpresa"
+                                        value={formik.values.bairroEmpresa}
+                                        onChange={formik.handleChange}
+                                        onBlur={formik.handleBlur}
+                                        error={formik.touched.bairroEmpresa && formik.errors.bairroEmpresa ? formik.errors.bairroEmpresa : ''}
+                                    />
+                                </Grid>
                             </Grid>
-                        </Grid>
-                        <Grid item display={'flex'} >
-                            <Grid item xs={5} marginRight={3} >
+                            <Grid item xs={12}>
                                 <Input
                                     fullWidth
-                                    label="Logradouro"
-                                    name="ruaEmpresa"
-                                    value={formik.values.ruaEmpresa}
+                                    label="E-mail"
+                                    name="email"
+                                    value={formik.values.email}
                                     onChange={formik.handleChange}
                                     onBlur={formik.handleBlur}
-                                    error={formik.touched.ruaEmpresa && formik.errors.ruaEmpresa ? formik.errors.ruaEmpresa : ''}
+                                    error={formik.touched.email && formik.errors.email ? formik.errors.email : ''}
                                 />
                             </Grid>
-                            <Grid item xs={2} marginRight={3} >
-                                <Input
-                                    fullWidth
-                                    label="N°"
-                                    name="numeroEmpresa"
-                                    type='number'
-                                    onChange={formik.handleChange}
-                                    onBlur={formik.handleBlur}
-                                    value={formik.values.numeroEmpresa}
-                                    error={formik.touched.numeroEmpresa && formik.errors.numeroEmpresa ? formik.errors.numeroEmpresa : ''}
-                                />
+                            <Grid item display={'flex'}>
+                                <Grid item xs={5} marginRight={3}>
+                                    <Input
+                                        fullWidth
+                                        label="Senha"
+                                        type="password"
+                                        name="password"
+                                        value={formik.values.password}
+                                        onChange={formik.handleChange}
+                                        onBlur={formik.handleBlur}
+                                        error={formik.touched.password && formik.errors.password ? formik.errors.password : ''}
+                                    />
+                                </Grid>
+                                <Grid item xs={6}>
+                                    <Input
+                                        fullWidth
+                                        label="Confirmar Senha"
+                                        type="password"
+                                        name="confirmPassword"
+                                        value={formik.values.confirmPassword}
+                                        onChange={formik.handleChange}
+                                        onBlur={formik.handleBlur}
+                                        error={formik.touched.confirmPassword && formik.errors.confirmPassword ? formik.errors.confirmPassword : ''}
+                                    />
+                                </Grid>
                             </Grid>
-                            <Grid item xs={4}>
+                            <Grid item xs={12}>
                                 <Input
                                     fullWidth
-                                    label="Bairro"
-                                    name="bairroEmpresa"
-                                    value={formik.values.bairroEmpresa}
-                                    onChange={formik.handleChange}
-                                    onBlur={formik.handleBlur}
-                                    error={formik.touched.bairroEmpresa && formik.errors.bairroEmpresa ? formik.errors.bairroEmpresa : ''}
-                                />
-                            </Grid>
-                        </Grid>
-                        <Grid item xs={12}>
-                            <Input
-                                fullWidth
-                                label="E-mail"
-                                name="email"
-                                value={formik.values.email}
-                                onChange={formik.handleChange}
-                                onBlur={formik.handleBlur}
-                                error={formik.touched.email && formik.errors.email ? formik.errors.email : ''}
-                            />
-                        </Grid>
-                        <Grid item display={'flex'}>
-                            <Grid item xs={5} marginRight={3}>
-                                <Input
-                                    fullWidth
-                                    label="Senha"
+                                    label="Senha do Dashboard"
                                     type="password"
-                                    name="password"
-                                    value={formik.values.password}
+                                    name="passwordDashboard"
+                                    value={formik.values.passwordDashboard}
                                     onChange={formik.handleChange}
                                     onBlur={formik.handleBlur}
-                                    error={formik.touched.password && formik.errors.password ? formik.errors.password : ''}
+                                    error={formik.touched.passwordDashboard && formik.errors.passwordDashboard ? formik.errors.passwordDashboard : ''}
                                 />
                             </Grid>
-                            <Grid item xs={6}>
-                                <Input
-                                    fullWidth
-                                    label="Confirmar Senha"
-                                    type="password"
-                                    name="confirmPassword"
-                                    value={formik.values.confirmPassword}
-                                    onChange={formik.handleChange}
-                                    onBlur={formik.handleBlur}
-                                    error={formik.touched.confirmPassword && formik.errors.confirmPassword ? formik.errors.confirmPassword : ''}
+                            <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center' }}>
+                                <Button
+                                    label="Registrar"
+                                    type="button"
+                                    disabled={loadingGlobal}
+                                    onClick={formik.handleSubmit}
                                 />
                             </Grid>
-                        </Grid>
-                        <Grid item xs={12}>
-                            <Input
-                                fullWidth
-                                label="Senha do Dashboard"
-                                type="password"
-                                name="passwordDashboard"
-                                value={formik.values.passwordDashboard}
-                                onChange={formik.handleChange}
-                                onBlur={formik.handleBlur}
-                                error={formik.touched.passwordDashboard && formik.errors.passwordDashboard ? formik.errors.passwordDashboard : ''}
-                            />
-                        </Grid>
-                        <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center' }}>
-                            <Button
-                                label="Registrar"
-                                type="button"
-                                disabled={loadingGlobal}
-                                onClick={formik.handleSubmit}
-                            />
-                        </Grid>
+                        </form>
                     </Grid>
+
                     <CustomSnackBar message={message} open={openSnackBar} setOpen={setOpenSnackBar} />
                 </>
             ) : (
                 <Typography align="center" color="textSecondary">
-                    {message ? 'Token inválido ou expirado.' : 'Aguarde, Verificando token...'}
+                    {message ? message : 'Aguarde, Verificando token...'}
                 </Typography>
             )}
         </AuthLayout>

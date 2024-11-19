@@ -164,7 +164,7 @@ function CadastroCliente() {
                 <Grid item xs={4}>
                     <Input
                         key={`ruaCliente-${key}`}
-                        label="Rua"
+                        label="Logradouro"
                         name="ruaCliente"
                         onBlur={handleBlur}
                         value={values.ruaCliente}

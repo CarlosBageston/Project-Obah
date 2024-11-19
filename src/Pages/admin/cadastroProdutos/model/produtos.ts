@@ -18,6 +18,7 @@ interface ProdutosModel {
     mpFabricado: ComprasModel[]
     valorItem?: number
     stMateriaPrima?: boolean
+    qntMinima: number | null
     kgProduto: number
 }
 export default ProdutosModel

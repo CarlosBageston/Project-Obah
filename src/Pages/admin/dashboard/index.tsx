@@ -52,7 +52,6 @@ function Dashboard() {
         onSubmit: handleAuthSubmit
     })
 
-
     const handleToggleVisibility = () => {
         if (showData) {
             setShowData(false);
@@ -100,7 +99,6 @@ function Dashboard() {
                     </Card>
                 </Grid>
             </Grid>
-
             <HorizontalTabs
                 selectedIndex={selectTab}
                 onChangeIndex={setSelectTab}

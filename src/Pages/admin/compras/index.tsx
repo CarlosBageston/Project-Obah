@@ -11,7 +11,6 @@ import EstoqueModel, { Versao } from '../estoque/model/estoque';
 import GenericTable from "../../../Components/table";
 import { useDispatch, useSelector } from 'react-redux';
 import formatDate from "../../../Components/masks/formatDate";
-import TelaDashboard from '../../../enumeration/telaDashboard';
 import ProdutosModel from "../cadastroProdutos/model/produtos";
 import SituacaoProduto from "../../../enumeration/situacaoProduto";
 import { addDoc, arrayUnion, collection, deleteDoc, doc, serverTimestamp, updateDoc, where, writeBatch } from "firebase/firestore";
@@ -30,7 +29,7 @@ import { useTableKeys } from '../../../hooks/tableKey';
 import { formatDescription } from '../../../utils/formattedString';
 import { setLoadingGlobal } from '../../../store/reducer/loadingSlice';
 import { DashboardCompraModel, updateAddDashboardCompra } from '../../../hooks/useCalculateValueDashboard';
-import { convertToNumber, formatCurrency, formatCurrencyRealTime, NumberFormatForBrazilianCurrency } from '../../../hooks/formatCurrency';
+import { convertToNumber, formatCurrency, formatCurrencyRealTime } from '../../../hooks/formatCurrency';
 
 
 
@@ -43,7 +42,7 @@ function AtualizarEstoque() {
     const [editData, setEditData] = useState<ComprasModel>();
     const tableKeys = useTableKeys();
     const dispatch = useDispatch();
-    const { removedStockCompras, updateStock } = useEstoque();
+    const { removedStockCompras } = useEstoque();
     const { onKeyPressHandleSubmit } = useHandleInputKeyPress();
 
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<ComprasModel>({
@@ -76,10 +75,9 @@ function AtualizarEstoque() {
                     if (parent.stEstoqueInfinito) return true;
                     return value !== undefined && value > 0;
                 }),
-            qntMinima: Yup.number().required('Campo obrigatório').typeError('Campo obrigatório'),
             nrOrdem: Yup.number().optional().nullable()
         }),
-        onSubmit: editData ? handleEditRow : handleSubmitForm,
+        onSubmit: handleSubmitForm,
     });
 
     /**
@@ -92,17 +90,18 @@ function AtualizarEstoque() {
             const refID: string = selected.id ?? '';
             await deleteDoc(doc(db, tableKeys.Compras, refID));
             const versoesValidas = await getSingleItemByQuery<EstoqueModel>(tableKeys.Estoque, [where('nmProduto', '==', selected.nmProduto)], dispatch)
-            //TODO: atualizar para id. ja alterei preciso testar
 
             if (versoesValidas) {
                 const refIdEstoque: string = versoesValidas.id ?? ''
                 const refTable = doc(db, tableKeys.Estoque, refIdEstoque);
                 const versoes = versoesValidas.versaos.filter(versao => versao.idVersao !== selected.id)
+                const idsversoes = versoesValidas.idsVersoes?.filter(versao => versao !== selected.id)
                 const totalQuantity = versoes.reduce((accumulator, versao) => accumulator + versao.vrQntd, 0);
 
                 await updateDoc(refTable, {
                     nmProduto: selected.nmProduto,
                     cdProduto: selected.cdProduto,
+                    idsVersoes: idsversoes,
                     quantidade: totalQuantity,
                     tpProduto: selected.tpProduto,
                     qntMinima: selected.qntMinima,
@@ -181,40 +180,43 @@ function AtualizarEstoque() {
     /**
      * Cria ou atualiza o estoque com base nos valores fornecidos.
      * 
-     * @param valuesUpdate - Valores atualizados.
+     * @param value - Valores atualizados.
      */
-    async function createStock(valuesUpdate: ComprasModel, idCompra: string | undefined) {
-        const estoqueExistente = await getSingleItemByQuery<EstoqueModel>(tableKeys.Estoque, [where('nmProduto', '==', valuesUpdate.nmProduto)], dispatch);
-        const novaVersao = criarNovaVersao(idCompra ?? '', valuesUpdate.quantidade);
+    async function createStock(value: ComprasModel, idCompra: string | undefined) {
+        const existingStock = await getSingleItemByQuery<EstoqueModel>(tableKeys.Estoque, [where('nmProduto', '==', value.nmProduto)], dispatch);
+        const novaVersao = criarNovaVersao(idCompra ?? '', value.quantidade);
 
-        if (estoqueExistente) {
-            const refID: string = estoqueExistente.id ?? '';
+        if (existingStock) {
+            const refID: string = existingStock.id ?? '';
             const refTable = doc(db, tableKeys.Estoque, refID);
-            let quantidadeKg = valuesUpdate.quantidade;
-            if (valuesUpdate.kgProduto && valuesUpdate.kgProduto !== 1) {
-                quantidadeKg = valuesUpdate.kgProduto * valuesUpdate.quantidade;
+            let quantidadeKg = value.quantidade;
+            if (value.kgProduto && value.kgProduto !== 1) {
+                quantidadeKg = value.kgProduto * value.quantidade;
             }
-            const novaQuantidade = quantidadeKg + estoqueExistente.quantidade;
+            const novaQuantidade = quantidadeKg + existingStock.quantidade;
 
             // Atualizando o estoque com a nova quantidade e as novas versões
+            const updates: Partial<EstoqueModel> = {};
+
+            if (novaQuantidade !== existingStock.quantidade) updates.quantidade = novaQuantidade;
+            if (value.nmProduto !== existingStock.nmProduto) updates.nmProduto = value.nmProduto;
+            if (value.cdProduto !== existingStock.cdProduto) updates.cdProduto = value.cdProduto;
+            if (value.qntMinima !== existingStock.qntMinima) updates.qntMinima = value.qntMinima;
+            if (value.tpProduto !== existingStock.tpProduto) updates.tpProduto = value.tpProduto;
+            if (value.stEstoqueInfinito !== existingStock.stEstoqueInfinito) updates.stEstoqueInfinito = value.stEstoqueInfinito;
             await updateDoc(refTable, {
-                quantidade: novaQuantidade,
+                ...updates,
                 versaos: arrayUnion(novaVersao),
-                idsVersoes: arrayUnion(novaVersao.idVersao),
-                nmProduto: valuesUpdate.nmProduto,
-                cdProduto: valuesUpdate.cdProduto,
-                qntMinima: valuesUpdate.qntMinima,
-                tpProduto: valuesUpdate.tpProduto,
-                stEstoqueInfinito: valuesUpdate.stEstoqueInfinito
+                idsVersoes: arrayUnion(novaVersao.idVersao)
             });
         } else {
             await addDoc(collection(db, tableKeys.Estoque), {
-                nmProduto: valuesUpdate.nmProduto,
-                cdProduto: valuesUpdate.cdProduto,
-                qntMinima: valuesUpdate.qntMinima,
-                tpProduto: valuesUpdate.tpProduto,
-                stEstoqueInfinito: valuesUpdate.stEstoqueInfinito,
-                quantidade: valuesUpdate.quantidade,
+                nmProduto: value.nmProduto,
+                cdProduto: value.cdProduto,
+                qntMinima: value.qntMinima,
+                tpProduto: value.tpProduto,
+                stEstoqueInfinito: value.stEstoqueInfinito,
+                quantidade: value.quantidade,
                 versaos: [novaVersao],
                 idsVersoes: [novaVersao.idVersao]
             });
@@ -326,42 +328,13 @@ function AtualizarEstoque() {
                 if (!isNaN(division)) setFieldValue('vlUnitario', formatCurrency(division.toString()))
                 else setFieldValue('vlUnitario', 0)
             } else if (values.tpProduto === SituacaoProduto.FABRICADO) {
-                const multiplication = convertToNumber(values.vlUnitario.toString()) * values.quantidade
+                const foundProduct = foundKgProduto(values as any)
+                const multiplication = convertToNumber(foundProduct.vlUnitario.toString()) * values.quantidade
                 if (!isNaN(multiplication)) setFieldValue('totalPago', formatCurrency(multiplication.toString()))
                 else setFieldValue('totalPago', 0)
             }
         }
     }, [values.quantidade, values.totalPago, editData?.quantidade, editData?.totalPago])
-    /**
-     * Edita uma linha da tabela e do banco de dados, atualizando também o estoque correspondente.
-     */
-    async function handleEditRow() {
-        dispatch(setLoadingGlobal(true))
-        if (values.totalPago) {
-            values.vlUnitario = convertToNumber(values.vlUnitario.toString())
-            values.totalPago = convertToNumber(values.totalPago.toString())
-            const refID: string = values.id ?? '';
-            const refTable = doc(db, tableKeys.Compras, refID);
-            const estoque: EstoqueModel = {
-                nmProduto: values.nmProduto,
-                cdProduto: values.cdProduto,
-                qntMinima: values.qntMinima || 0,
-                quantidade: values.quantidade,
-                tpProduto: values.tpProduto || 0,
-                versaos: [],
-            }
-            updateStock(estoque, values.id)
-            values.totalPago = convertToNumber(values.totalPago?.toString() ?? '')
-            values.vlUnitario = convertToNumber(values.vlUnitario.toString())
-
-            await updateDoc(refTable, { ...values })
-                .then(() => {
-                    setEditData(values)
-                });
-        }
-        resetForm()
-        dispatch(setLoadingGlobal(false))
-    }
 
     /**
      * Manipula a seleção de um valor no campo de autocompletar, preenchendo os campos do formulário com os valores correspondentes.
@@ -399,7 +372,6 @@ function AtualizarEstoque() {
      */
     useEffect(() => { setFieldValue("stEstoqueInfinito", false) }, [values.tpProduto])
 
-    //TODO: Testar novamente todos os passar do atualizar o estoque. ta faltando verificar se ele ta descontando e acrescentando no estoque
     const suggestions: ComprasModel[] = useDebouncedSuggestions<ComprasModel>(formatDescription(values.nmProduto), tableKeys.Produtos, dispatch, 'Produto', values.tpProduto ?? 0);
 
     return (
@@ -501,13 +473,8 @@ function AtualizarEstoque() {
                     <Input
                         key={`qntMinima - ${key}`}
                         label="Quant. mínima em estoque"
-                        onBlur={handleBlur}
-                        name="qntMinima"
                         value={values.qntMinima || ''}
-                        onChange={e => setFieldValue(e.target.name, parseFloat(e.target.value.replace(/[^\d]/g, '')))}
-                        maxLength={4}
-                        error={touched.qntMinima && errors.qntMinima ? errors.qntMinima : ''}
-                        onKeyPress={e => onKeyPressHandleSubmit(e, handleSubmit)}
+                        disabled
                     />
                 </Grid>
                 <Grid item xs={3}>
@@ -530,7 +497,7 @@ function AtualizarEstoque() {
             <Box mt={4} display="flex" justifyContent="flex-end">
                 <Button
                     type='button'
-                    label={editData ? 'Atualizar' : 'Cadastrar'}
+                    label={'Cadastrar'}
                     onClick={handleSubmit}
                     disabled={loadingGlobal}
                     style={{ width: '12rem', height: '4rem' }}
@@ -548,22 +515,9 @@ function AtualizarEstoque() {
                     { label: 'Quantidade', name: 'quantidade', isInfinite: true },
                     { label: 'Valor Total', name: 'totalPago', isCurrency: true }
                 ]}
-                onEdit={(row: ComprasModel | undefined) => {
-                    if (!row) return;
-                    setEditData(row)
-                    setFieldValue('cdProduto', row.cdProduto);
-                    setFieldValue('nmProduto', row.nmProduto);
-                    setFieldValue('dtCompra', row.dtCompra);
-                    setFieldValue('vlUnitario', NumberFormatForBrazilianCurrency(row.vlUnitario));
-                    setFieldValue('quantidade', row.quantidade);
-                    setFieldValue('totalPago', NumberFormatForBrazilianCurrency(row.totalPago ?? 0));
-                    setFieldValue('qntMinima', row.qntMinima);
-                    setFieldValue('stEstoqueInfinito', row.stEstoqueInfinito);
-                    setFieldValue('tpProduto', row.tpProduto);
-                    setFieldValue('id', row.id);
-                }}
                 deleteData={deleteData}
                 collectionName={tableKeys.Compras}
+                isVisibleEdit
                 setEditData={setEditData}
                 editData={editData}
                 onDelete={(selected: ComprasModel | undefined) => { handleDeleteRow(selected) }}

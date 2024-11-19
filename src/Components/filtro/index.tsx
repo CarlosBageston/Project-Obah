@@ -38,7 +38,7 @@ const GenericFilter = ({ setPage, carregarDados, filter, setLastVisible, setAppl
     const [valueItem, setValueItem] = useState<string>('');
     const [objectSearch, setObjectSearch] = useState<FilterProps | undefined>();
     const { onKeyPressHandleSubmit } = useHandleInputKeyPress();
-
+    //TODO: Não ta funcionando o filtro em estoque
     /**
      * Função para chamar a filtragem com base no tipo especificado (cliente ou produto).
      */

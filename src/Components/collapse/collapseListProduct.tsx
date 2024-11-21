@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Grow, Button, Box, Grid, Collapse, Typography, Autocomplete, TextField } from '@mui/material';
 import { TransitionGroup } from 'react-transition-group';
 import Input from '../input';
@@ -51,6 +51,7 @@ const CollapseListProduct = <T,>({
     const dispatch = useDispatch();
     const [key, setKey] = useState<number>(0);
     const { onKeyPressHandleSubmit } = useHandleInputKeyPress();
+    const autocompleteRef = useRef<HTMLInputElement>(null);
 
     const handleAddItem = (values: ItemProps) => {
         if (values.nmProduto && (values.quantidade || values.vlVendaProduto)) {
@@ -79,6 +80,11 @@ const CollapseListProduct = <T,>({
         setEditItem(null);
         resetForm();
         setKey(Math.random());
+        setTimeout(() => {
+            if (autocompleteRef.current) {
+                autocompleteRef.current.focus();
+            }
+        }, 100);
     };
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<ItemProps>({
         initialValues: {
@@ -200,6 +206,7 @@ const CollapseListProduct = <T,>({
                                         error={touched.nmProduto && Boolean(errors.nmProduto)}
                                         helperText={touched.nmProduto && errors.nmProduto}
                                         onBlur={handleBlur}
+                                        inputRef={autocompleteRef}
                                     />
                                 )}
                             />

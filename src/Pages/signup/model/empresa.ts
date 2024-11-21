@@ -16,4 +16,6 @@ export interface EmpresaRegister {
     estadoEmpresa: string;
     numeroEmpresa: string;
     isAdmin?: boolean
+    inscricaoEstadual?: string
+    isentoInscricaoEstadual?: boolean
 }

@@ -16,7 +16,8 @@ import {
     setEstadoEmpresa,
     setNumeroEmpresa,
     setIsAdmin,
-    setId
+    setId,
+    setInscricaoEstadual
 } from '../../store/reducer/empresaOnline';
 import { getSingleItemByQuery } from '../queryFirebase';
 import { RootState } from '../../store/reducer/store';
@@ -61,6 +62,7 @@ function UseAuth() {
             dispatch(setIsAdmin(empresaOnline.isAdmin));
             dispatch(setNumeroEmpresa(empresaOnline.numeroEmpresa));
             dispatch(setId(empresaOnline.id ?? ''));
+            dispatch(setInscricaoEstadual(empresaOnline.inscricaoEstadual ?? ''));
         }
     };
     return { isLoading };

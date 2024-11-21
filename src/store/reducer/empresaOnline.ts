@@ -12,6 +12,7 @@ export interface EmpresaState {
     cidadeEmpresa: string;
     estadoEmpresa: string;
     numeroEmpresa: string;
+    inscricaoEstadual?: string;
     isAdmin?: boolean;
 }
 
@@ -27,7 +28,8 @@ const initialState: EmpresaState = {
     estadoEmpresa: '',
     numeroEmpresa: '',
     isAdmin: false,
-    id: ''
+    id: '',
+    inscricaoEstadual: ''
 };
 
 const empresaOnline = createSlice({
@@ -69,7 +71,10 @@ const empresaOnline = createSlice({
         },
         setId(state, action: PayloadAction<string>) {
             state.id = action.payload;
-        }
+        },
+        setInscricaoEstadual(state, action: PayloadAction<string>) {
+            state.inscricaoEstadual = action.payload;
+        },
     },
 });
 
@@ -85,7 +90,8 @@ export const {
     setEstadoEmpresa,
     setNumeroEmpresa,
     setIsAdmin,
-    setId
+    setId,
+    setInscricaoEstadual
 } = empresaOnline.actions;
 
 export default empresaOnline.reducer;

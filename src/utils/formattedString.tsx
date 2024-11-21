@@ -26,5 +26,5 @@ export function formatCNPJ(value: string) {
         .replace(/(\d{3})(\d)/, "$1.$2")
         .replace(/(\d{3})(\d)/, "$1/$2")
         .replace(/(\d{4})(\d)/, "$1-$2")
-        .substr(0, 18);
+        .slice(0, 18);
 }

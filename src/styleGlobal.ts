@@ -18,19 +18,6 @@ body {
   font-size: 16px;
 }
 
-@media print {
-    /* Oculta elementos que não devem aparecer na impressão */
-    .no-print {
-        display: none !important;
-    }
-
-    .marginprint {
-        margin-bottom: 6px;
-        margin-top: 6px;
-    }
-
-    /* Adicione aqui quaisquer outros estilos específicos para impressão */
-}
 
 .style-scrollbar {
   overflow-y: auto;

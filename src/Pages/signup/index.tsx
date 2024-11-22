@@ -9,6 +9,8 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import {
     Box,
+    Checkbox,
+    FormControlLabel,
     Grid,
     LinearProgress,
     Typography,
@@ -61,6 +63,7 @@ function SignUp() {
             cidadeEmpresa: '',
             estadoEmpresa: '',
             numeroEmpresa: '',
+            inscricaoEstadual: '',
         },
         validationSchema: Yup.object({
             email: Yup.string().email('Email inválido').required('Campo obrigatório'),
@@ -82,6 +85,17 @@ function SignUp() {
             cidadeEmpresa: Yup.string().required('Campo obrigatório'),
             estadoEmpresa: Yup.string().required('Campo obrigatório'),
             numeroEmpresa: Yup.string().required('Campo obrigatório'),
+            inscricaoEstadual: Yup.string()
+                .test(
+                    'inscricao-estadual-condicional',
+                    'IE é obrigatória quando não isento',
+                    function (value) {
+                        if (formik.values.isentoInscricaoEstadual) {
+                            return true;
+                        }
+                        return !!value && /^\d{8,14}$/.test(value);
+                    }
+                ),
         }),
         onSubmit: handleRegister,
     });
@@ -200,6 +214,36 @@ function SignUp() {
                                     onBlur={formik.handleBlur}
                                     error={formik.touched.cnpjEmpresa && formik.errors.cnpjEmpresa ? formik.errors.cnpjEmpresa : ''}
                                 />
+                            </Grid>
+                            <Grid item display={'flex'} alignItems={'center'}>
+                                <Grid item xs={8}>
+                                    <Input
+                                        fullWidth
+                                        label="Inscrição Estadual"
+                                        maxLength={14}
+                                        name="inscricaoEstadual"
+                                        type='number'
+                                        disabled={formik.values.isentoInscricaoEstadual}
+                                        value={formik.values.inscricaoEstadual}
+                                        onChange={(e) => formik.setFieldValue("inscricaoEstadual", e.target.value)}
+                                        onBlur={formik.handleBlur}
+                                        error={formik.touched.inscricaoEstadual && formik.errors.inscricaoEstadual ? formik.errors.inscricaoEstadual : ''}
+                                    />
+                                </Grid>
+                                <Grid item xs={4}>
+                                    <FormControlLabel
+                                        control={
+                                            <Checkbox
+                                                checked={formik.values.isentoInscricaoEstadual}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) formik.setFieldValue("inscricaoEstadual", '');
+                                                    formik.setFieldValue("isentoInscricaoEstadual", e.target.checked)
+                                                }}
+                                            />
+                                        }
+                                        label="Isento"
+                                    />
+                                </Grid>
                             </Grid>
                             <Grid item display={'flex'} >
                                 <Grid item xs={7} marginRight={3}>

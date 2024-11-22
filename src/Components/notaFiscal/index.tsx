@@ -4,8 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { EntregaModel } from "../../Pages/admin/entregas/model/entrega";
 import { Table, TableHead, TableRow, TableCell, TableBody, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Typography, Box } from "@mui/material";
 
-
-import printJS from "print-js";
 import { NumberFormatForBrazilianCurrency } from "../../hooks/formatCurrency";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store/reducer/store";
@@ -33,48 +31,69 @@ export function NotaFiscal({ values, setShouldShow, handleSubmit }: Props) {
 
     // TODO: IMPRIMIR CUPOM DE NOTA FISCAL TESTE
 
+
     const handlePrint = () => {
         if (ref.current) {
-            const printContent = ref.current.innerHTML;
-
-            // Crie um iframe temporário
+            // Criar iframe invisível para manipulação de impressão
             const iframe = document.createElement('iframe');
+            iframe.style.position = 'absolute';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            iframe.style.border = 'none';
             document.body.appendChild(iframe);
-            iframe.style.display = 'none'; // Oculta o iframe
+            if (!iframe) return;
+            if (!iframe.contentWindow) return;
+            console.log(iframe.contentWindow)
+            // Escrever o conteúdo da impressão no iframe
+            const iframeDoc = iframe.contentWindow.document;
+            iframeDoc.open();
+            iframeDoc.write('<html><head><title>Nota Fiscal</title>');
+            iframeDoc.write(`
+                <style>
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin: 10px 0;
+                    }
+                    th, td {
+                        padding: 4px;
+                        text-align: center;
+                    }
+                    th {
+                        font-weight: bold;
+                    }
+                    td {
+                        font-size: 12px;
+                    }
+                    .descricao {
+                        text-align: left;
+                    }
+                    .line {
+                        margin: 0;
+                        padding: 4px 0;
+                        line-height: 1.2;
+                    }
+                    .total {
+                        font-weight: bold;
+                        font-size: 18px;
+                        margin-top: 10px;
+                    }
+                </style>
+            `);
+            iframeDoc.write('</head><body>');
+            iframeDoc.write(ref.current.innerHTML);
+            iframeDoc.write('</body></html>');
+            iframeDoc.close();
 
-            const doc = iframe.contentWindow?.document || iframe.contentDocument;
+            // Chamar o print no iframe (isso deve acionar o pop-up)
+            iframe.contentWindow.print();
 
-            if (doc) {
-                doc.open();
-                doc.write(`
-                    <html>
-                    <head>
-                        <title>Nota Fiscal</title>
-                        <style>
-                            @media print {
-                                .marginprint {
-                                    margin-bottom: 6px;
-                                    margin-top: 6px;
-                                }
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        ${printContent}
-                    </body>
-                    </html>
-                `);
-                doc.close();
-
-                // Usando print.js para imprimir o conteúdo do iframe
-                printJS({ printable: iframe.contentWindow?.document.body.innerHTML, type: 'html', style: '' });
-
-                // Remove o iframe após a impressão
+            // Após a impressão, remover o iframe
+            iframe.onload = () => {
                 setTimeout(() => {
                     document.body.removeChild(iframe);
-                    setRegisterProduct(true);
-                }, 1000);
-            }
+                }, 0);
+            };
         }
     };
 
@@ -95,21 +114,23 @@ export function NotaFiscal({ values, setShouldShow, handleSubmit }: Props) {
 
                         <Box sx={{ padding: "16px" }} ref={ref}>
                             <Box>
-                                <Typography variant="h4" align="center">SORVETERIA OBAH</Typography>
-                                <Typography align="center" sx={{ fontWeight: "bold", fontSize: "22px", margin: "8px 0" }}>
+                                <Typography className="line" variant="h4" align="center">SORVETERIA OBAH</Typography>
+                                <Typography className="line" align="center" sx={{ fontWeight: "bold", fontSize: "22px", margin: "8px 0" }}>
                                     {`${empresa.ruaEmpresa}, ${empresa.numeroEmpresa} - ${empresa.bairroEmpresa}, ${empresa.cidadeEmpresa} - ${empresa.estadoEmpresa}, ${empresa.cepEmpresa}`}
                                 </Typography>
 
                                 <Box display="flex" justifyContent="space-between" sx={{ margin: "1rem 0", height: "10rem", flexDirection: "column" }}>
                                     <Box>
-                                        <Typography sx={{ fontWeight: "bold", fontSize: "22px" }}>CNPJ: {empresa.cnpjEmpresa}</Typography>
-                                        <Typography sx={{ fontWeight: "bold", fontSize: "22px" }}>Telefone: {empresa.tfEmpresa}</Typography>
+                                        <Typography className="line" sx={{ fontWeight: "bold", fontSize: "22px" }}>CNPJ: {empresa.cnpjEmpresa}</Typography>
+                                        <Typography className="line" sx={{ fontWeight: "bold", fontSize: "22px" }}>IE: {empresa.inscricaoEstadual || 'Isento'}</Typography>
+                                        <Typography className="line" sx={{ fontWeight: "bold", fontSize: "22px" }}>Telefone: {empresa.tfEmpresa}</Typography>
                                     </Box>
-                                    <Box>
-                                        <Typography sx={{ fontWeight: "bold", fontSize: "22px" }}>Data e Hora da venda</Typography>
-                                        <Box display="flex">
-                                            <Typography sx={{ fontWeight: "bold", fontSize: "22px" }}>{values.dtEntrega ? values.dtEntrega.toString() : ''}</Typography>
-                                            <Typography sx={{ fontWeight: "bold", fontSize: "22px", marginLeft: "8px" }}>- {horaAtual}</Typography>
+                                    <Box >
+                                        <Typography className="line" sx={{ fontWeight: "bold", fontSize: "22px" }}>Data e Hora da venda</Typography>
+                                        <Box>
+                                            <Typography className="line" sx={{ fontWeight: "bold", fontSize: "22px" }}>
+                                                {values.dtEntrega ? `${values.dtEntrega.toString()} - ${horaAtual}` : ''}
+                                            </Typography>
                                         </Box>
                                     </Box>
                                 </Box>
@@ -123,17 +144,17 @@ export function NotaFiscal({ values, setShouldShow, handleSubmit }: Props) {
                                     <TableHead>
                                         <TableRow>
                                             <TableCell style={{ fontSize: 13 }}>ITEM</TableCell>
-                                            <TableCell style={{ fontSize: 13 }}>DESC.</TableCell>
+                                            <TableCell style={{ fontSize: 13 }} className="descricao">DESC.</TableCell>
                                             <TableCell style={{ fontSize: 13 }}>QNTD</TableCell>
-                                            <TableCell style={{ fontSize: 13 }}>V UN</TableCell>
-                                            <TableCell style={{ fontSize: 13 }}>V Total</TableCell>
+                                            <TableCell style={{ fontSize: 13 }}>UN</TableCell>
+                                            <TableCell style={{ fontSize: 13 }}>Total</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
                                         {values.produtos.filter(produto => produto.valorItem !== 0).map((produto, index) => (
                                             <TableRow key={produto.nmProduto}>
                                                 <TableCell style={{ fontSize: 13 }}>{formatIndex(index + 1)}</TableCell>
-                                                <TableCell style={{ fontSize: 13 }}>{produto.nmProduto}</TableCell>
+                                                <TableCell style={{ fontSize: 13 }} className="descricao">{produto.nmProduto}</TableCell>
                                                 <TableCell style={{ fontSize: 13 }}>{produto.quantidade ?? 0}</TableCell>
                                                 <TableCell style={{ fontSize: 13 }}>{NumberFormatForBrazilianCurrency(produto.vlVendaProduto).replace('R$', '')}</TableCell>
                                                 <TableCell style={{ fontSize: 12 }}> {
@@ -150,14 +171,13 @@ export function NotaFiscal({ values, setShouldShow, handleSubmit }: Props) {
                             <hr style={{ border: "1px dashed #000000" }} />
 
                             <Box sx={{ margin: "1rem 0" }}>
-                                <Typography variant="h6" align="center" sx={{ fontWeight: "bold" }}>VALOR TOTAL {values.vlEntrega}</Typography>
+                                <Typography className="total" variant="h6" align="center" sx={{ fontWeight: "bold" }}>VALOR TOTAL {values.vlEntrega}</Typography>
                             </Box>
                         </Box>
 
                         {/* Button */}
                         <Box display="flex" justifyContent="center" sx={{ margin: "1rem 0 2rem 0" }}>
                             <Button
-                                className="no-print"
                                 label={"Confirmar"}
                                 type="button"
                                 onClick={handlePrint}

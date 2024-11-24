@@ -64,7 +64,7 @@ const GenericFilter = ({ setPage, carregarDados, filter, setLastVisible, setAppl
             return;
         }
         let nmField = objectSearch?.values
-        if (nmField === 'nmProduto') {
+        if (nmField === 'nmProduto' || nmField === 'nmCliente') {
             nmField = objectSearch?.values.concat("Formatted");
         }
 
@@ -72,7 +72,6 @@ const GenericFilter = ({ setPage, carregarDados, filter, setLastVisible, setAppl
             where(nmField, '>=', valueItem),
             where(nmField, '<=', valueItem + '\uf8ff')
         ];
-
         setAppliedFilters(constraints);
         setPage(1);
         fetchPageData('next', constraints);

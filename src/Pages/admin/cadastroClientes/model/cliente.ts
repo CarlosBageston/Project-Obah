@@ -18,7 +18,8 @@ interface ClienteModel {
     ruaCliente: string,
     bairroCliente: string,
     cidadeCliente: string,
-    nrCasaCliente: string,
+    nrCasaCliente: string | null,
+    noHouseNumber: boolean,
     produtos: ProdutosModel[]
 }
 export default ClienteModel

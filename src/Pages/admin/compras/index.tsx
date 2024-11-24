@@ -13,13 +13,12 @@ import { useDispatch, useSelector } from 'react-redux';
 import formatDate from "../../../Components/masks/formatDate";
 import ProdutosModel from "../cadastroProdutos/model/produtos";
 import SituacaoProduto from "../../../enumeration/situacaoProduto";
-import { addDoc, arrayUnion, collection, deleteDoc, doc, serverTimestamp, updateDoc, where, writeBatch } from "firebase/firestore";
+import { addDoc, arrayUnion, collection, deleteDoc, doc, updateDoc, where, writeBatch } from "firebase/firestore";
 import { Autocomplete, AutocompleteChangeReason, Box, FormControlLabel, Grid, Switch, TextField, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
 
 //hooks
 import useEstoque from '../../../hooks/useEstoque';
 import { foundKgProduto } from '../../../hooks/useFoundProductKg';
-import useHandleInputKeyPress from '../../../hooks/useHandleInputKeyPress';
 import useDebouncedSuggestions from '../../../hooks/useDebouncedSuggestions';
 import { getItemsByQuery, getSingleItemByQuery } from '../../../hooks/queryFirebase';
 import CustomSnackBar, { StateSnackBar } from '../../../Components/snackBar/customsnackbar';
@@ -30,6 +29,7 @@ import { formatDescription } from '../../../utils/formattedString';
 import { setLoadingGlobal } from '../../../store/reducer/loadingSlice';
 import { DashboardCompraModel, updateAddDashboardCompra } from '../../../hooks/useCalculateValueDashboard';
 import { convertToNumber, formatCurrency, formatCurrencyRealTime } from '../../../hooks/formatCurrency';
+import useDeleteOldData from '../../../hooks/useDeleteOldData';
 
 
 
@@ -43,8 +43,10 @@ function AtualizarEstoque() {
     const tableKeys = useTableKeys();
     const dispatch = useDispatch();
     const { removedStockCompras } = useEstoque();
-    const { onKeyPressHandleSubmit } = useHandleInputKeyPress();
-
+    const { deleteCompras } = useDeleteOldData();
+    useEffect(() => {
+        deleteCompras();
+    }, [])
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<ComprasModel>({
         validateOnBlur: true,
         validateOnChange: true,
@@ -212,6 +214,7 @@ function AtualizarEstoque() {
         } else {
             await addDoc(collection(db, tableKeys.Estoque), {
                 nmProduto: value.nmProduto,
+                nmProdutoFormatted: formatDescription(value.nmProduto),
                 cdProduto: value.cdProduto,
                 qntMinima: value.qntMinima,
                 tpProduto: value.tpProduto,
@@ -266,10 +269,12 @@ function AtualizarEstoque() {
      */
     async function handleSubmitForm() {
         dispatch(setLoadingGlobal(true));
+        const dateFormatted = moment(values.dtCompra, 'DD/MM/YYYY').format('YYYY/MM/DD');
         const valuesUpdate: ComprasModel = {
             ...values,
             vlUnitario: convertToNumber(values.vlUnitario.toString()),
-            totalPago: values.totalPago && convertToNumber(values.totalPago?.toString())
+            totalPago: values.totalPago && convertToNumber(values.totalPago?.toString()),
+            dtCompra: dateFormatted,
         };
         try {
             if (valuesUpdate.tpProduto === SituacaoProduto.COMPRADO) {

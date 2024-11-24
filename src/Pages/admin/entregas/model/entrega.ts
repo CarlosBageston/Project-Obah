@@ -10,8 +10,9 @@ export interface EntregaModel {
     vlEntrega: number;
     vlLucro: number;
     nmCliente: string;
+    nmClienteFormatted?: string;
     produtos: SubProdutoModel[];
-    dtEntrega: Date | null;
+    dtEntrega: Date | null | string;
 }
 
 

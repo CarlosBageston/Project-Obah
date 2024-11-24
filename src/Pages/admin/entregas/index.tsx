@@ -73,6 +73,8 @@ function Entregas() {
     async function hundleSubmitForm() {
         dispatch(setLoadingGlobal(true))
         removedStock(values.produtos)
+        values.dtEntrega = moment(values.dtEntrega, 'DD/MM/YYYY').format('YYYY/MM/DD')
+        values.nmClienteFormatted = formatDescription(values.nmCliente)
         values.vlEntrega = convertToNumber(values.vlEntrega.toString())
         values.vlLucro = convertToNumber(values.vlLucro.toString())
         values.produtos = values.produtos.filter(produto => produto.quantidade !== null)
@@ -136,9 +138,8 @@ function Entregas() {
     }, [values.produtos]);
 
     useEffect(() => {
-        if (dataTableEntregas.length)
-            deleteEntregas(dataTableEntregas)
-    }, [dataTableEntregas])
+        deleteEntregas()
+    }, [])
 
     const suggestions: ClienteModel[] = useDebouncedSuggestions<ClienteModel>(formatDescription(values.nmCliente), tableKeys.Clientes, dispatch, 'Cliente');
     useEffect(() => {
@@ -208,6 +209,7 @@ function Entregas() {
 
             // Após a impressão, remover o iframe
             iframe.onload = () => {
+                hundleSubmitForm();
                 setTimeout(() => {
                     document.body.removeChild(iframe);
                 }, 0);
@@ -428,7 +430,7 @@ function Entregas() {
             <GenericTable<EntregaModel>
                 columns={[
                     { label: 'Nome', name: 'nmCliente', shouldApplyFilter: true },
-                    { label: 'Data Entrega', name: 'dtEntrega', shouldApplyFilter: true },
+                    { label: 'Data Entrega', name: 'dtEntrega' },
                     { label: 'Valor Total', name: 'vlEntrega', isCurrency: true },
                     { label: 'Lucro', name: 'vlLucro', isCurrency: true },
                 ]}

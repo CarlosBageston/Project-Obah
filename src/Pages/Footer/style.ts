@@ -15,7 +15,8 @@ export const ImageDetail = styled.img`
 position: absolute;
 top: -1px;
 left: 0;
-width: 100%;
+width: 98%;
+margin-left: 2%;
 `;
 
 export const DivText = styled.div`

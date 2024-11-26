@@ -16,7 +16,7 @@ import MUIButton from "@mui/material/Button";
 import CollapseListProduct from '../../../Components/collapse/collapseListProduct';
 import _ from 'lodash';
 import SituacaoProduto from '../../../enumeration/situacaoProduto';
-import { Box, Dialog, Divider, Grid, Typography } from '@mui/material';
+import { Box, Dialog, Divider, FormControlLabel, Grid, Switch, Typography } from '@mui/material';
 import CustomSnackBar, { StateSnackBar } from '../../../Components/snackBar/customsnackbar';
 import { RootState } from '../../../store/reducer/store';
 import { formatDescription } from '../../../utils/formattedString';
@@ -42,17 +42,27 @@ function CadastroCliente() {
             nmCliente: '',
             tfCliente: '',
             ruaCliente: '',
-            nrCasaCliente: '',
+            nrCasaCliente: null,
             bairroCliente: '',
             cidadeCliente: '',
             produtos: [],
-            nmClienteFormatted: ''
+            nmClienteFormatted: '',
+            noHouseNumber: false
         },
         validationSchema: Yup.object().shape({
             nmCliente: Yup.string().required('Campo obrigatório'),
             tfCliente: Yup.string().required('Campo obrigatório'),
             ruaCliente: Yup.string().required('Campo obrigatório'),
-            nrCasaCliente: Yup.string().required('Campo obrigatório'),
+            noHouseNumber: Yup.boolean(),
+            nrCasaCliente: Yup.string()
+                .nullable()
+                .test("check-noHouseNumber", "Campo obrigatório", function (value) {
+                    const { noHouseNumber } = this.parent;
+                    if (noHouseNumber) {
+                        return true;
+                    }
+                    return !!value;
+                }),
             bairroCliente: Yup.string().required('Campo obrigatório'),
             cidadeCliente: Yup.string().required('Campo obrigatório'),
             produtos: Yup.array().test("array vazio", 'Obrigatório pelo menos 1 produto', function (value) {
@@ -172,16 +182,32 @@ function CadastroCliente() {
                         error={touched.ruaCliente && errors.ruaCliente ? errors.ruaCliente : ""}
                     />
                 </Grid>
-                <Grid item xs={4}>
+                <Grid item xs={2}>
                     <Input
                         key={`nrCasaCliente-${key}`}
                         label="Número"
                         name="nrCasaCliente"
                         type='number'
+                        disabled={values.noHouseNumber}
                         onBlur={handleBlur}
                         value={values.nrCasaCliente}
                         onChange={(e) => setFieldValue(e.target.name, e.target.value)}
                         error={touched.nrCasaCliente && errors.nrCasaCliente ? errors.nrCasaCliente : ""}
+                    />
+                </Grid>
+                <Grid item xs={2} display="flex" alignItems="center">
+                    <FormControlLabel
+                        control={
+                            <Switch
+                                checked={values.noHouseNumber}
+                                onChange={(e) => {
+                                    if (e.target.checked) setFieldValue("nrCasaCliente", '')
+                                    setFieldValue("noHouseNumber", e.target.checked)
+                                }}
+                                color="primary"
+                            />
+                        }
+                        label="Sem Número"
                     />
                 </Grid>
             </Grid>
@@ -218,7 +244,7 @@ function CadastroCliente() {
             {/* Tabela */}
             <GenericTable
                 columns={[
-                    { label: "Nome", name: "nmCliente" },
+                    { label: "Nome", name: "nmCliente", shouldApplyFilter: true },
                     { label: "Telefone", name: "tfCliente" },
                     { label: "Cidade", name: "cidadeCliente" },
                     { label: "Bairro", name: "bairroCliente" },

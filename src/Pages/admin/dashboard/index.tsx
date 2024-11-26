@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Card, CardContent, Grid, IconButton, Typography, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button } from '@mui/material';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -14,7 +14,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { where } from 'firebase/firestore';
 import CryptoJS from 'crypto-js';
 import { RootState } from '../../../store/reducer/store';
-
 interface DashboardLogin {
     passwordDashboard: string
 }
@@ -59,7 +58,6 @@ function Dashboard() {
             setIsAuthDialogOpen(true);
         }
     };
-
     const cardStyle = {
         backgroundColor: '#047e00',
         borderRadius: '15px',
@@ -67,11 +65,6 @@ function Dashboard() {
         filter: showData ? 'none' : 'grayscale(100%)',
         cursor: showData ? 'default' : 'not-allowed',
     };
-    useEffect(() => {
-        if (isAuthDialogOpen && refInput.current) {
-            refInput.current.focus();
-        }
-    }, [isAuthDialogOpen]);
     return (
         <>
             <Grid container justifyContent="flex-end" mt={5} mb={'-4rem'} paddingRight={'2rem'} >
@@ -145,7 +138,17 @@ function Dashboard() {
                 ]}
             />
 
-            <Dialog open={isAuthDialogOpen} onClose={() => setIsAuthDialogOpen(false)}>
+            <Dialog
+                open={isAuthDialogOpen}
+                onClose={() => setIsAuthDialogOpen(false)}
+                TransitionProps={{
+                    onEntered: () => {
+                        if (refInput.current) {
+                            refInput.current.focus();
+                        }
+                    },
+                }}
+            >
                 <DialogTitle>Digite sua senha para acessar os dados</DialogTitle>
                 <DialogContent>
                     <TextField
@@ -154,7 +157,7 @@ function Dashboard() {
                         fullWidth
                         variant='standard'
                         value={formik.values.passwordDashboard}
-                        ref={refInput}
+                        inputRef={refInput}
                         onKeyDown={(e) => onKeyPressHandleSubmit(e, formik.handleSubmit)}
                         onChange={(e) => formik.setFieldValue('passwordDashboard', e.target.value)}
                         error={Boolean(formik.errors.passwordDashboard && formik.touched.passwordDashboard)}

@@ -4,7 +4,6 @@ import { useFormik } from 'formik';
 import { db } from "../../../firebase";
 import Input from "../../../Components/input";
 import { EntregaModel } from "./model/entrega";
-import GetData from "../../../firebase/getData";
 import Button from "../../../Components/button";
 import { AiTwotonePrinter } from 'react-icons/ai';
 import GenericTable from "../../../Components/table";
@@ -14,7 +13,7 @@ import ClienteModel from "../cadastroClientes/model/cliente";
 import formatDate from "../../../Components/masks/formatDate";
 import { setMessage } from '../../../store/reducer/reducer';
 import { addDoc, collection } from "firebase/firestore";
-import { Autocomplete, AutocompleteChangeReason, Box, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from "@mui/material";
+import { Autocomplete, AutocompleteChangeReason, Box, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from "@mui/material";
 
 //hooks
 import useEstoque from '../../../hooks/useEstoque';
@@ -38,16 +37,12 @@ function Entregas() {
     const ref = useRef<HTMLDivElement>(null);
     const empresa = useSelector((state: RootState) => state.empresaOnline);
     const [horaAtual, setHoraAtual] = useState<string>('');
-
+    const [openDialog, setOpenDialog] = useState<boolean>(false);
     const dispatch = useDispatch();
     const { removedStock } = useEstoque();
     const { deleteEntregas } = useDeleteOldData();
     const tableKeys = useTableKeys();
 
-    const {
-        dataTable: dataTableEntregas,
-        setDataTable: setDataTableEntregas
-    } = GetData(tableKeys.Entregas, true) as { dataTable: EntregaModel[], setDataTable: (data: EntregaModel[]) => void };
 
 
     const { values, errors, touched, handleBlur, handleSubmit, setFieldValue, resetForm } = useFormik<EntregaModel>({
@@ -73,6 +68,8 @@ function Entregas() {
     async function hundleSubmitForm() {
         dispatch(setLoadingGlobal(true))
         removedStock(values.produtos)
+        values.dtEntrega = moment(values.dtEntrega, 'DD/MM/YYYY').format('YYYY/MM/DD')
+        values.nmClienteFormatted = formatDescription(values.nmCliente)
         values.vlEntrega = convertToNumber(values.vlEntrega.toString())
         values.vlLucro = convertToNumber(values.vlLucro.toString())
         values.produtos = values.produtos.filter(produto => produto.quantidade !== null)
@@ -82,7 +79,6 @@ function Entregas() {
         })
             .then(() => {
                 dispatch(setLoadingGlobal(false))
-                setDataTableEntregas([...dataTableEntregas, values])
                 setEditData(values)
                 setOpenSnackBar(prev => ({ ...prev, success: true }))
             })
@@ -92,6 +88,7 @@ function Entregas() {
                 setOpenSnackBar(prev => ({ ...prev, error: true }))
             });
         resetForm()
+        setOpenDialog(false)
         setKey(Math.random());
     }
 
@@ -136,9 +133,8 @@ function Entregas() {
     }, [values.produtos]);
 
     useEffect(() => {
-        if (dataTableEntregas.length)
-            deleteEntregas(dataTableEntregas)
-    }, [dataTableEntregas])
+        deleteEntregas()
+    }, [])
 
     const suggestions: ClienteModel[] = useDebouncedSuggestions<ClienteModel>(formatDescription(values.nmCliente), tableKeys.Clientes, dispatch, 'Cliente');
     useEffect(() => {
@@ -208,6 +204,7 @@ function Entregas() {
 
             // Após a impressão, remover o iframe
             iframe.onload = () => {
+                setOpenDialog(true);
                 setTimeout(() => {
                     document.body.removeChild(iframe);
                 }, 0);
@@ -422,13 +419,30 @@ function Entregas() {
                             style={{ width: '12rem', height: '4rem' }}
                         />
                     </Box>
+                    <Dialog
+                        open={openDialog}
+                        onClose={() => setOpenDialog(false)}
+                        maxWidth="xs"
+                        fullWidth
+                    >
+                        <DialogTitle>Confirmar Cadastro</DialogTitle>
+                        <DialogContent>
+                            <DialogContentText>
+                                Você deseja cadastrar esta entrega?
+                            </DialogContentText>
+                        </DialogContent>
+                        <DialogActions sx={{ justifyContent: 'space-between', padding: '1rem' }}>
+                            <Button label="Cancelar" type="button" onClick={() => setOpenDialog(false)} />
+                            <Button label="Confirmar" type="button" onClick={() => hundleSubmitForm()} />
+                        </DialogActions>
+                    </Dialog>
                 </Box>
             </Box>
             {/*Tabala */}
             <GenericTable<EntregaModel>
                 columns={[
                     { label: 'Nome', name: 'nmCliente', shouldApplyFilter: true },
-                    { label: 'Data Entrega', name: 'dtEntrega', shouldApplyFilter: true },
+                    { label: 'Data Entrega', name: 'dtEntrega' },
                     { label: 'Valor Total', name: 'vlEntrega', isCurrency: true },
                     { label: 'Lucro', name: 'vlLucro', isCurrency: true },
                 ]}

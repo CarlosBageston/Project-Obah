@@ -1,31 +1,34 @@
 import moment from "moment";
 import { EntregaModel } from "../Pages/admin/entregas/model/entrega";
-import { deleteDoc, doc } from "firebase/firestore";
+import { deleteDoc, doc, where } from "firebase/firestore";
 import { db } from "../firebase";
 import { useTableKeys } from "./tableKey";
+import { getItemsByQuery } from "./queryFirebase";
+import ComprasModel from "../Pages/admin/compras/model/compras";
+import { useDispatch } from "react-redux";
 
 
 export default function useDeleteOldData(){
    
-    //TODO: adicionar lógica para deletar Compras Antigas
     const tableKeys = useTableKeys();
+    const dispatch = useDispatch();
+    const newDate = moment().subtract(45, 'days');
+    const newDateFormatted = newDate.format('YYYY/MM/DD');
 
-    function deleteEntregas(dataTableEstoque: EntregaModel[]) {
-        if (!dataTableEstoque) return; 
-        const currentDate = moment();
+    async function deleteCompras() {
+        const res = await getItemsByQuery<ComprasModel>(tableKeys.Compras, [where('dtCompra', '<', newDateFormatted)], dispatch);
+        res.data.forEach(async (item) => {
+            await deleteDoc(doc(db, tableKeys.Compras, item.id ?? ''))
+        })
+    }    
 
-        const filteredEntregas = dataTableEstoque.filter(venda => {
-            const entregaDate = moment(venda.dtEntrega, 'DD/MM/YYYY');
-            const differenceInDays = currentDate.diff(entregaDate, 'days');
-            return differenceInDays >= 30;
-        });
-
-        filteredEntregas.forEach(async (item) => {
-            const refID: string = item.id ?? '';
-            await deleteDoc(doc(db, tableKeys.Entregas, refID))
+    async function deleteEntregas() {
+        const res = await getItemsByQuery<EntregaModel>(tableKeys.Entregas, [where('dtEntrega', '<', newDateFormatted)], dispatch);
+        res.data.forEach(async (item) => {
+            await deleteDoc(doc(db, tableKeys.Entregas, item.id ?? ''))
         })
     }
 
-    return { deleteEntregas };
+    return { deleteEntregas, deleteCompras };
 
 }

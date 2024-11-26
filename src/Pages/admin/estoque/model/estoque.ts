@@ -11,6 +11,7 @@ import SituacaoProduto from "../../../../enumeration/situacaoProduto"
 interface EstoqueModel {
     id?: string,
     nmProduto: string,
+    nmProdutoFormatted?: string,
     cdProduto: string,
     quantidade: number,
     tpProduto: SituacaoProduto | null,

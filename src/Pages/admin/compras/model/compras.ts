@@ -6,7 +6,7 @@ import SituacaoProduto from "../../../../enumeration/situacaoProduto"
 */
 interface ComprasModel {
     id?: string,
-    dtCompra: Date | null,
+    dtCompra: Date | null | string, 
     nmProduto: string,
     nmProdutoFormatted: string,
     cdProduto: string,

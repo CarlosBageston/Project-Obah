@@ -73,7 +73,7 @@ function Entregas() {
         values.vlEntrega = convertToNumber(values.vlEntrega.toString())
         values.vlLucro = convertToNumber(values.vlLucro.toString())
         values.produtos = values.produtos.filter(produto => produto.quantidade !== null)
-        updateAddDashboardVendasEntregas(values.produtos, values.dtEntrega?.toString() ?? '', tableKeys.DashboardEntregas, dispatch)
+        updateAddDashboardVendasEntregas(values.produtos, values.dtEntrega ?? '', tableKeys.DashboardEntregas, dispatch)
         await addDoc(collection(db, tableKeys.Entregas), {
             ...values
         })

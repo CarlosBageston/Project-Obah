@@ -13,4 +13,5 @@ export interface SubProdutoModel {
     valorItem: number
     vlLucro?: number,
     vlTotalMult?: number
+    kgProduto?: number | null
 }

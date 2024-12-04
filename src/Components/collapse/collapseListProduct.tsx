@@ -12,6 +12,7 @@ import SituacaoProduto from '../../enumeration/situacaoProduto';
 import { formatDescription } from '../../utils/formattedString';
 import useHandleInputKeyPress from '../../hooks/useHandleInputKeyPress';
 import { convertToNumber, formatCurrencyRealTime, NumberFormatForBrazilianCurrency } from '../../hooks/formatCurrency';
+import { foundKgProduto } from '../../hooks/useFoundProductKg';
 
 interface CollapseListProductProps<T> {
     initialItems: T[];
@@ -196,7 +197,9 @@ const CollapseListProduct = <T,>({
                                 options={suggestions}
                                 getOptionLabel={(option: any) => option && option.nmProduto ? option.nmProduto : ""}
                                 value={suggestions.find((item: any) => item.nmProduto === values.nmProduto) || null}
-                                onChange={(_, selectedOption: any) => selectedOption && setFieldValue('vlUnitario', selectedOption.vlUnitario)}
+                                onChange={(_, selectedOption: any) => {
+                                    selectedOption && setFieldValue('vlUnitario', foundKgProduto(selectedOption as any).vlUnitario)
+                                }}
                                 onInputChange={(_, newInputValue) => setFieldValue('nmProduto', newInputValue)}
                                 renderInput={(params) => (
                                     <TextField

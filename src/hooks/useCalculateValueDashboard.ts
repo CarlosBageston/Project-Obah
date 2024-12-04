@@ -25,7 +25,7 @@ export async function updateAddDashboardCompra(
     collectionName: string,
     dispatch: Dispatch
 ) {
-    const dtCompraFormatted = moment(values.dtProduto, "DD/MM/YYYY").format("YYYY/MM");
+    const dtCompraFormatted = moment(values.dtProduto, "YYYY/MM/DD").format("YYYY/MM");
 
     const compra = await getSingleItemByQuery<DashboardCompraModel>(collectionName, [where('nmProduto', '==', values.nmProduto)], dispatch);
     const totalMensal: TotalMensal = {
@@ -78,7 +78,7 @@ export async function updateAddDashboardVendasEntregas(
     collectionName: string,
     dispatch: Dispatch
 ) {
-    const dtVendaFormatted = moment(dtProduto, "DD/MM/YYYY").format("YYYY/MM");
+    const dtVendaFormatted = moment(dtProduto, "YYYY/MM/DD").format("YYYY/MM");
 
     // Inicia um batch para operações em lote
     const batch = writeBatch(db);

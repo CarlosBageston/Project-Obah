@@ -1,5 +1,5 @@
 import SituacaoProduto from "../../../../enumeration/situacaoProduto"
-import ComprasModel from "../../compras/model/compras"
+import { SubProdutoModel } from "./subprodutos"
 
 /**
  * Modelo de Produto
@@ -15,9 +15,10 @@ interface ProdutosModel {
     vlVendaProduto: number,
     tpProduto: SituacaoProduto | null,
     stEntrega?: boolean,
-    mpFabricado: ComprasModel[]
+    mpFabricado: SubProdutoModel[]
     valorItem?: number
     stMateriaPrima?: boolean
+    stEstoqueInfinito?: boolean
     qntMinima: number | null
     kgProduto: number
 }

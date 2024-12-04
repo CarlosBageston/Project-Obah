@@ -47,7 +47,6 @@ function useDebouncedSuggestions<T>(
                 constraints,
                 dispatch
             );
-            console.log(data)
             setSuggestions(data);
         } catch (error) {
             console.error('Erro ao buscar sugestões:', error);

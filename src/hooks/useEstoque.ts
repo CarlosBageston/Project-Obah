@@ -85,7 +85,7 @@ export default function useEstoque(){
      * @param {ComprasModel} values - Dados da compra.
      */
     async function removedStockCompras(
-        mpFabricado: ComprasModel[] | undefined, 
+        mpFabricado: SubProdutoModel[] | undefined, 
         quantidadeUsada: number
         ) {
             if(!mpFabricado) return;
@@ -93,7 +93,7 @@ export default function useEstoque(){
                 const estoqueMP = await getSingleItemByQuery<EstoqueModel>(tableKeys.Estoque, [where('nmProduto', '==', mp.nmProduto)], dispatch);
                 if (estoqueMP) {
                     if(estoqueMP.quantidade !== 0) {
-                        let qntdUsadaProducao = quantidadeUsada * mp.quantidade;
+                        let qntdUsadaProducao = quantidadeUsada * (mp.quantidade ?? 0);
                         const versoesOrdenadas = estoqueMP.versaos.sort((a, b) => a.vrQntd - b.vrQntd);
                         
                         for (const versao of versoesOrdenadas) {

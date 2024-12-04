@@ -264,7 +264,7 @@ function Vendas() {
     async function addProduct(nomeProduto: string, isTaca?: boolean) {
         const produtoEncontrado = await getSingleItemByQuery<ProdutosModel>(
             tableKeys.Produtos,
-            [where('nmProduto', '==', nomeProduto)],
+            [where('nmProdutoFormatted', '==', nomeProduto)],
             dispatch
         );
         if (produtoEncontrado) {
@@ -333,7 +333,7 @@ function Vendas() {
     }
 
     const suggestions: ProdutosModel[] = useDebouncedSuggestions<ProdutosModel>(formatDescription(formik.values.barcode ?? ''), tableKeys.Produtos, dispatch, "Produto", undefined, false);
-    //TODO: Não ta mostrando mensagem de erro qual clicar na taça sundae, deve msotrar que o campo e obrigatorio para adicionar ao carrinho
+
     return (
         <Box sx={{ padding: '5rem 8rem' }}>
             <Typography variant="h4" gutterBottom>Painel de Vendas</Typography>
@@ -399,7 +399,7 @@ function Vendas() {
                             <Grid>
                                 <Grid container direction="column" spacing={2}>
                                     <Grid item>
-                                        <MUIButton variant="contained" startIcon={<CgAddR />} onClick={() => addProduct('cascao')}>
+                                        <MUIButton variant="contained" startIcon={<CgAddR />} onClick={() => addProduct('cascão')}>
                                             Cascão
                                         </MUIButton>
                                     </Grid>

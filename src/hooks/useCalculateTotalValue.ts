@@ -1,11 +1,11 @@
 import { where } from "firebase/firestore";
-import ComprasModel from "../Pages/admin/compras/model/compras";
 import { getItemsByQuery } from "./queryFirebase";
 import { foundKgProduto } from "./useFoundProductKg";
 import { Dispatch } from 'redux';
 import ProdutosModel from "../Pages/admin/cadastroProdutos/model/produtos";
 import { useTableKeys } from "./tableKey";
 import { convertToNumber } from "./formatCurrency";
+import { SubProdutoModel } from "../Pages/admin/cadastroProdutos/model/subprodutos";
 
 
 /**
@@ -28,12 +28,12 @@ export class ProdutosSemQuantidadeError {
 
 /**
  * Calcula o valor total com base nas quantidades de produtos e nos valores unitários.
- * @param {ComprasModel[]} mpList - Lista de produtos ou um único produto.
+ * @param {SubProdutoModel[]} mpList - Lista de produtos ou um único produto.
  * @returns {number} - Valor total calculado.
  * @throws {ProdutosSemQuantidadeError} - Lança exceção se houver produtos sem quantidade.
  */
 export async function calculateTotalValue(
-    mpList: ComprasModel[], 
+    mpList: SubProdutoModel[], 
     dispatch: Dispatch,
     tableKeys: ReturnType<typeof useTableKeys>
 ): Promise<number> {
@@ -75,15 +75,15 @@ export async function calculateTotalValue(
 }
 /**
  * Calcula o valor total para um único produto com base na quantidade e no valor unitário.
- * @param {ComprasModel} mp - Produto a ser calculado.
+ * @param {SubProdutoModel} mp - Produto a ser calculado.
  * @param {ProdutosModel} produtoEncontrado - Informações históricas do produto.
  * @returns {number} - Valor total calculado para o produto.
  */
-function calcularValorParaProduto(mp: ComprasModel, produtoEncontrado: ProdutosModel): number {
+function calcularValorParaProduto(mp: SubProdutoModel, produtoEncontrado: ProdutosModel): number {
     let result = 0;
     let quantidade = null
     if(typeof mp.quantidade === 'string') { quantidade = convertToNumber(mp.quantidade) } 
-    else { quantidade = mp.quantidade }
+    else { quantidade = mp.quantidade ?? 0 }
 
     result = produtoEncontrado.vlUnitario * quantidade;
     return parseFloat(result.toFixed(2));

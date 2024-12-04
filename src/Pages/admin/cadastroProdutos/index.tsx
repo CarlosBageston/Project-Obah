@@ -13,7 +13,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setMessage } from '../../../store/reducer/reducer';
 import SituacaoProduto from "../../../enumeration/situacaoProduto";
 import { addDoc, collection, deleteDoc, doc, updateDoc, where } from "firebase/firestore";
-import { Box, Checkbox, FormControl, FormControlLabel, FormHelperText, Grid, InputLabel, MenuItem, Select, Typography, } from "@mui/material";
+import { Box, Checkbox, FormControl, FormControlLabel, FormHelperText, Grid, InputAdornment, InputLabel, MenuItem, Select, Switch, Typography, } from "@mui/material";
 
 
 //hooks
@@ -30,6 +30,7 @@ import { setLoadingGlobal } from '../../../store/reducer/loadingSlice';
 import { convertToNumber, formatCurrency, formatCurrencyRealTime, NumberFormatForBrazilianCurrency } from '../../../hooks/formatCurrency';
 import useHandleInputKeyPress from '../../../hooks/useHandleInputKeyPress';
 import { theme } from '../../../theme';
+import { SubProdutoModel } from './model/subprodutos';
 
 
 function CadastroProduto() {
@@ -63,7 +64,8 @@ function CadastroProduto() {
             stMateriaPrima: false,
             kgProduto: 1,
             nmProdutoFormatted: '',
-            qntMinima: null
+            qntMinima: null,
+            stEstoqueInfinito: false
         },
         validationSchema: Yup.object().shape({
             nmProduto: Yup.string().required('Campo obrigatório')
@@ -102,7 +104,19 @@ function CadastroProduto() {
                 if (tpProduto === SituacaoProduto.FABRICADO && (!value || value.length === 0)) return false;
                 return true;
             }).nullable(),
-            qntMinima: Yup.number().required('Campo obrigatório').typeError('Campo obrigatório'),
+            qntMinima: Yup.number()
+                .nullable()
+                .test(
+                    'is-required-if-not-infinite',
+                    'Campo obrigatório',
+                    function (value) {
+                        console.log(value)
+                        const { stEstoqueInfinito } = this.parent;
+                        if (!value && stEstoqueInfinito) return true
+                        return false;
+                    }
+                )
+                .typeError('O valor deve ser um número válido')
         }),
         onSubmit: editData ? handleEditRow : handleSubmitForm,
     });
@@ -133,6 +147,7 @@ function CadastroProduto() {
             .finally(() => dispatch(setLoadingGlobal(false)));
         resetForm()
         setFieldValue('tpProduto', null)
+        setFieldValue("stEstoqueInfinito", false)
         setKey(Math.random());
     }
 
@@ -325,15 +340,39 @@ function CadastroProduto() {
                         label="Quant. mínima em estoque"
                         onBlur={handleBlur}
                         name="qntMinima"
-                        value={values.qntMinima || ''}
+                        disabled={values.stEstoqueInfinito}
+                        value={values.stEstoqueInfinito ? '' : values.qntMinima || ''}
                         type='number'
                         onChange={e => setFieldValue(e.target.name, Number(e.target.value))}
                         maxLength={5}
                         error={touched.qntMinima && errors.qntMinima ? errors.qntMinima : ''}
                         onKeyDown={e => onKeyPressHandleSubmit(e, handleSubmit)}
+                        InputProps={{
+                            startAdornment: values.stEstoqueInfinito ? (
+                                <InputAdornment position="start">{'\u221E'}</InputAdornment>
+                            ) : null,
+                        }}
+                        InputLabelProps={{
+                            shrink: values.stEstoqueInfinito
+                        }}
                     />
                 </Grid>
                 <Grid item xs={5} >
+                    <FormControlLabel
+                        style={{ height: '70px' }}
+                        disabled={values.tpProduto === SituacaoProduto.COMPRADO}
+                        control={
+                            <Switch
+                                checked={values.stEstoqueInfinito}
+                                onChange={(e) => {
+                                    setFieldValue("qntMinima", null)
+                                    setFieldValue("stEstoqueInfinito", e.target.checked)
+                                }}
+                                color="primary"
+                            />
+                        }
+                        label="Estoque infinito?"
+                    />
                     <FormControlLabel
                         style={{ height: '70px' }}
                         control={<Checkbox checked={values.stEntrega} onChange={(e) => setFieldValue("stEntrega", e.target.checked)} />}
@@ -347,7 +386,7 @@ function CadastroProduto() {
                 </Grid>
             </Grid>
 
-            <CollapseListProduct<ComprasModel>
+            <CollapseListProduct<SubProdutoModel>
                 isVisible={isVisibleTpProuto}
                 searchMateriaPrima
                 nameArray='mpFabricado'

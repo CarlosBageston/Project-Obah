@@ -252,6 +252,7 @@ export function TableBill({ nameTable, setShowTable, setFecharComanda, setShowTa
                         onChange={(e) => { setFieldValue('quantidade', (parseFloat(e.target.value))) }}
                         label="Qntde"
                         variant="standard"
+                        type='number'
                         onKeyDown={(e) => { onKeyPressHandleSubmit(e, handleSubmit) }}
                         error={Boolean(touched.quantidade && errors.quantidade)}
                         InputProps={{

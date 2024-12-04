@@ -14,7 +14,7 @@ import formatDate from "../../../Components/masks/formatDate";
 import ProdutosModel from "../cadastroProdutos/model/produtos";
 import SituacaoProduto from "../../../enumeration/situacaoProduto";
 import { addDoc, arrayUnion, collection, deleteDoc, doc, updateDoc, where, writeBatch } from "firebase/firestore";
-import { Autocomplete, AutocompleteChangeReason, Box, FormControlLabel, Grid, Switch, TextField, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
+import { Autocomplete, AutocompleteChangeReason, Box, FormControlLabel, Grid, InputAdornment, Switch, TextField, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
 
 //hooks
 import useEstoque from '../../../hooks/useEstoque';
@@ -30,6 +30,8 @@ import { setLoadingGlobal } from '../../../store/reducer/loadingSlice';
 import { DashboardCompraModel, updateAddDashboardCompra } from '../../../hooks/useCalculateValueDashboard';
 import { convertToNumber, formatCurrency, formatCurrencyRealTime } from '../../../hooks/formatCurrency';
 import useDeleteOldData from '../../../hooks/useDeleteOldData';
+import { SubProdutoModel } from '../cadastroProdutos/model/subprodutos';
+import useHandleInputKeyPress from '../../../hooks/useHandleInputKeyPress';
 
 
 
@@ -44,6 +46,7 @@ function AtualizarEstoque() {
     const dispatch = useDispatch();
     const { removedStockCompras } = useEstoque();
     const { deleteCompras } = useDeleteOldData();
+    const { onKeyPressHandleSubmit } = useHandleInputKeyPress();
     useEffect(() => {
         deleteCompras();
     }, [])
@@ -129,7 +132,7 @@ function AtualizarEstoque() {
         );
 
         produtosQueUsamProdutoEditado.forEach(produto => {
-            const novoValorUnitario = calculateNewUnitario(valuesUpdate, produto);
+            const novoValorUnitario = calculateNewUnitario(valuesUpdate, produto.mpFabricado);
             const newProduto = { ...produto, vlUnitario: novoValorUnitario };
             produtosEncontrado.push(newProduto);
         })
@@ -159,7 +162,7 @@ function AtualizarEstoque() {
 
                     // Para cada produto que utiliza o item editado
                     produtosQueUsamProdutoEditado.forEach(produto => {
-                        const novoValorUnitario = calculateNewUnitario(item, produto, foundProductUpdate);
+                        const novoValorUnitario = calculateNewUnitario(item, produto.mpFabricado, foundProductUpdate);
                         const newProduto = { ...produto, vlUnitario: novoValorUnitario };
                         produtosEncontrado.push(newProduto);
                     });
@@ -167,15 +170,14 @@ function AtualizarEstoque() {
             })
         );
     }
-    function calculateNewUnitario(item: ProdutosModel | ComprasModel, produto: ProdutosModel, itemAtualizando?: ProdutosModel): number {
+    function calculateNewUnitario(item: ProdutosModel | ComprasModel, mpFabricado: SubProdutoModel[], itemAtualizando?: ProdutosModel): number {
         let soma = 0.0;
-        produto.mpFabricado.forEach(mp => {
+        mpFabricado.forEach(mp => {
             const unitario = mp.nmProduto === item.nmProduto
                 ? (itemAtualizando ? itemAtualizando.vlUnitario : item.vlUnitario)
                 : mp.vlUnitario;
-
             if (mp.nmProduto === item.nmProduto) mp.vlUnitario = item.vlUnitario
-            soma += unitario * mp.quantidade;
+            soma += unitario * (mp.quantidade ?? 0);
         });
         return parseFloat(soma.toFixed(2));
     }
@@ -315,6 +317,7 @@ function AtualizarEstoque() {
         } catch (error) {
             dispatch(setMessage("Erro ao Atualizar Estoque"))
             setOpenSnackBar(prev => ({ ...prev, error: true }))
+            dispatch(setLoadingGlobal(false));
             return;
         }
         resetForm()
@@ -426,6 +429,7 @@ function AtualizarEstoque() {
                         value={values.stEstoqueInfinito ? '\u221E' : values.quantidade || ''}
                         onChange={e => setFieldValue(e.target.name, parseFloat(e.target.value))}
                         error={touched.quantidade && errors.quantidade ? errors.quantidade : ''}
+                        onKeyDown={e => onKeyPressHandleSubmit(e, handleSubmit)}
                     />
                 </Grid>
                 <Grid item xs={3}>
@@ -451,6 +455,7 @@ function AtualizarEstoque() {
                         value={values.totalPago && values.totalPago.toString() !== 'R$ 0,00' ? values.totalPago : ''}
                         onChange={e => setFieldValue(e.target.name, formatCurrencyRealTime(e.target.value))}
                         maxLength={15}
+                        onKeyDown={e => onKeyPressHandleSubmit(e, handleSubmit)}
                     />
                 </Grid>
 
@@ -479,21 +484,15 @@ function AtualizarEstoque() {
                         key={`qntMinima - ${key}`}
                         label="Quant. mínima em estoque"
                         value={values.qntMinima || ''}
+                        InputProps={{
+                            startAdornment: values.stEstoqueInfinito ? (
+                                <InputAdornment position="start">∞</InputAdornment>
+                            ) : null,
+                        }}
+                        InputLabelProps={{
+                            shrink: values.stEstoqueInfinito || Boolean(values.qntMinima),
+                        }}
                         disabled
-                    />
-                </Grid>
-                <Grid item xs={3}>
-                    <FormControlLabel
-                        style={{ height: '70px' }}
-                        disabled={values.tpProduto === SituacaoProduto.COMPRADO}
-                        control={
-                            <Switch
-                                checked={values.stEstoqueInfinito}
-                                onChange={(e) => setFieldValue("stEstoqueInfinito", e.target.checked)}
-                                color="primary" // Você pode mudar a cor para "secondary" se preferir
-                            />
-                        }
-                        label="Estoque infinito?"
                     />
                 </Grid>
             </Grid>

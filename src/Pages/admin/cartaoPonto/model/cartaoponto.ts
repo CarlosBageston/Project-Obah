@@ -12,11 +12,12 @@ interface CartaoPontoModel {
     id?: string
     vlHora?: number
     datetime?: Date
-    uid?: number
+    uid: string
     action?: ActionCartaoPontoEnum
     dtInicio?: string | Date,
     dtTermino?: string | Date,
     entrada?: Date
     saida?: Date
+    nmColaborador?: string
 }
 export default CartaoPontoModel

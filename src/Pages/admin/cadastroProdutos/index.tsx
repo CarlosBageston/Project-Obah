@@ -110,10 +110,15 @@ function CadastroProduto() {
                     'is-required-if-not-infinite',
                     'Campo obrigatório',
                     function (value) {
-                        console.log(value)
                         const { stEstoqueInfinito } = this.parent;
-                        if (!value && stEstoqueInfinito) return true
-                        return false;
+
+                        // Se stEstoqueInfinito for false e o valor estiver vazio ou inválido, será obrigatório
+                        if (!stEstoqueInfinito && (value === null || value === undefined || isNaN(value))) {
+                            return false; // Retorna false para mostrar a mensagem de erro
+                        }
+
+                        // Caso contrário, o campo não é obrigatório
+                        return true;
                     }
                 )
                 .typeError('O valor deve ser um número válido')
@@ -340,7 +345,7 @@ function CadastroProduto() {
                         label="Quant. mínima em estoque"
                         onBlur={handleBlur}
                         name="qntMinima"
-                        disabled={values.stEstoqueInfinito}
+                        disabled={values.stEstoqueInfinito || values.tpProduto === SituacaoProduto.COMPRADO}
                         value={values.stEstoqueInfinito ? '' : values.qntMinima || ''}
                         type='number'
                         onChange={e => setFieldValue(e.target.name, Number(e.target.value))}
@@ -353,7 +358,7 @@ function CadastroProduto() {
                             ) : null,
                         }}
                         InputLabelProps={{
-                            shrink: values.stEstoqueInfinito
+                            shrink: values.stEstoqueInfinito || !!values.qntMinima
                         }}
                     />
                 </Grid>
@@ -426,6 +431,7 @@ function CadastroProduto() {
                 onEdit={(row: ProdutoModel | undefined) => {
                     if (!row) return;
                     setEditData(row);
+                    console.log(row)
                     setFieldValue('cdProduto', row.cdProduto);
                     setFieldValue('nmProduto', row.nmProduto);
                     setFieldValue('vlVendaProduto', NumberFormatForBrazilianCurrency(row.vlVendaProduto));
@@ -437,6 +443,11 @@ function CadastroProduto() {
                     setFieldValue('id', row.id);
                     setFieldValue('nmProdutoFormatted', row.nmProdutoFormatted);
                     setFieldValue('qntMinima', row.qntMinima);
+                    if (row.stEstoqueInfinito) {
+                        setFieldValue('stEstoqueInfinito', row.stEstoqueInfinito);
+                    } else {
+                        setFieldValue('stEstoqueInfinito', false);
+                    }
                 }}
                 editData={editData}
                 setEditData={setEditData}

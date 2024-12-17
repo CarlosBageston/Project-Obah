@@ -2,13 +2,11 @@ import * as Yup from 'yup';
 import moment from 'moment';
 import { useFormik } from "formik";
 import { IoMdClose } from "react-icons/io";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { BiSearchAlt } from "react-icons/bi";
 import { realtimeDb } from '../../../firebase';
-import GetData from "../../../firebase/getData";
-import { onValue, ref } from 'firebase/database';
+import { query, orderByChild, startAt, endAt, ref, get } from "firebase/database";
 import CartaoPontoModel from "./model/cartaoponto";
-import { TitleDefault } from '../cadastroClientes/style';
 import ActionCartaoPontoEnum from '../../../enumeration/action';
 import { ButtonFilter } from "../../../Components/filtro/style";
 import DatePicker from '../../../Components/datePicker/datePicker';
@@ -17,48 +15,46 @@ import {
     TextField,
     Autocomplete,
     AutocompleteChangeReason,
-} from "@mui/material";
-import {
     Box,
-    DivTable,
-    TotalValue,
-    BoxDate,
-    DivFull,
-    DivTableBody,
-    DivTableTitle,
-    DivTableRow
-} from "./style";
+    Typography,
+    Grid,
+    Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+} from "@mui/material";
 import { useTableKeys } from '../../../hooks/tableKey';
-import { formatCurrency } from '../../../hooks/formatCurrency';
+import { NumberFormatForBrazilianCurrency } from '../../../hooks/formatCurrency';
+import { getItemsByQuery, getSingleItemByQuery } from '../../../hooks/queryFirebase';
+import { where } from 'firebase/firestore';
+import { useDispatch } from 'react-redux';
+import SituacaoSalarioColaboradorEnum from '../../../enumeration/situacaoColaborador';
 
-const objClean: CartaoPontoModel = {
-    dtInicio: '',
-    dtTermino: '',
-    action: undefined,
-    datetime: undefined,
-    uid: undefined,
-    vlHora: undefined
-}
 function CartaoPonto() {
-    const [key, setKey] = useState<number>(0);
+    const [suggestions, setSuggestions] = useState<ColaboradorModel[]>([]);
     const [currentColaborador, setCurrentColaborador] = useState<ColaboradorModel | null>();
-    const [initialValues, setInitialValues] = useState<CartaoPontoModel>({ ...objClean });
     const [currentCartaoPonto, setCurrentCartaoPonto] = useState<CartaoPontoModel[]>([])
     const [sumTotalPago, setSumTotalPago] = useState<string>('');
     const [sumHoraTrabalhada, setHoraTrabalhada] = useState<string>('');
-    const [dataRealTime, setDataRealTime] = useState<CartaoPontoModel[]>([])
     const tableKeys = useTableKeys();
-
-    //realizando busca no banco de dados
-    const {
-        dataTable: dataTableColabroador,
-    } = GetData(tableKeys.Colaborador, true) as { dataTable: ColaboradorModel[] };
+    const dispatch = useDispatch();
 
 
-    const { values, setFieldValue } = useFormik<CartaoPontoModel>({
+    const { values, setFieldValue, resetForm } = useFormik<CartaoPontoModel>({
         validateOnBlur: true,
         validateOnChange: true,
-        initialValues,
+        initialValues: {
+            dtInicio: '',
+            dtTermino: '',
+            action: undefined,
+            datetime: undefined,
+            uid: '',
+            vlHora: undefined,
+            nmColaborador: ''
+        },
         validationSchema: Yup.object().shape({
             dtInicio: Yup.string().required('Campo obrigatório'),
             dtTermino: Yup.string().required('Campo obrigatório'),
@@ -67,30 +63,19 @@ function CartaoPonto() {
         onSubmit: () => { },
     });
 
-    function cleanState() {
-        setInitialValues({
-            dtInicio: '',
-            dtTermino: '',
-            action: undefined,
-            datetime: undefined,
-            uid: undefined,
-            vlHora: undefined
-        })
-        setKey(Math.random());
-    }
     //manupulando evento de onchange do Select
-    function handleColaboradorChange(event: React.SyntheticEvent<Element, Event>, value: ColaboradorModel | null, reason: AutocompleteChangeReason) {
+    async function handleColaboradorChange(event: React.SyntheticEvent<Element, Event>, value: any, reason: AutocompleteChangeReason) {
         if (reason === 'clear' || reason === 'removeOption') {
-            cleanState()
+            resetForm()
             setCurrentCartaoPonto([])
         } else {
-            cleanState()
+            console.log(value)
             setCurrentColaborador(value);
             if (value) {
                 const colaboradorId = value.idCartaoPonto;
-                const colaboradorEncontrado = dataTableColabroador.find(cartao => cartao.idCartaoPonto === colaboradorId);
+                const colaboradorEncontrado = await getSingleItemByQuery<ColaboradorModel>(tableKeys.Colaborador, [where('idCartaoPonto', '==', colaboradorId)], dispatch)
                 if (colaboradorEncontrado) {
-                    setFieldValue('colaborador.nmColaborador', colaboradorEncontrado.nmColaborador);
+                    setFieldValue('nmColaborador', colaboradorEncontrado.nmColaborador);
                 }
             }
         }
@@ -102,91 +87,171 @@ function CartaoPonto() {
         setCurrentCartaoPonto([])
     }
 
-    function calcularHorasTrabalhadas(data: CartaoPontoModel[]) {
-        let horasTrabalhadas = 0;
+    function calcularHorasTrabalhadas(
+        data: CartaoPontoModel[],
+    ) {
+        if (!currentColaborador) {
+            throw new Error("Colaborador não encontrado.");
+        }
+
+        switch (currentColaborador.stSalarioColaborador) {
+            case SituacaoSalarioColaboradorEnum.DIARIA:
+                return calcularPagamentoDiario(data, currentColaborador);
+
+            case SituacaoSalarioColaboradorEnum.MES:
+                return calcularPagamentoMensal(currentColaborador);
+
+            default:
+                return calcularPagamentoPorHoras(data);
+        }
+    }
+
+    function calcularPagamentoDiario(
+        data: CartaoPontoModel[],
+        currentColaborador: ColaboradorModel
+    ) {
+        if (data.length === 0) {
+            throw new Error("Nenhum registro de ponto encontrado.");
+        }
+
+        const uniqueDates = new Set(
+            data.map((d) => {
+                const date = d.datetime ? new Date(d.datetime) : new Date();
+                return date.toISOString().split("T")[0]; // Formato YYYY-MM-DD
+            })
+        );
+
+        const diffDays = uniqueDates.size;
+        const salarioDiario = currentColaborador.vlHora ?? 0;
+        const totalSalario = diffDays * salarioDiario;
+
+        return {
+            horasTrabalhadas: `${diffDays} dias`,
+            valorPago: NumberFormatForBrazilianCurrency(totalSalario),
+        };
+    }
+
+    function calcularPagamentoMensal(currentColaborador: ColaboradorModel) {
+        const salarioMensal = currentColaborador.vlHora ?? 0;
+        return {
+            horasTrabalhadas: "",
+            valorPago: NumberFormatForBrazilianCurrency(salarioMensal),
+        };
+    }
+
+    function calcularPagamentoPorHoras(data: CartaoPontoModel[]) {
+        let totalHorasTrabalhadas = 0;
         let valorPago = 0;
 
-        data.forEach((entrada, i) => {
+        for (let i = 0; i < data.length; i += 2) {
+            const entrada = data[i];
             const saida = data[i + 1];
 
-            if (entrada && saida && entrada.action === 0 && saida.action === 1) {
-                const horaEntrada = moment(entrada.datetime);
-                const horaSaida = moment(saida.datetime);
-                const diffSeconds = horaSaida.diff(horaEntrada, 'seconds'); // Diferença em segundos
-                const vlHora = entrada.vlHora ?? 0;
-
-                if (!isNaN(diffSeconds) && !isNaN(vlHora)) {
-                    horasTrabalhadas += diffSeconds / 3600; // Convertendo segundos para horas
-                    valorPago += (diffSeconds / 3600) * vlHora;
-                }
+            if (isParValido(entrada, saida)) {
+                const { horasTrabalhadas, valor } = calcularHorasEValor(entrada, saida);
+                totalHorasTrabalhadas += horasTrabalhadas;
+                valorPago += valor;
             }
-        });
+        }
 
-        // Converter horas trabalhadas para horas, minutos e segundos
-        const totalSeconds = Math.floor(horasTrabalhadas * 3600);
+        const tempoFormatado = formatarHoras(totalHorasTrabalhadas);
+
+        return {
+            horasTrabalhadas: tempoFormatado,
+            valorPago: NumberFormatForBrazilianCurrency(valorPago),
+        };
+    }
+
+    function isParValido(entrada: CartaoPontoModel, saida: CartaoPontoModel): boolean {
+        return (
+            entrada &&
+            saida &&
+            entrada.action === "entrada" &&
+            saida.action === "saida"
+        );
+    }
+
+    function calcularHorasEValor(
+        entrada: CartaoPontoModel,
+        saida: CartaoPontoModel
+    ): { horasTrabalhadas: number; valor: number } {
+        const horaEntrada = moment(entrada.datetime);
+        const horaSaida = moment(saida.datetime);
+
+        const diffSeconds = horaSaida.diff(horaEntrada, "seconds");
+        const vlHora = entrada.vlHora ?? 0;
+
+        if (isNaN(diffSeconds)) {
+            return { horasTrabalhadas: 0, valor: 0 };
+        }
+
+        const horasTrabalhadas = diffSeconds / 3600;
+        const valor = horasTrabalhadas * vlHora;
+
+        return { horasTrabalhadas, valor };
+    }
+
+    function formatarHoras(totalHoras: number): string {
+        const totalSeconds = Math.floor(totalHoras * 3600);
         const horas = Math.floor(totalSeconds / 3600);
         const minutos = Math.floor((totalSeconds % 3600) / 60);
         const segundos = totalSeconds % 60;
 
-        return {
-            horasTrabalhadas: `${horas}:${minutos}:${segundos}`,
-            valorPago: formatCurrency(valorPago.toFixed(2))
-        };
+        return `${horas}h ${minutos}m ${segundos}s`;
     }
 
-    function handleSearch() {
-        if (currentColaborador && values.dtInicio && values.dtTermino) {
-            const dataFormattedInicio = new Date(values.dtInicio)
-            const dataFormattedTermino = new Date(values.dtTermino)
+    async function fetchColaboradorWithDateFilters(uid: string, startDate: string, endDate: string): Promise<CartaoPontoModel[]> {
+        const cartaoPontoRef = ref(realtimeDb, `CartaoPonto/${uid}`);
+        const startAtDate = new Date(startDate).toISOString(); // Converte para ISO 8601
+        const endAtDate = new Date(endDate).toISOString();
 
-            const inicioDate = moment(dataFormattedInicio, "DD/MM/YYYY");
-            const terminoDate = moment(dataFormattedTermino, "DD/MM/YYYY");
+        // Consulta filtrada pelas datas
+        const filteredQuery = query(
+            cartaoPontoRef,
+            orderByChild("datetime"),
+            startAt(startAtDate),
+            endAt(endAtDate)
+        );
+        const snapshot = await get(filteredQuery);
 
-            const filteredData = dataRealTime.filter(cartao => {
-                const cartaoDate = moment(cartao.datetime);
-
-                return cartaoDate.isSameOrAfter(inicioDate, 'day') && cartaoDate.isSameOrBefore(terminoDate, 'day') &&
-                    cartao.uid === currentColaborador.idCartaoPonto;
+        const dataArray: CartaoPontoModel[] = [];
+        if (snapshot.exists()) {
+            const data = snapshot.val();
+            Object.keys(data).forEach((key) => {
+                dataArray.push(data[key]);
             });
-            filteredData.map((item) => {
-                const funcionarioEncontrado = dataTableColabroador.find(id => id.idCartaoPonto = item.uid)
-                item.vlHora = funcionarioEncontrado?.vlHora
-                item.id = Math.random().toString()
-            })
-            const { horasTrabalhadas, valorPago } = calcularHorasTrabalhadas(filteredData)
-            setSumTotalPago(valorPago)
-            setHoraTrabalhada(horasTrabalhadas)
-            mergeEntriesAndExits(filteredData)
+        }
+        console.log(dataArray)
+        return dataArray;
+    }
+
+    // Atualização do handleSearch
+    async function handleSearch() {
+        if (currentColaborador && values.dtInicio && values.dtTermino) {
+            const filteredData = await fetchColaboradorWithDateFilters(
+                currentColaborador.idCartaoPonto,
+                values.dtInicio as string,
+                values.dtTermino as string
+            );
+            console.log(filteredData)
+            const { horasTrabalhadas, valorPago } = calcularHorasTrabalhadas(filteredData);
+            setSumTotalPago(valorPago);
+            setHoraTrabalhada(horasTrabalhadas);
+            mergeEntriesAndExits(filteredData);
         }
     }
-
-    useEffect(() => {
-        const cartaoPontoRef = ref(realtimeDb, 'CartaoPonto');
-        onValue(cartaoPontoRef, (snapshot) => {
-            const data = snapshot.val();
-            if (data !== null && typeof data === 'object') {
-                const dataArray: any[] = [];
-                Object.keys(data).forEach((key) => {
-                    const item = data[key];
-                    dataArray.push(item);
-                });
-                setDataRealTime(dataArray);
-            }
-        });
-    }, []);
 
     function mergeEntriesAndExits(data: CartaoPontoModel[]) {
         const mergedData: CartaoPontoModel[] = [];
         let currentEntry: CartaoPontoModel | null = null;
-
         data.forEach(item => {
             if (item.action === ActionCartaoPontoEnum.ENTRADA) {
                 // Se for uma entrada, cria um novo objeto de entrada.
                 currentEntry = {
-                    action: 0,
+                    action: ActionCartaoPontoEnum.ENTRADA,
                     entrada: item.datetime,
                     uid: item.uid,
-                    vlHora: item.vlHora
+                    vlHora: currentColaborador?.vlHora
                 };
             } else if (item.action === ActionCartaoPontoEnum.SAIDA && currentEntry) {
                 // Se for uma saída e houver um objeto de entrada correspondente,
@@ -198,23 +263,48 @@ function CartaoPonto() {
         });
         setCurrentCartaoPonto(mergedData)
     }
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            fetchSuggestions();
+        }, 200);
 
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [values.nmColaborador]);
+
+    const fetchSuggestions = useCallback(async () => {
+        if (!values.nmColaborador || values.nmColaborador.trim() === "") {
+            setSuggestions([]);
+            return;
+        }
+        try {
+            const { data } = await getItemsByQuery<ColaboradorModel>(
+                tableKeys.Colaborador,
+                [where('nmColaborador', '>=', values.nmColaborador), where('nmColaborador', '<=', values.nmColaborador + '\uf8ff')],
+                dispatch
+            );
+            setSuggestions(data);
+        } catch (error) {
+            console.error('Erro ao buscar sugestões:', error);
+            setSuggestions([]);
+        }
+    }, [values.nmColaborador]);
     return (
-        <Box>
-            <TitleDefault>Histórico Cartão Ponto</TitleDefault>
-            <DivFull>
-                <div>
+        <Box sx={{ padding: '5rem' }}>
+            <Typography variant="h4" gutterBottom>Cartão Ponto</Typography>
+            <Grid container spacing={2} mb={5}>
+                <Grid item xs={3}>
                     <Autocomplete
+                        freeSolo
                         id="tags-standard"
-                        options={dataTableColabroador}
+                        options={suggestions}
+                        value={suggestions.find((item: any) => item.colaborador === values.nmColaborador) || null}
                         getOptionLabel={(item: any) => item.nmColaborador}
-                        onChange={handleColaboradorChange}
-                        style={{
-                            borderBottom: '1px solid #6e6dc0',
-                            color: 'black',
-                            backgroundImage: 'linear-gradient(to top, #b2beed1a, #b2beed1a, #b2beed1a, #b2beed12, #ffffff)',
-                            width: '20rem',
-                            marginTop: '6px'
+                        onChange={(_, newValue, reason) => handleColaboradorChange(_, newValue, reason)}
+                        onInputChange={(_, newInputValue, reason) => {
+                            if (reason === 'clear') handleColaboradorChange(_, null, 'clear');
+                            setFieldValue('nmColaborador', newInputValue);
                         }}
                         renderInput={(params) => (
                             <TextField
@@ -222,28 +312,25 @@ function CartaoPonto() {
                                 variant="standard"
                                 label="Colaborador"
                                 placeholder="Selecione..."
-                                InputLabelProps={{
-                                    style: { fontSize: '1.3rem', fontWeight: '500', color: '#4d68b7' }
-                                }}
                             />
                         )}
                     />
-                </div>
-                <BoxDate>
+                </Grid>
+                <Grid item xs={2}>
                     <DatePicker
                         label='Data Inicio'
                         onChange={(date) => setFieldValue('dtInicio', date)}
                         value={values.dtInicio}
-                        key={`dtInicio-${key}`}
                     />
+                </Grid>
+                <Grid item xs={2}>
 
                     <DatePicker
                         label='Data Termino'
                         onChange={(date) => setFieldValue('dtTermino', date)}
                         value={values.dtTermino}
-                        key={`dtTermino-${key}`}
                     />
-                </BoxDate>
+                </Grid>
                 <div style={{ display: 'flex' }}>
 
                     <ButtonFilter
@@ -259,40 +346,46 @@ function CartaoPonto() {
                     >
                     </ButtonFilter>
                 </div>
-            </DivFull>
+            </Grid>
             <div style={{ minHeight: 'calc(100vh - 433px)' }}>
-                {currentCartaoPonto.length > 0 &&
-                    <div>
-                        <DivTable>
-                            <DivTableTitle>
-                                <h3>Data Trabalhada</h3>
-                                <h3>Hora de entrada</h3>
-                                <h3>Hora de saída</h3>
-                                <h3>Valor a Receber</h3>
-                            </DivTableTitle>
-                            <DivTableBody>
-                                {currentCartaoPonto.map(row => (
-                                    <DivTableRow key={row.id}>
-                                        <p>{moment(row.entrada).format("DD/MM/YYYY")}</p>
-                                        <p>{moment(row.entrada).format("HH:mm:ss")}</p>
-                                        <p>{moment(row.saida).format("HH:mm:ss")}</p>
-                                        <p>
+                {currentCartaoPonto.length > 0 && (
+                    <TableContainer component={Paper} className='style-scrollbar'>
+                        <Table>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell><strong>Data Trabalhada</strong></TableCell>
+                                    <TableCell><strong>Hora de Entrada</strong></TableCell>
+                                    <TableCell><strong>Hora de Saída</strong></TableCell>
+                                    <TableCell><strong>Valor a Receber</strong></TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {currentCartaoPonto.map((row: any) => (
+                                    <TableRow key={row.id}>
+                                        <TableCell>{moment(row.entrada).format("DD/MM/YYYY")}</TableCell>
+                                        <TableCell>{moment(row.entrada).format("HH:mm:ss")}</TableCell>
+                                        <TableCell>{moment(row.saida).format("HH:mm:ss")}</TableCell>
+                                        <TableCell>
                                             {row.vlHora && row.vlHora % 1 === 0 && typeof row.vlHora === 'number'
                                                 ? ` ${row.vlHora.toFixed(0)},00`
                                                 : `${row.vlHora?.toString() + ',00'}`
                                             }
-                                        </p>
-                                    </DivTableRow>
+                                        </TableCell>
+                                    </TableRow>
                                 ))}
-                            </DivTableBody>
-                        </DivTable>
-                        <div>
-                            <TotalValue>Total de Horas Trabalhadas: {sumHoraTrabalhada}</TotalValue>
-                            <TotalValue>Valor Total: {sumTotalPago}</TotalValue>
-                        </div>
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                )}
 
+                {currentCartaoPonto.length > 0 && (
+                    <div style={{ marginTop: "1rem" }}>
+                        <p><strong>
+                            Total de
+                            {currentColaborador?.stSalarioColaborador === SituacaoSalarioColaboradorEnum.HORA ? ' Horas Trabalhadas: ' : ' Dias Trabalhados: '}</strong> {sumHoraTrabalhada}</p>
+                        <p><strong>Valor Total:</strong> {sumTotalPago}</p>
                     </div>
-                }
+                )}
             </div>
         </Box>
     )

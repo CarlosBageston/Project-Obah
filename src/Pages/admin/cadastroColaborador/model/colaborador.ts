@@ -1,4 +1,4 @@
-
+import SituacaoSalarioColaboradorEnum from "../../../../enumeration/situacaoColaborador"
 
 /**
 * Modelo de Colaborador
@@ -14,7 +14,8 @@ interface ColaboradorModel {
     bairroColaborador: string,
     cidadeColaborador: string,
     nrCasaColaborador: string,
-    idCartaoPonto?: number,
+    idCartaoPonto: string,
+    stSalarioColaborador: SituacaoSalarioColaboradorEnum | null
     vlHora?: number
 }
 export default ColaboradorModel

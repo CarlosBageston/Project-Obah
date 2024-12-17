@@ -4,8 +4,8 @@
  * @author Carlos Bageston
  */
 enum ActionCartaoPontoEnum {
-    ENTRADA,
-    SAIDA
+    ENTRADA = 'entrada',
+    SAIDA = 'saida'
   }
   
   export default ActionCartaoPontoEnum;

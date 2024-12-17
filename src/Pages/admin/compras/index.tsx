@@ -176,7 +176,9 @@ function AtualizarEstoque() {
             const unitario = mp.nmProduto === item.nmProduto
                 ? (itemAtualizando ? itemAtualizando.vlUnitario : item.vlUnitario)
                 : mp.vlUnitario;
-            if (mp.nmProduto === item.nmProduto) mp.vlUnitario = item.vlUnitario
+            if (mp.nmProduto === item.nmProduto) {
+                mp.vlUnitario = foundKgProduto(item as ProdutosModel).vlUnitario
+            }
             soma += unitario * (mp.quantidade ?? 0);
         });
         return parseFloat(soma.toFixed(2));

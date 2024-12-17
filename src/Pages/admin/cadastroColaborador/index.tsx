@@ -13,9 +13,11 @@ import GenericTable from '../../../Components/table';
 import _ from 'lodash';
 import { RootState } from '../../../store/reducer/store';
 import CustomSnackBar, { StateSnackBar } from '../../../Components/snackBar/customsnackbar';
-import { Box, Grid, Typography } from '@mui/material';
+import { Box, FormControl, Grid, InputLabel, MenuItem, Select, Typography } from '@mui/material';
 import { useTableKeys } from '../../../hooks/tableKey';
 import { setLoadingGlobal } from '../../../store/reducer/loadingSlice';
+import SituacaoSalarioColaboradorEnum from '../../../enumeration/situacaoColaborador';
+import { convertToNumber, formatCurrencyRealTime } from '../../../hooks/formatCurrency';
 
 function CadastroColaborador() {
     const [key, setKey] = useState<number>(0);
@@ -36,8 +38,9 @@ function CadastroColaborador() {
             nrCasaColaborador: '',
             bairroColaborador: '',
             cidadeColaborador: '',
-            idCartaoPonto: undefined,
-            vlHora: undefined
+            idCartaoPonto: '',
+            vlHora: undefined,
+            stSalarioColaborador: null
         },
         validationSchema: Yup.object().shape({
             nmColaborador: Yup.string().required('Campo obrigatório'),
@@ -66,8 +69,13 @@ function CadastroColaborador() {
 
     async function hundleSubmitForm() {
         dispatch(setLoadingGlobal(true))
+        if (!values.vlHora) return;
+        const valuesUpdate: ColaboradorModel = {
+            ...values,
+            vlHora: convertToNumber(values.vlHora.toString())
+        };
         await addDoc(collection(db, tableKeys.Colaborador), {
-            ...values
+            ...valuesUpdate
         }).then(() => {
             dispatch(setLoadingGlobal(false))
             setEditData(values);
@@ -87,7 +95,7 @@ function CadastroColaborador() {
                     Cadastro De Novos Colaborador
                 </Typography>
                 <Grid container spacing={3}>
-                    <Grid item xs={6}>
+                    <Grid item xs={3}>
                         <Input
                             key={`nmColaborador-${key}`}
                             label='Nome'
@@ -97,9 +105,10 @@ function CadastroColaborador() {
                             onChange={e => setFieldValue(e.target.name, e.target.value)}
                             error={touched.nmColaborador && errors.nmColaborador ? errors.nmColaborador : ''}
                         />
+                    </Grid>
+                    <Grid item xs={2}>
                         <Input
                             key={`tfColaborador-${key}`}
-                            maxLength={12}
                             label='Telefone'
                             name='tfColaborador'
                             onBlur={handleBlur}
@@ -107,26 +116,19 @@ function CadastroColaborador() {
                             onChange={e => setFieldValue(e.target.name, e.target.value)}
                             error={touched.tfColaborador && errors.tfColaborador ? errors.tfColaborador : ''}
                         />
+                    </Grid>
+                    <Grid item xs={2}>
                         <Input
                             key={`cidadeColaborador-${key}`}
                             label='Cidade'
                             name='cidadeColaborador'
                             onBlur={handleBlur}
-                            value={formatPhone(values.cidadeColaborador)}
+                            value={values.cidadeColaborador}
                             onChange={e => setFieldValue(e.target.name, e.target.value)}
                             error={touched.cidadeColaborador && errors.cidadeColaborador ? errors.cidadeColaborador : ''}
                         />
-                        <Input
-                            key={`idCartaoPonto-${key}`}
-                            label='ID Cartão Ponto'
-                            name='idCartaoPonto'
-                            onBlur={handleBlur}
-                            value={values.idCartaoPonto}
-                            onChange={e => setFieldValue(e.target.name, e.target.value)}
-                            error={touched.idCartaoPonto && errors.idCartaoPonto ? errors.idCartaoPonto : ''}
-                        />
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid item xs={2}>
                         <Input
                             key={`bairroColaborador-${key}`}
                             label='Bairro'
@@ -136,15 +138,19 @@ function CadastroColaborador() {
                             onChange={e => setFieldValue(e.target.name, e.target.value)}
                             error={touched.bairroColaborador && errors.bairroColaborador ? errors.bairroColaborador : ''}
                         />
+                    </Grid>
+                    <Grid item xs={2}>
                         <Input
                             key={`ruaColaborador-${key}`}
-                            label='Rua'
+                            label='Logradouro'
                             name='ruaColaborador'
                             onBlur={handleBlur}
                             value={values.ruaColaborador}
                             onChange={e => setFieldValue(e.target.name, e.target.value)}
                             error={touched.ruaColaborador && errors.ruaColaborador ? errors.ruaColaborador : ''}
                         />
+                    </Grid>
+                    <Grid item xs={1}>
                         <Input
                             key={`nrCasaColaborador-${key}`}
                             label='Numero'
@@ -154,14 +160,47 @@ function CadastroColaborador() {
                             onChange={e => setFieldValue(e.target.name, e.target.value)}
                             error={touched.nrCasaColaborador && errors.nrCasaColaborador ? errors.nrCasaColaborador : ''}
                         />
+                    </Grid>
+                    <Grid item xs={2}>
+                        <FormControl fullWidth variant='standard'>
+                            <InputLabel id="contract-type-label">Tipo de Contrato</InputLabel>
+                            <Select
+                                labelId="contract-type-label"
+                                name="stSalarioColaborador"
+                                value={values.stSalarioColaborador}
+                                onChange={(e) => setFieldValue('stSalarioColaborador', e.target.value)}
+                            >
+                                <MenuItem value={SituacaoSalarioColaboradorEnum.MES}>Mensal</MenuItem>
+                                <MenuItem value={SituacaoSalarioColaboradorEnum.DIARIA}>Por Dia</MenuItem>
+                                <MenuItem value={SituacaoSalarioColaboradorEnum.HORA}>Por Hora</MenuItem>
+                            </Select>
+                        </FormControl>
+                    </Grid>
+                    <Grid item xs={3}>
                         <Input
                             key={`vlHora-${key}`}
-                            label='Salário - valor por hora'
-                            name='vlHora'
+                            label={`Salário (
+                                ${values.stSalarioColaborador === SituacaoSalarioColaboradorEnum.MES ? 'por mês'
+                                    : values.stSalarioColaborador === SituacaoSalarioColaboradorEnum.DIARIA ? 'por dia'
+                                        : values.stSalarioColaborador === SituacaoSalarioColaboradorEnum.HORA ? 'por hora'
+                                            : 'Selecione um tipo de contrato'}
+                                    )`}
+                            name="vlHora"
                             onBlur={handleBlur}
                             value={values.vlHora ?? ''}
-                            onChange={e => setFieldValue(e.target.name, e.target.value)}
+                            onChange={e => setFieldValue(e.target.name, formatCurrencyRealTime(e.target.value))}
                             error={touched.vlHora && errors.vlHora ? errors.vlHora : ''}
+                        />
+                    </Grid>
+                    <Grid item xs={2}>
+                        <Input
+                            key={`idCartaoPonto-${key}`}
+                            label='ID Cartão Ponto'
+                            name='idCartaoPonto'
+                            onBlur={handleBlur}
+                            value={values.idCartaoPonto}
+                            onChange={e => setFieldValue(e.target.name, e.target.value)}
+                            error={touched.idCartaoPonto && errors.idCartaoPonto ? errors.idCartaoPonto : ''}
                         />
                     </Grid>
                 </Grid>
@@ -204,7 +243,7 @@ function CadastroColaborador() {
                     editData={editData}
                 />
                 <CustomSnackBar message={message ? message : "Cadastrado Colaborador com sucesso"} open={openSnackBar} setOpen={setOpenSnackBar} />
-            </Box>
+            </Box >
         </>
     )
 }

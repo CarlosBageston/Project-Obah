@@ -26,6 +26,11 @@ const DatePicker: React.FC<CustomDatePickerProps> = ({ label, onChange, value })
                 format='DD/MM/YYYY'
                 onChange={onChange}
                 value={value}
+                slotProps={{
+                    textField: {
+                        variant: 'standard',
+                    },
+                }}
             />
         </LocalizationProvider>
     );

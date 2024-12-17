@@ -193,7 +193,7 @@ const CollapseListProduct = <T,>({
                                 key={key}
                                 freeSolo
                                 style={{ height: '70px' }}
-                                disabled={editItem !== null}
+                                // disabled={editItem !== null}
                                 options={suggestions}
                                 getOptionLabel={(option: any) => option && option.nmProduto ? option.nmProduto : ""}
                                 value={suggestions.find((item: any) => item.nmProduto === values.nmProduto) || null}

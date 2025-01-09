@@ -345,7 +345,7 @@ function CadastroProduto() {
                         label="Quant. mínima em estoque"
                         onBlur={handleBlur}
                         name="qntMinima"
-                        disabled={values.stEstoqueInfinito || values.tpProduto === SituacaoProduto.COMPRADO}
+                        disabled={values.stEstoqueInfinito}
                         value={values.stEstoqueInfinito ? '' : values.qntMinima || ''}
                         type='number'
                         onChange={e => setFieldValue(e.target.name, Number(e.target.value))}

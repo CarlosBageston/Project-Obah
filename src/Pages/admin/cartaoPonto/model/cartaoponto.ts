@@ -11,13 +11,15 @@ import ActionCartaoPontoEnum from "../../../../enumeration/action"
 interface CartaoPontoModel {
     id?: string
     vlHora?: number
-    datetime?: Date
+    datetime?: string
     uid: string
     action?: ActionCartaoPontoEnum
     dtInicio?: string | Date,
     dtTermino?: string | Date,
-    entrada?: Date
-    saida?: Date
+    entrada?:  string
+    saida?:  string
     nmColaborador?: string
+    salarioPago?: boolean
+    dtPagamento?: string
 }
 export default CartaoPontoModel

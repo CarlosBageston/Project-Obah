@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import * as Yup from 'yup';
 import moment from 'moment';
 import { useFormik } from "formik";
@@ -5,7 +6,7 @@ import { IoMdClose } from "react-icons/io";
 import { useState, useEffect, useCallback } from "react";
 import { BiSearchAlt } from "react-icons/bi";
 import { realtimeDb } from '../../../firebase';
-import { query, orderByChild, startAt, endAt, ref, get } from "firebase/database";
+import { query, orderByChild, startAt, endAt, ref, get, update } from "firebase/database";
 import CartaoPontoModel from "./model/cartaoponto";
 import ActionCartaoPontoEnum from '../../../enumeration/action';
 import { ButtonFilter } from "../../../Components/filtro/style";
@@ -32,6 +33,9 @@ import { getItemsByQuery, getSingleItemByQuery } from '../../../hooks/queryFireb
 import { where } from 'firebase/firestore';
 import { useDispatch } from 'react-redux';
 import SituacaoSalarioColaboradorEnum from '../../../enumeration/situacaoColaborador';
+import { theme } from '../../../theme';
+import Button from '../../../Components/button';
+import { PagamentoDialog } from './components/PagamentoDialog';
 
 function CartaoPonto() {
     const [suggestions, setSuggestions] = useState<ColaboradorModel[]>([]);
@@ -41,6 +45,15 @@ function CartaoPonto() {
     const [sumHoraTrabalhada, setHoraTrabalhada] = useState<string>('');
     const tableKeys = useTableKeys();
     const dispatch = useDispatch();
+    const [showPagament, setShowPagament] = useState(false);
+
+    const handleOpenPagamentoDialog = () => setShowPagament(true);
+    const handleClosePagamentoDialog = () => setShowPagament(false);
+
+    const handleSalvarPagamentoData = async () => {
+        await handleSalvarPagamento();
+        setShowPagament(false);
+    };
 
 
     const { values, setFieldValue, resetForm } = useFormik<CartaoPontoModel>({
@@ -64,12 +77,11 @@ function CartaoPonto() {
     });
 
     //manupulando evento de onchange do Select
-    async function handleColaboradorChange(event: React.SyntheticEvent<Element, Event>, value: any, reason: AutocompleteChangeReason) {
+    async function handleColaboradorChange(_: React.SyntheticEvent<Element, Event>, value: any, reason: AutocompleteChangeReason) {
         if (reason === 'clear' || reason === 'removeOption') {
             resetForm()
             setCurrentCartaoPonto([])
         } else {
-            console.log(value)
             setCurrentColaborador(value);
             if (value) {
                 const colaboradorId = value.idCartaoPonto;
@@ -200,11 +212,27 @@ function CartaoPonto() {
         return `${horas}h ${minutos}m ${segundos}s`;
     }
 
+    function formattedDate(startDate: string, endDate: string) {
+        const getLocalISOString = (date: Date) => {
+            const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+            return localDate.toISOString();
+        }
+        // Definindo o horário de início (00:00:00) e de fim (23:59:59)
+        const startAtDateObj = new Date(startDate);
+        startAtDateObj.setHours(0, 0, 0, 0); // Define para 00:00:00.000 no horário local
+
+        const endAtDateObj = new Date(endDate);
+        endAtDateObj.setHours(23, 59, 59, 999); // Define para 23:59:59.999 no horário local
+
+        // Converte para ISO 8601 com horário local, levando em consideração o fuso horário
+        const startAtDate = getLocalISOString(startAtDateObj);
+        const endAtDate = getLocalISOString(endAtDateObj);
+        return { startAtDate, endAtDate };
+    }
     async function fetchColaboradorWithDateFilters(uid: string, startDate: string, endDate: string): Promise<CartaoPontoModel[]> {
         const cartaoPontoRef = ref(realtimeDb, `CartaoPonto/${uid}`);
-        const startAtDate = new Date(startDate).toISOString(); // Converte para ISO 8601
-        const endAtDate = new Date(endDate).toISOString();
 
+        const { startAtDate, endAtDate } = formattedDate(startDate, endDate);
         // Consulta filtrada pelas datas
         const filteredQuery = query(
             cartaoPontoRef,
@@ -221,10 +249,63 @@ function CartaoPonto() {
                 dataArray.push(data[key]);
             });
         }
-        console.log(dataArray)
         return dataArray;
     }
 
+    function resetTime(date: Date): Date {
+        const resetDate = new Date(date); // Cria uma nova data a partir da original
+        resetDate.setUTCHours(0, 0, 0, 0); // Zera a hora, minuto, segundo e milissegundo no UTC
+        return resetDate;
+    }
+
+    async function handleSalvarPagamento() {
+        const cartaoPontoRef = ref(realtimeDb, `CartaoPonto/${currentColaborador?.idCartaoPonto}`);
+        const dataISO = `${values.dtPagamento}`;
+
+        // Definindo o início e o fim do intervalo
+        const startDate = new Date(`${dataISO}T00:00:00.000Z`);
+        const endDate = new Date(`${dataISO}T23:59:59.999Z`);
+
+        // Consulta filtrada pelas datas
+        const filteredQuery = query(
+            cartaoPontoRef,
+            orderByChild("datetime"),
+            startAt(startDate.toISOString()),
+            endAt(endDate.toISOString())
+        );
+        try {
+            const snapshot = await get(filteredQuery);
+            if (snapshot.exists()) {
+                const data = snapshot.val() as CartaoPontoModel;
+                const entries = Object.entries(data).sort(([_, valueA], [__, valueB]) => {
+                    const dateA = new Date(valueA.datetime);
+                    const dateB = new Date(valueB.datetime);
+                    return dateA.getTime() - dateB.getTime();
+                });
+
+                // Zera as horas da data selecionada
+                const startDateWithoutTime = resetTime(startDate);
+                const matchingEntries = entries.filter(([_, value]: [string, any]) => {
+                    const entryDateWithoutTime = resetTime(new Date(value.datetime));
+                    return startDateWithoutTime.toISOString() === entryDateWithoutTime.toISOString();
+                });
+
+                if (matchingEntries.length > 0) {
+                    // Pega a primeira entrada correspondente
+                    const [key, _] = matchingEntries[0];
+                    const entryRef = ref(realtimeDb, `CartaoPonto/${currentColaborador?.idCartaoPonto}/${key}`);
+                    // Realize a atualização aqui
+                    await update(entryRef, { salarioPago: true });
+                } else {
+                    console.error("Nenhum dado encontrado para a data selecionada.");
+                }
+            } else {
+                console.error("Nenhum dado encontrado para a data e ação especificadas.");
+            }
+        } catch (error) {
+            console.error("Erro ao buscar ou atualizar os dados:", error);
+        }
+    }
     // Atualização do handleSearch
     async function handleSearch() {
         if (currentColaborador && values.dtInicio && values.dtTermino) {
@@ -233,36 +314,44 @@ function CartaoPonto() {
                 values.dtInicio as string,
                 values.dtTermino as string
             );
-            console.log(filteredData)
             const { horasTrabalhadas, valorPago } = calcularHorasTrabalhadas(filteredData);
             setSumTotalPago(valorPago);
             setHoraTrabalhada(horasTrabalhadas);
             mergeEntriesAndExits(filteredData);
         }
     }
-
     function mergeEntriesAndExits(data: CartaoPontoModel[]) {
         const mergedData: CartaoPontoModel[] = [];
         let currentEntry: CartaoPontoModel | null = null;
-        data.forEach(item => {
-            if (item.action === ActionCartaoPontoEnum.ENTRADA) {
-                // Se for uma entrada, cria um novo objeto de entrada.
+
+        data.forEach((item, index) => {
+            if (index % 2 === 0) {
+                // Garantindo que currentEntry seja corretamente tipado
                 currentEntry = {
                     action: ActionCartaoPontoEnum.ENTRADA,
                     entrada: item.datetime,
                     uid: item.uid,
-                    vlHora: currentColaborador?.vlHora
+                    vlHora: currentColaborador?.vlHora,
+                    salarioPago: item.salarioPago ? true : false
                 };
-            } else if (item.action === ActionCartaoPontoEnum.SAIDA && currentEntry) {
-                // Se for uma saída e houver um objeto de entrada correspondente,
-                // adicione a saída ao objeto de entrada e adicione o objeto de entrada unificado à lista.
+            } else if (index % 2 === 1 && currentEntry) {
+                // A propriedade 'saida' já está presente em currentEntry
                 currentEntry.saida = item.datetime;
                 mergedData.push(currentEntry);
                 currentEntry = null;
             }
         });
-        setCurrentCartaoPonto(mergedData)
+
+        // Verifica se há uma entrada sem saída e assume a saída baseada em um horário fixo
+        if (currentEntry) {
+            // Type assertion aqui para garantir que currentEntry é do tipo correto
+            (currentEntry as CartaoPontoModel).saida = "";
+            mergedData.push(currentEntry);
+        }
+
+        setCurrentCartaoPonto(mergedData);
     }
+
     useEffect(() => {
         const handler = setTimeout(() => {
             fetchSuggestions();
@@ -331,8 +420,7 @@ function CartaoPonto() {
                         value={values.dtTermino}
                     />
                 </Grid>
-                <div style={{ display: 'flex' }}>
-
+                <div style={{ display: 'flex', paddingLeft: '1rem' }}>
                     <ButtonFilter
                         type="button"
                         startIcon={<BiSearchAlt size={25} />}
@@ -360,11 +448,11 @@ function CartaoPonto() {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {currentCartaoPonto.map((row: any) => (
-                                    <TableRow key={row.id}>
-                                        <TableCell>{moment(row.entrada).format("DD/MM/YYYY")}</TableCell>
-                                        <TableCell>{moment(row.entrada).format("HH:mm:ss")}</TableCell>
-                                        <TableCell>{moment(row.saida).format("HH:mm:ss")}</TableCell>
+                                {currentCartaoPonto.map((row: CartaoPontoModel) => (
+                                    <TableRow key={row.id} style={{ backgroundColor: row.salarioPago ? theme.paletteColor.tertiaryGreen : '' }}>
+                                        <TableCell>{moment.utc(row.entrada).format("DD/MM/YYYY")}</TableCell>
+                                        <TableCell>{row.entrada === '' ? "Sem Registro" : moment.utc(row.entrada).format("HH:mm:ss")}</TableCell>
+                                        <TableCell>{row.saida === '' ? "Sem Registro" : moment.utc(row.saida).format("HH:mm:ss")}</TableCell>
                                         <TableCell>
                                             {row.vlHora && row.vlHora % 1 === 0 && typeof row.vlHora === 'number'
                                                 ? ` ${row.vlHora.toFixed(0)},00`
@@ -384,6 +472,14 @@ function CartaoPonto() {
                             Total de
                             {currentColaborador?.stSalarioColaborador === SituacaoSalarioColaboradorEnum.HORA ? ' Horas Trabalhadas: ' : ' Dias Trabalhados: '}</strong> {sumHoraTrabalhada}</p>
                         <p><strong>Valor Total:</strong> {sumTotalPago}</p>
+                        <Button style={{ marginTop: "1rem" }} onClick={handleOpenPagamentoDialog} label={'Adicionar Pagamento'} type="button" />
+                        <PagamentoDialog
+                            setFieldValueExterno={setFieldValue}
+                            dtPagemento={values.dtPagamento ?? ''}
+                            open={showPagament}
+                            onClose={handleClosePagamentoDialog}
+                            onSalvar={handleSalvarPagamentoData}
+                        />
                     </div>
                 )}
             </div>

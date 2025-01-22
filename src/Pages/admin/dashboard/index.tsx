@@ -1,11 +1,11 @@
-import { useRef, useState } from 'react';
-import { Card, CardContent, Grid, IconButton, Typography, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button } from '@mui/material';
+import { useEffect, useRef, useState } from 'react';
+import { Card, CardContent, Grid, IconButton, Typography, Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import HorizontalTabs from '../../../Components/horizontaltabs/horizontalTabs';
 import DashboardCard from './dashboardCard';
 import { useTableKeys } from '../../../hooks/tableKey';
-import { DashboardCompraModel, DashboardVendasEntregaModel } from '../../../hooks/useCalculateValueDashboard';
+import { DashboardCompraModel, DashboardGeneral, DashboardVendasEntregaModel } from '../../../hooks/useCalculateValueDashboard';
 import SituacaoProduto from '../../../enumeration/situacaoProduto';
 import { useFormik } from 'formik';
 import useHandleInputKeyPress from '../../../hooks/useHandleInputKeyPress';
@@ -14,13 +14,24 @@ import { useDispatch, useSelector } from 'react-redux';
 import { where } from 'firebase/firestore';
 import CryptoJS from 'crypto-js';
 import { RootState } from '../../../store/reducer/store';
+import Input from '../../../Components/input';
+import { NumberFormatForBrazilianCurrency } from '../../../hooks/formatCurrency';
+
 interface DashboardLogin {
     passwordDashboard: string
 }
+
+interface DataDashboard {
+    vlTotal: string;
+    vlLucro: string;
+}
+
 function Dashboard() {
     const [selectTab, setSelectTab] = useState<number>(0);
     const [showData, setShowData] = useState<boolean>(false);
     const [isAuthDialogOpen, setIsAuthDialogOpen] = useState<boolean>(false);
+    const [dataDashboard, setDataDashboard] = useState<DataDashboard>();
+
     const tableKeys = useTableKeys();
     const refInput = useRef<HTMLInputElement>(null);
     const { onKeyPressHandleSubmit } = useHandleInputKeyPress();
@@ -36,12 +47,12 @@ function Dashboard() {
                 setIsAuthDialogOpen(false);
                 formik.resetForm();
             } else {
-                formik.setFieldTouched('password', true, false);
-                formik.setFieldError('password', 'Senha incorreta');
+                formik.setFieldError('passwordDashboard', 'Senha incorreta');
+                formik.setFieldTouched('passwordDashboard', true, false);
             }
         } else {
-            formik.setFieldTouched('password', true, false);
-            formik.setFieldError('password', 'Senha incorreta');
+            formik.setFieldError('passwordDashboard', 'Senha incorreta');
+            formik.setFieldTouched('passwordDashboard', true, false);
         }
     };
     const formik = useFormik<DashboardLogin>({
@@ -65,6 +76,22 @@ function Dashboard() {
         filter: showData ? 'none' : 'grayscale(100%)',
         cursor: showData ? 'default' : 'not-allowed',
     };
+    useEffect(() => {
+        const dataDashboard = async () => {
+            await getSingleItemByQuery<DashboardGeneral>(
+                tableKeys.DashboardGeral,
+                [where('dtDashboard', '==', new Date().toISOString().split('-')[0])],
+                dispatch
+            ).then((res) => {
+                const dados: DataDashboard = {
+                    vlTotal: res?.vlTotalAnual ? NumberFormatForBrazilianCurrency(res.vlTotalAnual) : 'Erro ao Buscar',
+                    vlLucro: res?.vlLucroAnual ? NumberFormatForBrazilianCurrency(res.vlLucroAnual) : 'Erro ao Buscar',
+                }
+                setDataDashboard(dados);
+            });
+        }
+        dataDashboard()
+    }, [dispatch])
     return (
         <>
             <Grid container justifyContent="flex-end" mt={5} mb={'-4rem'} paddingRight={'2rem'} >
@@ -76,7 +103,7 @@ function Dashboard() {
                         <CardContent>
                             <Typography variant="h6" width={'8rem'} color={'#fff'}>Receita Anual</Typography>
                             <Typography variant="h5" width={'11rem'} color={'#fff'}>
-                                {showData ? 'R$ 60.000,00' : 'R$ ********'}
+                                {showData ? dataDashboard?.vlTotal : 'R$ ********'}
                             </Typography>
                         </CardContent>
                     </Card>
@@ -86,7 +113,7 @@ function Dashboard() {
                         <CardContent>
                             <Typography variant="h6" width={'8rem'} color={'#fff'}>Lucro Anual</Typography>
                             <Typography variant="h5" width={'11rem'} color={'#fff'}>
-                                {showData ? 'R$ 70.000,00' : 'R$ ********'}
+                                {showData ? dataDashboard?.vlLucro : 'R$ ********'}
                             </Typography>
                         </CardContent>
                     </Card>
@@ -151,7 +178,7 @@ function Dashboard() {
             >
                 <DialogTitle>Digite sua senha para acessar os dados</DialogTitle>
                 <DialogContent>
-                    <TextField
+                    <Input
                         label="Senha"
                         type="password"
                         fullWidth
@@ -160,8 +187,7 @@ function Dashboard() {
                         inputRef={refInput}
                         onKeyDown={(e) => onKeyPressHandleSubmit(e, formik.handleSubmit)}
                         onChange={(e) => formik.setFieldValue('passwordDashboard', e.target.value)}
-                        error={Boolean(formik.errors.passwordDashboard && formik.touched.passwordDashboard)}
-                        helperText={formik.errors.passwordDashboard}
+                        error={formik.touched.passwordDashboard && formik.errors.passwordDashboard ? formik.errors.passwordDashboard : ''}
                     />
                 </DialogContent>
                 <DialogActions>

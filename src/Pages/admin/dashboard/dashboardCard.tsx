@@ -281,7 +281,7 @@ function DashboardCard<T>({ showData, collectionName, nameUnidade, nameGrafico, 
                             <Typography variant="h6" color={'#fff'}>Total no Mês Atual</Typography>
                             <Typography variant="h4" color={'#fff'}>{NumberFormatForBrazilianCurrency(values.vlTotalMonth ?? 0)}</Typography>
                             <Typography variant="body2" color={'#fff'}>
-                                Total de compras realizadas neste mês
+                                Total de {nameGrafico} realizadas neste mês
                             </Typography>
                         </CardContent>
                     </Card>
@@ -303,7 +303,7 @@ function DashboardCard<T>({ showData, collectionName, nameUnidade, nameGrafico, 
                             <Typography variant="h6" color={'#fff'}>Total Receita Anual</Typography>
                             <Typography variant="h4" color={'#fff'}>{NumberFormatForBrazilianCurrency(values.vlTotalAnual ?? 0)}</Typography>
                             <Typography variant="body2" color={'#fff'}>
-                                Total acumulado de compras ao longo do ano
+                                Total acumulado de {nameGrafico} ao longo do ano
                             </Typography>
                         </CardContent>
                     </Card>

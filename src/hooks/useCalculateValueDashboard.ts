@@ -1,7 +1,7 @@
 import moment from "moment";
 import { db } from "../firebase";
 import { addDoc, collection, doc, updateDoc, where, writeBatch } from "firebase/firestore";
-import { getSingleItemByQuery } from "./queryFirebase";
+import { addItem, getSingleItemByQuery, updateItem } from "./queryFirebase";
 import { Dispatch } from "@reduxjs/toolkit";
 import { SubProdutoModel } from "../Pages/admin/cadastroProdutos/model/subprodutos";
 
@@ -70,6 +70,28 @@ interface TotalMensalVendas {
     dtProduto: string
     quantidade: number | null
     vlTotal?: number,
+}
+
+export interface DashboardGeneral {
+    id?: string
+    vlTotalAnual?: number
+    vlLucroAnual?: number
+    dtDashboard?: string
+}
+
+export async function dashboardGeneralVendasEntregas(
+    collectionName: string,
+    dispatch: Dispatch,
+    vlLucroAnual: number,
+    vlTotalAnual: number,
+    dtDashboard: string
+) {
+    const getData = await getSingleItemByQuery<DashboardGeneral>(collectionName,  [where('dtDashboard', '==', dtDashboard)], dispatch);
+    if(getData){
+            const newLucro = getData.vlLucroAnual ? getData.vlLucroAnual + vlLucroAnual : vlLucroAnual;
+            const newTotal = getData.vlTotalAnual ? getData.vlTotalAnual + vlTotalAnual : vlTotalAnual;
+            updateItem(collectionName, getData.id ?? '', { vlTotalAnual: newTotal, vlLucroAnual: newLucro }, dispatch);
+    } else addItem(collectionName, { vlTotalAnual, vlLucroAnual, dtDashboard }, dispatch);
 }
 
 export async function updateAddDashboardVendasEntregas(

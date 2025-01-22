@@ -14,6 +14,7 @@ export const useTableKeys = () => {
         DashboardCompra: `UsersData/${user.uid}/DashboardCompra`,
         DashboardVendas: `UsersData/${user.uid}/DashboardVendas`,
         DashboardEntregas: `UsersData/${user.uid}/DashboardEntregas`,
+        DashboardGeral: `UsersData/${user.uid}/DashboardGeral`,
         Empresa: `UsersData/${user.uid}/Empresa`,
         Estoque: `UsersData/${user.uid}/Estoque`,
         Compras: `UsersData/${user.uid}/Compras`,

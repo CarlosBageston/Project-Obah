@@ -28,8 +28,9 @@ import useDebouncedSuggestions from '../../../hooks/useDebouncedSuggestions';
 import { useTableKeys } from '../../../hooks/tableKey';
 import { formatDescription } from '../../../utils/formattedString';
 import { convertToNumber, formatCurrencyRealTime, NumberFormatForBrazilianCurrency } from '../../../hooks/formatCurrency';
-import { updateAddDashboardVendasEntregas } from '../../../hooks/useCalculateValueDashboard';
+import { dashboardGeneralVendasEntregas, updateAddDashboardVendasEntregas } from '../../../hooks/useCalculateValueDashboard';
 import { setLoadingGlobal } from '../../../store/reducer/loadingSlice';
+import moment from 'moment';
 
 
 interface VendaProps {
@@ -249,6 +250,7 @@ function Vendas() {
             dispatch(setMessage('Erro ao Cadastrar Venda'))
             setOpenSnackBar(prev => ({ ...prev, error: true }))
         });
+        dashboardGeneralVendasEntregas(tableKeys.DashboardGeral, dispatch, values.vlLucroTotal, values.vlTotal, moment(values.dtProduto, 'DD/MM/YYYY').format('YYYY'))
         resetForm()
         setKey(Math.random())
 

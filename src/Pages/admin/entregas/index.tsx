@@ -24,7 +24,7 @@ import { RootState } from '../../../store/reducer/store';
 import { useTableKeys } from '../../../hooks/tableKey';
 import { formatDescription } from '../../../utils/formattedString';
 import { convertToNumber, NumberFormatForBrazilianCurrency } from '../../../hooks/formatCurrency';
-import { updateAddDashboardVendasEntregas } from '../../../hooks/useCalculateValueDashboard';
+import { dashboardGeneralVendasEntregas, updateAddDashboardVendasEntregas } from '../../../hooks/useCalculateValueDashboard';
 import { setLoadingGlobal } from '../../../store/reducer/loadingSlice';
 import { format } from 'date-fns';
 
@@ -74,6 +74,7 @@ function Entregas() {
         values.vlLucro = convertToNumber(values.vlLucro.toString())
         values.produtos = values.produtos.filter(produto => produto.quantidade !== null)
         updateAddDashboardVendasEntregas(values.produtos, values.dtEntrega ?? '', tableKeys.DashboardEntregas, dispatch)
+        dashboardGeneralVendasEntregas(tableKeys.DashboardGeral, dispatch, values.vlLucro, values.vlEntrega, moment(values.dtEntrega, 'YYYY/MM/DD').format('YYYY'))
         await addDoc(collection(db, tableKeys.Entregas), {
             ...values
         })

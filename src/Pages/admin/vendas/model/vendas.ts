@@ -11,7 +11,7 @@ import { SubProdutoModel } from "../../cadastroProdutos/model/subprodutos"
 
 interface VendaModel {
     id?: string,
-    dtProduto: Date | null,
+    dtProduto: Date | null | string,
     vlLucroTotal: number,
     vlTotal: number ,
     vlRecebido: number,

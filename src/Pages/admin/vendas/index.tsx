@@ -238,7 +238,7 @@ function Vendas() {
         };
         updateAddDashboardVendasEntregas(
             valuesUpdate.produtoEscaniado,
-            values.dtProduto?.toString() ?? '',
+            moment(values.dtProduto, 'DD/MM/YYYY').format('YYYY/MM/DD'),
             tableKeys.DashboardVendas,
             dispatch
         ).then(() => {

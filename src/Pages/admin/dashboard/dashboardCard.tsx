@@ -199,7 +199,7 @@ function DashboardCard<T>({ showData, collectionName, nameUnidade, nameGrafico, 
                     <FormControl style={selectstyle} fullWidth variant='standard'>
                         <InputLabel>Ano</InputLabel>
                         <Select
-                            value={values.year ?? years[0]}
+                            value={values.year}
                             key={key}
                             onChange={(e) => setFieldValue('year', Number(e.target.value))}
                             label="Ano"

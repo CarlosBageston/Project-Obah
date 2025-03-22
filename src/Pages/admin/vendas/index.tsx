@@ -377,7 +377,6 @@ function Vendas() {
                         value={suggestions.find((item: any) => item.nmProduto === formik.values.barcode) || null}
                         getOptionLabel={(option: any) => option && option.nmProduto ? option.nmProduto : ""}
                         onChange={(_, newValue, reason) => {
-                            console.log(reason)
                             if (reason === "selectOption" && newValue) {
                                 // Atualiza o estado somente se um item foi selecionado
                                 handleInputChange(_, newValue, reason);

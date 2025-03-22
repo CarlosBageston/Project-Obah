@@ -97,11 +97,6 @@ const CollapseListProduct = <T,>({
         validationSchema: Yup.object({
             nmProduto: Yup.string()
                 .required('O nome do produto é obrigatório.')
-                // .test('valid-product', 'O produto inserido não é válido.', value => {
-                //     console.log(value)
-                //     console.log(suggestions)
-                //     return !value || (suggestions?.find((i: any) => i.nmProduto === value) ? true : false);
-                // })
                 .test('unique-product', 'esse Item ja existe na lista.', value => {
                     if (editItem) return true;
                     if (!value) return true;

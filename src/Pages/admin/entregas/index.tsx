@@ -158,7 +158,6 @@ function Entregas() {
             document.body.appendChild(iframe);
             if (!iframe) return;
             if (!iframe.contentWindow) return;
-            console.log(iframe.contentWindow)
             // Escrever o conteúdo da impressão no iframe
             const iframeDoc = iframe.contentWindow.document;
             iframeDoc.open();
@@ -293,7 +292,10 @@ function Entregas() {
                             options={suggestions}
                             getOptionLabel={(option: any) => option && option.nmCliente ? option.nmCliente : ""}
                             value={suggestions.find((item: any) => item.nmCliente === values.nmCliente) || null}
-                            onChange={(_, newValue, reason) => handleClienteChange(_, newValue, reason)}
+                            onChange={(_, newValue, reason) => {
+                                if (reason === "selectOption" && newValue)
+                                    handleClienteChange(_, newValue, reason)
+                            }}
                             onInputChange={(_, newInputValue, reason) => {
                                 if (reason === 'clear') handleClienteChange(_, null, 'clear');
                                 setFieldValue('nmCliente', newInputValue);

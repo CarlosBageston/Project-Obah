@@ -61,7 +61,6 @@ function Login() {
             dispatch(setMessage(''));
             navigate('/dashboard');
         } catch (error) {
-            console.error("Erro de autenticação:", error);
             if (error instanceof Error) {
                 dispatch(setMessage("E-mail ou senha incorreto"));
             } else {
